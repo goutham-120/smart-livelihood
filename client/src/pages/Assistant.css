@@ -1,0 +1,313 @@
+/* Page specific styles for Assistant.jsx using CSS variables from styles.css */
+
+.assistant-container {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+.assistant-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.assistant-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.assistant-subtitle {
+  color: var(--text-muted);
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.stage-tracker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  overflow-x: auto;
+  gap: 8px;
+}
+
+.stage-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  min-width: 70px;
+  text-align: center;
+  cursor: default;
+}
+
+.stage-step.active {
+  color: var(--primary-600);
+}
+
+.stage-step.completed {
+  color: var(--accent-green);
+}
+
+.stage-circle {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-subtle);
+  border: 2px solid var(--border-medium);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.stage-step.active .stage-circle {
+  background: var(--primary-600);
+  border-color: var(--primary-600);
+  color: var(--text-inverse);
+  box-shadow: 0 0 10px rgba(79, 70, 229, 0.4);
+}
+
+.stage-step.completed .stage-circle {
+  background: var(--accent-green);
+  border-color: var(--accent-green);
+  color: var(--text-inverse);
+}
+
+.controls-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+}
+
+.selector-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.select-control {
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-medium);
+  background: var(--bg-card);
+  font-size: 13px;
+  color: var(--text-main);
+}
+
+.chat-window {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  height: 480px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.chat-messages {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.message-bubble {
+  max-width: 80%;
+  padding: 14px 18px;
+  border-radius: var(--radius-lg);
+  font-size: 14px;
+  line-height: 1.5;
+  position: relative;
+  word-break: break-word;
+}
+
+.message-bubble.assistant {
+  align-self: flex-start;
+  background: var(--bg-subtle);
+  color: var(--text-main);
+  border-bottom-left-radius: 4px;
+  border: 1px solid var(--border-light);
+}
+
+.message-bubble.user {
+  align-self: flex-end;
+  background: var(--primary-600);
+  color: var(--text-inverse);
+  border-bottom-right-radius: 4px;
+}
+
+.message-bubble.system {
+  align-self: center;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 12px;
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+}
+
+.message-time {
+  font-size: 10px;
+  opacity: 0.7;
+  margin-top: 4px;
+  text-align: right;
+}
+
+.voice-control-panel {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border-light);
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.interim-box {
+  width: 100%;
+  min-height: 24px;
+  padding: 6px 12px;
+  background: var(--primary-50);
+  border-radius: var(--radius-sm);
+  color: var(--primary-700);
+  font-size: 13px;
+  font-style: italic;
+  text-align: center;
+}
+
+.voice-buttons-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.mic-button {
+  width: 68px;
+  height: 68px;
+  border-radius: var(--radius-full);
+  border: none;
+  background: var(--primary-600);
+  color: var(--text-inverse);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4);
+  transition: all 0.25s ease;
+}
+
+.mic-button:hover {
+  background: var(--primary-700);
+  transform: scale(1.05);
+}
+
+.mic-button.listening {
+  background: var(--accent-red);
+  box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+  animation: pulse-ring 1.5s infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 16px rgba(220, 38, 38, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+  }
+}
+
+.stop-button {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-medium);
+  background: var(--bg-subtle);
+  color: var(--accent-red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.input-form {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.text-input-field {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-medium);
+  font-size: 14px;
+  background: var(--bg-main);
+  outline: none;
+}
+
+.text-input-field:focus {
+  border-color: var(--border-focus);
+  background: #ffffff;
+}
+
+.skills-card {
+  margin-top: 20px;
+  padding: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+}
+
+.skills-badge-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.quick-channel-links {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.error-banner {
+  background: #fee2e2;
+  color: var(--accent-red);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}

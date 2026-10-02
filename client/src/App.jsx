@@ -13,6 +13,9 @@ import { Roadmap } from './pages/Roadmap';
 import { WhatIf } from './pages/WhatIf';
 import { Progress } from './pages/Progress';
 import { Profile } from './pages/Profile';
+import { SelfEmployment } from './pages/SelfEmployment';
+import { Kiosk } from './pages/Kiosk';
+import { ChannelDemo } from './pages/ChannelDemo';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -64,6 +67,9 @@ export default function App() {
             <Route path="/what-if" element={<WhatIf />} />
             <Route path="/progress" element={<Progress />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/self-employment" element={<SelfEmployment />} />
+            <Route path="/kiosk" element={<Kiosk />} />
+            <Route path="/channel-demo" element={<ChannelDemo />} />
             <Route path="*" element={<Navigate to="/assistant" replace />} />
           </Routes>
         </main>

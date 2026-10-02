@@ -3,16 +3,21 @@ import { User } from '../models/User.js';
 import { Profile } from '../models/Profile.js';
 import { authenticate } from '../middleware/auth.js';
 import { sanitizeString } from '../middleware/security.js';
-import { generateEmpatheticResponse } from '../services/aiService.js';
 import { logAudit } from '../middleware/audit.js';
+import { processConversationTurn, clearSession } from '../services/conversation.js';
+import { getSpeechProvider } from '../channels/speech.js';
 
 const router = express.Router();
 
-// POST /api/assistant/message
+/**
+ * POST /api/assistant/message
+ * Handles channel agnostic dialogue turns for Web and Officer Assisted modes.
+ */
 router.post('/message', authenticate, async (req, res) => {
   try {
     const text = sanitizeString(req.body.text, 1000);
-    const lang = sanitizeString(req.body.lang || req.body.language, 10) || 'en';
+    const lang = sanitizeString(req.body.lang || req.body.language, 10) || 'te';
+    const dialect = sanitizeString(req.body.dialect, 40) || '';
     const channel = sanitizeString(req.body.channel, 20) || 'web';
 
     if (!text) {
@@ -21,6 +26,7 @@ router.post('/message', authenticate, async (req, res) => {
 
     let targetUserId = req.user._id;
 
+    // Check ownership or officer district authority if forUserId is specified
     if (req.body.forUserId) {
       const forUserId = sanitizeString(req.body.forUserId, 40);
       if (forUserId !== req.user._id.toString()) {
@@ -38,83 +44,95 @@ router.post('/message', authenticate, async (req, res) => {
       }
     }
 
-    const userRecord = await User.findById(targetUserId);
-    let profile = await Profile.findOne({ user: targetUserId });
-    if (!profile) {
-      profile = await Profile.create({
-        user: targetUserId,
-        district: userRecord ? userRecord.district : 'Warangal',
-        state: 'Telangana',
-        channel
-      });
-    }
-
-    const userContext = {
-      name: userRecord ? userRecord.name : 'Beneficiary',
-      district: profile.district,
-      skills: profile.skills || [],
-      employmentPreference: profile.employmentPreference,
-      education: profile.education
-    };
-
-    const aiResult = await generateEmpatheticResponse({
-      userMessage: text,
-      language: lang,
-      userContext
+    const sessionKey = `sess_${targetUserId}`;
+    const result = await processConversationTurn({
+      text,
+      lang,
+      dialect,
+      channel,
+      userId: req.user._id,
+      forUserId: req.body.forUserId ? targetUserId : null,
+      sessionKey
     });
 
-    // If new skills were discovered by the AI, merge them into the profile
-    const existingSkills = new Set(profile.skills || []);
-    let profileUpdated = false;
-
-    if (aiResult.extractedSkills && aiResult.extractedSkills.length > 0) {
-      aiResult.extractedSkills.forEach((sk) => {
-        if (!existingSkills.has(sk)) {
-          existingSkills.add(sk);
-          profileUpdated = true;
-        }
-      });
-      profile.skills = Array.from(existingSkills);
-    }
-
-    if (aiResult.identifiedPreference && aiResult.identifiedPreference !== profile.employmentPreference) {
-      profile.employmentPreference = aiResult.identifiedPreference;
-      profileUpdated = true;
-    }
-
-    if (profileUpdated) {
-      // Recalculate risk score
-      let riskScore = 0;
-      const riskReasons = [];
-      if (profile.mobilityConstraints && profile.mobilityConstraints.length > 0) {
-        riskScore += 25;
-        riskReasons.push('Restricted geographical mobility');
-      }
-      if (profile.education === 'Primary School' || profile.education === 'None') {
-        riskScore += 20;
-        riskReasons.push('Low formal education level');
-      }
-      if (profile.skills.length === 0) {
-        riskScore += 25;
-        riskReasons.push('No market skills');
-      }
-      profile.riskScore = riskScore;
-      profile.riskReasons = riskReasons;
-      await profile.save();
-    }
+    await logAudit({
+      actor: req.user._id,
+      actorRole: req.user.role,
+      action: 'ASSISTANT_DIALOGUE_TURN',
+      target: targetUserId,
+      targetModel: 'User',
+      district: req.user.district,
+      details: { stage: result.stage, isComplete: result.isComplete, channel }
+    });
 
     return res.json({
-      replyText: aiResult.replyText,
-      extractedSkills: aiResult.extractedSkills,
-      followUpQuestion: aiResult.followUpQuestion,
-      updatedProfile: {
-        skills: profile.skills,
-        employmentPreference: profile.employmentPreference,
-        riskScore: profile.riskScore
-      }
+      replyText: result.replyText,
+      stage: result.stage,
+      isComplete: result.isComplete || false,
+      extractedSkills: result.extractedSkills || [],
+      followUpQuestion: result.followUpQuestion || result.replyText,
+      updatedProfile: result.updatedProfile || {},
+      matchedOpportunities: result.matchedOpportunities || []
     });
   } catch (err) {
     return res.status(500).json({ error: 'Failed to process assistant dialogue' });
+  }
+});
+
+/**
+ * POST /api/assistant/reset
+ * Resets active session state for fresh evaluation.
+ */
+router.post('/reset', authenticate, async (req, res) => {
+  try {
+    const targetUserId = req.body.forUserId ? sanitizeString(req.body.forUserId, 40) : req.user._id.toString();
+    clearSession(`sess_${targetUserId}`);
+    return res.json({ success: true, message: 'Conversation session reset successfully' });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to reset session' });
+  }
+});
+
+/**
+ * POST /api/assistant/speech/synthesize
+ * Server side text to speech using Sarvam when configured.
+ */
+router.post('/speech/synthesize', authenticate, async (req, res) => {
+  try {
+    const text = sanitizeString(req.body.text, 1000);
+    const language = sanitizeString(req.body.language, 10) || 'te';
+
+    if (!text) {
+      return res.status(400).json({ error: 'Text to synthesize is required' });
+    }
+
+    const provider = getSpeechProvider();
+    const result = await provider.synthesize(text, language);
+    return res.json(result);
+  } catch (err) {
+    return res.status(500).json({ error: 'Speech synthesis failed' });
+  }
+});
+
+/**
+ * POST /api/assistant/speech/transcribe
+ * Server side speech to text using Sarvam when configured.
+ */
+router.post('/speech/transcribe', authenticate, async (req, res) => {
+  try {
+    const language = sanitizeString(req.body.language, 10) || 'te';
+    const audioBase64 = req.body.audioBase64;
+
+    if (!audioBase64) {
+      return res.status(400).json({ error: 'Audio data is required' });
+    }
+
+    const audioBuffer = Buffer.from(audioBase64, 'base64');
+    const provider = getSpeechProvider();
+    const result = await provider.transcribe(audioBuffer, language);
+    return res.json(result);
+  } catch (err) {
+    return res.status(500).json({ error: 'Speech transcription failed' });
   }
 });
 
