@@ -150,6 +150,16 @@ apiInstance.runWhatIf = async (arg1, district) => {
   return res.data;
 };
 
+apiInstance.getOpportunities = async () => {
+  const res = await apiInstance.get('/opportunities');
+  return res.data;
+};
+
+apiInstance.getSelfEmployment = async (occupationKey) => {
+  const res = await apiInstance.get(`/self-employment/${occupationKey}`);
+  return res.data;
+};
+
 apiInstance.getOfficerAnalytics = async (district) => {
   const res = await apiInstance.get('/analytics/overview', district ? { params: { district } } : {});
   return res.data;

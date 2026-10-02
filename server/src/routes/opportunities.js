@@ -1,7 +1,7 @@
 import express from 'express';
 import { Occupation } from '../models/Occupation.js';
 import { Profile } from '../models/Profile.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, optionalAuth } from '../middleware/auth.js';
 import { sanitizeString } from '../middleware/security.js';
 import { calculateOpportunityMatchV2 } from '../services/matching.js';
 import { getRegionalDataForDistrict } from '../services/regional.js';
@@ -10,10 +10,10 @@ import { getSelfEmploymentGuide, createFinancialCounselorTask } from '../service
 const router = express.Router();
 
 // GET /api/opportunities
-router.get('/', authenticate, async (req, res) => {
+router.get('/', optionalAuth, async (req, res) => {
   try {
-    const profile = await Profile.findOne({ user: req.user._id });
-    const district = profile ? profile.district : (req.user.district || 'Warangal');
+    const profile = req.user ? await Profile.findOne({ user: req.user._id }) : null;
+    const district = profile ? profile.district : (req.user?.district || req.query.district || 'Warangal');
 
     const occupations = await Occupation.find();
     const regionalData = await getRegionalDataForDistrict(district);
