@@ -1,5 +1,6 @@
 export { User } from './User.js';
 export { Profile } from './Profile.js';
+export { Journey } from './Journey.js';
 export { Skill } from './Skill.js';
 export { Occupation } from './Occupation.js';
 export { Course } from './Course.js';

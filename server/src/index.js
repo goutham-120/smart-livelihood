@@ -18,6 +18,7 @@ import jobsRoutes from './routes/jobs.js';
 import tasksRoutes from './routes/tasks.js';
 import assistantRoutes from './routes/assistant.js';
 import opportunitiesRoutes from './routes/opportunities.js';
+import pathwayRoutes from './routes/pathway.js';
 import channelsRoutes from './routes/channels.js';
 import plansRoutes from './routes/plans.js';
 
@@ -94,6 +95,7 @@ app.use('/api/tasks', tasksRoutes);
 app.use('/api/assistant', assistantRoutes);
 app.use('/api/opportunities', opportunitiesRoutes);
 app.use('/api/self-employment', opportunitiesRoutes);
+app.use('/api/pathway', pathwayRoutes);
 app.use('/api/channels', channelsRoutes);
 app.use('/api/plans', plansRoutes);
 
