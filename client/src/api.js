@@ -1,4 +1,4 @@
-/* api.js: Axios client and API helpers for SIH26097 PM-AJAY */
+/* api.js: Unified Axios client and complete API helper suite for SIH26097 PM-AJAY */
 import axios from 'axios';
 
 const BASE_URL = '/api';
@@ -40,28 +40,73 @@ export const authOtpVerify = (data) => apiInstance.post('/auth/otp/verify', data
 export const authDemoLogin = (role, district) => apiInstance.post('/auth/demo-login', { role, district });
 export const authMe = () => apiInstance.get('/auth/me');
 
+export const login = async (identifier, password) => {
+  const res = await apiInstance.post('/auth/login', { identifier, password });
+  return res.data;
+};
+
+export const demoLogin = async (role = 'beneficiary', district = 'Warangal') => {
+  const res = await apiInstance.post('/auth/demo-login', { role, district });
+  return res.data;
+};
+
+export const getMe = async () => {
+  const res = await apiInstance.get('/auth/me');
+  return res.data;
+};
+
 /* PROFILE */
-export const getProfile = (forUserId) =>
-  apiInstance.get('/profile', forUserId ? { params: { forUserId } } : {});
-export const putProfile = (data) => apiInstance.put('/profile', data);
+export const getProfile = async (forUserId) => {
+  const res = await apiInstance.get('/profile', forUserId ? { params: { forUserId } } : {});
+  const data = res.data || {};
+  if (!data.data) data.data = data;
+  return data;
+};
+
+export const putProfile = async (dataPayload) => {
+  const res = await apiInstance.put('/profile', dataPayload);
+  const data = res.data || {};
+  if (!data.data) data.data = data;
+  return data;
+};
+
+export const updateProfile = putProfile;
 
 /* ASSISTANT */
-export const postMessage = (data) => apiInstance.post('/assistant/message', data);
+export const postMessage = async (dataPayload) => {
+  const res = await apiInstance.post('/assistant/message', dataPayload);
+  return res.data;
+};
+
+export const sendVoiceMessage = async (text, lang = 'te', channel = 'web') => {
+  const res = await apiInstance.post('/assistant/message', { text, lang, channel });
+  return res.data;
+};
 
 /* OPPORTUNITIES */
-export const getOpportunities = () => apiInstance.get('/opportunities');
-export const getSelfEmployment = (occupationKey) =>
-  apiInstance.get(`/self-employment/${occupationKey}`);
+export const getOpportunities = async () => {
+  const res = await apiInstance.get('/opportunities');
+  const data = res.data || {};
+  if (!data.data) data.data = data;
+  return data;
+};
+
+export const getSelfEmployment = async (occupationKey) => {
+  const res = await apiInstance.get(`/self-employment/${occupationKey}`);
+  const data = res.data || {};
+  if (!data.data) data.data = data;
+  return data;
+};
 
 /* PRIVACY */
-export const postConsent = (data) => apiInstance.post('/consent', data);
+export const postConsent = (dataPayload) => apiInstance.post('/consent', dataPayload);
 export const getPrivacyExport = () => apiInstance.get('/privacy/export');
 export const deletePrivacyMe = () => apiInstance.delete('/privacy/me');
 
 /* PLACEMENTS */
 export const getPlacements = (params) => apiInstance.get('/placements', { params });
-export const postPlacement = (data) => apiInstance.post('/placements', data);
-export const patchPlacement = (id, data) => apiInstance.patch(`/placements/${id}`, data);
+export const postPlacement = (dataPayload) => apiInstance.post('/placements', dataPayload);
+export const patchPlacement = (id, dataPayload) => apiInstance.patch(`/placements/${id}`, dataPayload);
 
 /* JOBS */
 export const getJobs = (params) => apiInstance.get('/jobs', { params });
@@ -69,91 +114,104 @@ export const getJobCandidates = (id) => apiInstance.get(`/jobs/${id}/candidates`
 
 /* TASKS */
 export const getTasks = (params) => apiInstance.get('/tasks', { params });
-export const postTask = (data) => apiInstance.post('/tasks', data);
-export const patchTask = (id, data) => apiInstance.patch(`/tasks/${id}`, data);
+export const postTask = (dataPayload) => apiInstance.post('/tasks', dataPayload);
+export const patchTask = (id, dataPayload) => apiInstance.patch(`/tasks/${id}`, dataPayload);
 
 /* ANALYTICS */
-export const getAnalyticsOverview = (district) =>
-  apiInstance.get('/analytics/overview', district ? { params: { district } } : {});
+export const getAnalyticsOverview = async (district) => {
+  const res = await apiInstance.get('/analytics/overview', district ? { params: { district } } : {});
+  const data = res.data || {};
+  if (!data.data) data.data = data;
+  return data;
+};
+
+export const getOfficerAnalytics = getAnalyticsOverview;
 
 /* OFFICER */
-export const getOfficerBeneficiaries = (params) =>
-  apiInstance.get('/officer/beneficiaries', { params });
-export const postOfficerBeneficiary = (data) =>
-  apiInstance.post('/officer/beneficiaries', data);
+export const getOfficerBeneficiaries = (params) => apiInstance.get('/officer/beneficiaries', { params });
+export const postOfficerBeneficiary = (dataPayload) => apiInstance.post('/officer/beneficiaries', dataPayload);
 
 /* ADMIN */
-export const postAdminOfficer = (data) => apiInstance.post('/admin/officers', data);
+export const postAdminOfficer = (dataPayload) => apiInstance.post('/admin/officers', dataPayload);
 export const getAdminUsers = (params) => apiInstance.get('/admin/users', { params });
 
 /* PLANS */
-export const postGeneratePlan = (data) => apiInstance.post('/plans/generate', data);
+export const postGeneratePlan = (dataPayload) => apiInstance.post('/plans/generate', dataPayload);
 export const getPlans = (params) => apiInstance.get('/plans', { params });
 
 /* DIRECTORY */
-export const getDirectoryCenters = (params) =>
-  apiInstance.get('/directory/centers', { params });
-export const getDirectoryCounselors = (params) =>
-  apiInstance.get('/directory/counselors', { params });
-export const getDirectorySchemes = (params) =>
-  apiInstance.get('/directory/schemes', { params });
+export const getDirectoryCenters = (params) => apiInstance.get('/directory/centers', { params });
+export const getDirectoryCounselors = (params) => apiInstance.get('/directory/counselors', { params });
+export const getDirectorySchemes = (params) => apiInstance.get('/directory/schemes', { params });
 
-/* Backward-compatible and helper methods on api */
-apiInstance.login = async (identifier, password) => {
-  const res = await apiInstance.post('/auth/login', { identifier, password });
-  return res.data;
-};
-
-apiInstance.demoLogin = async (role = 'beneficiary', district = 'Warangal') => {
-  const res = await apiInstance.post('/auth/demo-login', { role, district });
-  return res.data;
-};
-
-apiInstance.getMe = async () => {
-  const res = await apiInstance.get('/auth/me');
-  return res.data;
-};
-
-apiInstance.sendVoiceMessage = async (text, lang = 'te', channel = 'web') => {
-  const res = await apiInstance.post('/assistant/message', { text, lang, channel });
-  return res.data;
-};
-
-apiInstance.updateProfile = async (data) => {
-  const res = await apiInstance.put('/profile', data);
-  return res.data;
-};
-
-apiInstance.getSkillGaps = async (occKey) => {
+/* PATHWAY */
+export const getSkillGaps = async (occKey) => {
   const res = await apiInstance.get(`/pathway/skill-gaps/${occKey}`);
   return res.data;
 };
 
-apiInstance.getTraining = async (occKey) => {
+export const getTraining = async (occKey) => {
   const res = await apiInstance.get(`/pathway/training/${occKey}`);
   return res.data;
 };
 
-apiInstance.getRoadmap = async (occKey) => {
+export const getRoadmap = async (occKey) => {
   const res = await apiInstance.get(`/pathway/roadmap/${occKey}`);
   return res.data;
 };
 
-apiInstance.getProgress = async () => {
+export const getProgress = async () => {
   const res = await apiInstance.get('/pathway/progress');
   return res.data;
 };
 
-apiInstance.runWhatIf = async (arg1, district) => {
+export const runWhatIf = async (arg1, district) => {
   const payload = typeof arg1 === 'object' && !Array.isArray(arg1) ? arg1 : { skills: arg1, district };
   const res = await apiInstance.post('/pathway/what-if', payload);
   return res.data;
 };
 
-apiInstance.getOfficerAnalytics = async (district) => {
-  const res = await apiInstance.get('/analytics/overview', district ? { params: { district } } : {});
-  return res.data;
-};
+/* Attach all helper methods onto apiInstance for object-style invocation compatibility */
+apiInstance.getProfile = getProfile;
+apiInstance.putProfile = putProfile;
+apiInstance.updateProfile = updateProfile;
+apiInstance.getOpportunities = getOpportunities;
+apiInstance.getSelfEmployment = getSelfEmployment;
+apiInstance.sendVoiceMessage = sendVoiceMessage;
+apiInstance.postMessage = postMessage;
+apiInstance.getOfficerAnalytics = getOfficerAnalytics;
+apiInstance.getAnalyticsOverview = getAnalyticsOverview;
+apiInstance.getSkillGaps = getSkillGaps;
+apiInstance.getTraining = getTraining;
+apiInstance.getRoadmap = getRoadmap;
+apiInstance.getProgress = getProgress;
+apiInstance.runWhatIf = runWhatIf;
+apiInstance.login = login;
+apiInstance.demoLogin = demoLogin;
+apiInstance.getMe = getMe;
+apiInstance.authMe = authMe;
+apiInstance.authLogin = authLogin;
+apiInstance.authRegister = authRegister;
+apiInstance.authOtpSend = authOtpSend;
+apiInstance.authOtpVerify = authOtpVerify;
+apiInstance.authDemoLogin = authDemoLogin;
+apiInstance.getPlacements = getPlacements;
+apiInstance.postPlacement = postPlacement;
+apiInstance.patchPlacement = patchPlacement;
+apiInstance.getJobs = getJobs;
+apiInstance.getJobCandidates = getJobCandidates;
+apiInstance.getTasks = getTasks;
+apiInstance.postTask = postTask;
+apiInstance.patchTask = patchTask;
+apiInstance.getOfficerBeneficiaries = getOfficerBeneficiaries;
+apiInstance.postOfficerBeneficiary = postOfficerBeneficiary;
+apiInstance.postAdminOfficer = postAdminOfficer;
+apiInstance.getAdminUsers = getAdminUsers;
+apiInstance.postGeneratePlan = postGeneratePlan;
+apiInstance.getPlans = getPlans;
+apiInstance.getDirectoryCenters = getDirectoryCenters;
+apiInstance.getDirectoryCounselors = getDirectoryCounselors;
+apiInstance.getDirectorySchemes = getDirectorySchemes;
 
 export const api = apiInstance;
 export default apiInstance;
