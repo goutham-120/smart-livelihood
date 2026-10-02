@@ -8,9 +8,7 @@ export const extractSkillsFromText = async (text) => {
   const matched = [];
 
   for (const skill of allSkills) {
-    // Check aliases
     const hasAlias = (skill.aliases || []).some((alias) => lowerText.includes(alias.toLowerCase()));
-    // Check direct key or names
     const hasName =
       lowerText.includes(skill.name.toLowerCase()) ||
       (skill.names?.hi && lowerText.includes(skill.names.hi.toLowerCase())) ||
@@ -22,4 +20,79 @@ export const extractSkillsFromText = async (text) => {
   }
 
   return Array.from(new Set(matched));
+};
+
+export const extractLivelihoodProfile = async (text) => {
+  if (!text || typeof text !== 'string') return {};
+
+  const lowerText = text.toLowerCase();
+  const result = {};
+
+  // Extract skills via aliases & keywords
+  const skills = await extractSkillsFromText(text);
+  if (skills.length > 0) {
+    result.skills = skills;
+  }
+
+  // Extract Education
+  if (lowerText.includes('10th') || lowerText.includes('tenth') || lowerText.includes('high school') || lowerText.includes('10th pass')) {
+    result.education = 'High School';
+  } else if (lowerText.includes('7th') || lowerText.includes('8th') || lowerText.includes('middle school') || lowerText.includes('elementary')) {
+    result.education = 'Middle School';
+  } else if (lowerText.includes('primary') || lowerText.includes('5th') || lowerText.includes('read write')) {
+    result.education = 'Primary School';
+  } else if (lowerText.includes('graduate') || lowerText.includes('degree') || lowerText.includes('bachelor') || lowerText.includes('college')) {
+    result.education = 'Graduate';
+  } else if (lowerText.includes('diploma') || lowerText.includes('iti') || lowerText.includes('polytechnic')) {
+    result.education = 'Diploma';
+  }
+
+  // Extract Employment Preference
+  if (lowerText.includes('self') || lowerText.includes('own business') || lowerText.includes('my own shop') || lowerText.includes('micro enterprise') || lowerText.includes('start business')) {
+    result.employmentPreference = 'self';
+  } else if (lowerText.includes('job') || lowerText.includes('wage') || lowerText.includes('salary') || lowerText.includes('company work') || lowerText.includes('factory')) {
+    result.employmentPreference = 'wage';
+  }
+
+  // Extract Mobility Constraints
+  const mobility = [];
+  if (lowerText.includes('don\'t want to travel') || lowerText.includes('cannot travel') || lowerText.includes('no travel') || lowerText.includes('home village') || lowerText.includes('from home') || lowerText.includes('at home')) {
+    mobility.push('no_travel');
+  }
+  if (lowerText.includes('no night shift') || lowerText.includes('day time only') || lowerText.includes('day shift')) {
+    mobility.push('night_shift_restricted');
+  }
+  if (mobility.length > 0) {
+    result.mobilityConstraints = mobility;
+  }
+
+  // Extract Income Goal
+  const incomeMatch = lowerText.match(/(?:rupees|rs|\u20b9)?\s*(\d{4,6})\s*(?:rupees|rs|\u20b9)?/i);
+  if (incomeMatch && incomeMatch[1]) {
+    const val = parseInt(incomeMatch[1], 10);
+    if (val >= 5000 && val <= 100000) {
+      result.incomeGoal = val;
+    }
+  }
+
+  // Extract Experience Years
+  const expMatch = lowerText.match(/(\d{1,2})\s*(?:years?|yrs?)\s*(?:of\s*)?experience/i);
+  if (expMatch && expMatch[1]) {
+    result.experienceYears = parseInt(expMatch[1], 10);
+  }
+
+  // Extract Current Livelihood
+  if (lowerText.includes('grocery') || lowerText.includes('kirana')) {
+    result.currentLivelihood = 'family grocery store';
+  } else if (lowerText.includes('farm') || lowerText.includes('agriculture')) {
+    result.currentLivelihood = 'farming';
+  } else if (lowerText.includes('weld') || lowerText.includes('welding')) {
+    result.currentLivelihood = 'welding';
+  } else if (lowerText.includes('tailor') || lowerText.includes('sewing') || lowerText.includes('stitching')) {
+    result.currentLivelihood = 'tailoring';
+  } else if (lowerText.includes('repair') || lowerText.includes('mobile')) {
+    result.currentLivelihood = 'electronics repair';
+  }
+
+  return result;
 };

@@ -1,18 +1,20 @@
 import rateLimit from 'express-rate-limit';
 
 export const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 30, // max 30 attempts per window
+  windowMs: 15 * 60 * 1000,
+  max: process.env.NODE_ENV === 'production' ? 30 : 1000,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: () => process.env.NODE_ENV !== 'production',
   message: { error: 'Too many authentication attempts. Please try again later.' }
 });
 
 export const apiLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 120, // max 120 requests per minute
+  windowMs: 60 * 1000,
+  max: process.env.NODE_ENV === 'production' ? 120 : 2000,
   standardHeaders: true,
   legacyHeaders: false,
+  skip: () => process.env.NODE_ENV !== 'production',
   message: { error: 'Rate limit exceeded. Please slow down.' }
 });
 
@@ -52,7 +54,6 @@ export const errorHandler = (err, req, res, next) => {
   if (res.headersSent) {
     return next(err);
   }
-  // Generic safe client response
   const status = err.status || 500;
   return res.status(status).json({
     error: err.userMessage || 'An unexpected error occurred. Please try again.'

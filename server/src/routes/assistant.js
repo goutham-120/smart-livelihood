@@ -4,6 +4,7 @@ import { Profile } from '../models/Profile.js';
 import { authenticate } from '../middleware/auth.js';
 import { sanitizeString } from '../middleware/security.js';
 import { generateEmpatheticResponse } from '../services/aiService.js';
+import { extractLivelihoodProfile } from '../services/extract.js';
 import { logAudit } from '../middleware/audit.js';
 
 const router = express.Router();
@@ -57,33 +58,75 @@ router.post('/message', authenticate, async (req, res) => {
       education: profile.education
     };
 
-    const aiResult = await generateEmpatheticResponse({
-      userMessage: text,
-      language: lang,
-      userContext
-    });
+    // AI & Rule-based Extraction
+    const [aiResult, ruleExtracted] = await Promise.all([
+      generateEmpatheticResponse({
+        userMessage: text,
+        language: lang,
+        userContext
+      }),
+      extractLivelihoodProfile(text)
+    ]);
 
-    // If new skills were discovered by the AI, merge them into the profile
-    const existingSkills = new Set(profile.skills || []);
+    const existingSkills = new Set((profile.skills || []).map((s) => s.toLowerCase()));
     let profileUpdated = false;
 
-    if (aiResult.extractedSkills && aiResult.extractedSkills.length > 0) {
-      aiResult.extractedSkills.forEach((sk) => {
-        if (!existingSkills.has(sk)) {
-          existingSkills.add(sk);
+    // Merge skills safely
+    const newSkills = Array.from(new Set([
+      ...(aiResult.extractedSkills || []),
+      ...(ruleExtracted.skills || [])
+    ]));
+
+    if (newSkills.length > 0) {
+      newSkills.forEach((sk) => {
+        if (!existingSkills.has(sk.toLowerCase())) {
+          existingSkills.add(sk.toLowerCase());
           profileUpdated = true;
         }
       });
       profile.skills = Array.from(existingSkills);
     }
 
-    if (aiResult.identifiedPreference && aiResult.identifiedPreference !== profile.employmentPreference) {
-      profile.employmentPreference = aiResult.identifiedPreference;
+    // Merge preference safely
+    const pref = aiResult.identifiedPreference || ruleExtracted.employmentPreference;
+    if (pref && pref !== profile.employmentPreference) {
+      profile.employmentPreference = pref;
+      profileUpdated = true;
+    }
+
+    // Merge Education safely
+    if (ruleExtracted.education && ruleExtracted.education !== profile.education) {
+      profile.education = ruleExtracted.education;
+      profileUpdated = true;
+    }
+
+    // Merge Mobility Constraints safely
+    if (ruleExtracted.mobilityConstraints && ruleExtracted.mobilityConstraints.length > 0) {
+      const existingMobility = new Set(profile.mobilityConstraints || []);
+      ruleExtracted.mobilityConstraints.forEach((m) => existingMobility.add(m));
+      profile.mobilityConstraints = Array.from(existingMobility);
+      profileUpdated = true;
+    }
+
+    // Merge Income Goal safely
+    if (ruleExtracted.incomeGoal && ruleExtracted.incomeGoal > 0) {
+      profile.incomeGoal = ruleExtracted.incomeGoal;
+      profileUpdated = true;
+    }
+
+    // Merge Experience Years safely
+    if (ruleExtracted.experienceYears && ruleExtracted.experienceYears > 0) {
+      profile.experienceYears = ruleExtracted.experienceYears;
+      profileUpdated = true;
+    }
+
+    // Merge Current Livelihood safely
+    if (ruleExtracted.currentLivelihood && !profile.currentLivelihood) {
+      profile.currentLivelihood = ruleExtracted.currentLivelihood;
       profileUpdated = true;
     }
 
     if (profileUpdated) {
-      // Recalculate risk score
       let riskScore = 0;
       const riskReasons = [];
       if (profile.mobilityConstraints && profile.mobilityConstraints.length > 0) {
@@ -105,11 +148,15 @@ router.post('/message', authenticate, async (req, res) => {
 
     return res.json({
       replyText: aiResult.replyText,
-      extractedSkills: aiResult.extractedSkills,
+      extractedSkills: profile.skills,
       followUpQuestion: aiResult.followUpQuestion,
       updatedProfile: {
         skills: profile.skills,
         employmentPreference: profile.employmentPreference,
+        education: profile.education,
+        mobilityConstraints: profile.mobilityConstraints,
+        incomeGoal: profile.incomeGoal,
+        experienceYears: profile.experienceYears,
         riskScore: profile.riskScore
       }
     });
