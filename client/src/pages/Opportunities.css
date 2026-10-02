@@ -1,0 +1,72 @@
+/* Opportunities.css */
+.opp-root { padding-bottom: var(--sp-8); }
+
+.opp-card { cursor: default; }
+
+.opp-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-4);
+}
+
+.opp-stat {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: 0.85rem;
+  color: var(--surface-200);
+}
+
+.match-meter {
+  position: relative;
+  width: 80px;
+  height: 8px;
+  background: var(--surface-700);
+  border-radius: var(--radius-full);
+  overflow: visible;
+}
+
+.match-meter-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.5s ease;
+}
+
+.match-meter-label {
+  position: absolute;
+  right: 0;
+  top: -18px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.opp-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  background: var(--surface-700);
+  border-radius: var(--radius-md);
+  padding: var(--sp-4);
+}
+
+.breakdown-row { margin-bottom: var(--sp-1); }
+
+.selfemp-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  background: hsl(222 28% 4% / 0.85);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-4);
+}
+
+.selfemp-modal-card {
+  width: 100%;
+  max-width: 600px;
+  max-height: 90dvh;
+  overflow-y: auto;
+}
