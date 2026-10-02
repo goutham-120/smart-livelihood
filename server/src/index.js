@@ -21,6 +21,7 @@ import opportunitiesRoutes from './routes/opportunities.js';
 import pathwayRoutes from './routes/pathway.js';
 import channelsRoutes from './routes/channels.js';
 import plansRoutes from './routes/plans.js';
+import analyticsRoutes from './routes/analytics.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -86,7 +87,7 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/privacy', privacyRoutes);
 app.use('/api/consent', privacyRoutes);
 app.use('/api/officer', officerRoutes);
-app.use('/api/analytics', officerRoutes);
+app.use('/api/analytics', analyticsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/directory', directoryRoutes);
 app.use('/api/placements', placementsRoutes);

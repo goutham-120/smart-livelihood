@@ -58,7 +58,7 @@ router.get('/', authenticate, async (req, res) => {
 });
 
 // GET /api/opportunities/self-employment/:occupationKey or /api/self-employment/:occupationKey
-router.get(['/self-employment/:occupationKey', '/:occupationKey/self-employment'], async (req, res) => {
+router.get(['/self-employment/:occupationKey', '/:occupationKey/self-employment', '/:occupationKey'], async (req, res) => {
   try {
     const occupationKey = sanitizeString(req.params.occupationKey, 60);
     const district = sanitizeString(req.query.district, 80) || 'Warangal';
