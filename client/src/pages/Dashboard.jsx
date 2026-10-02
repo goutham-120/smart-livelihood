@@ -19,6 +19,9 @@ export const Dashboard = ({ user }) => {
       api.getOfficerAnalytics(district).then((res) => {
         setAnalytics(res);
         setLoading(false);
+      }).catch((err) => {
+        console.error('Analytics load error:', err);
+        setLoading(false);
       });
     } else {
       Promise.all([
@@ -28,9 +31,13 @@ export const Dashboard = ({ user }) => {
         setProfile(profRes.profile || null);
         setOpportunities(oppRes.opportunities || []);
         setLoading(false);
-      }).catch(() => setLoading(false));
+      }).catch((err) => {
+        console.error('Beneficiary load error:', err);
+        setLoading(false);
+      });
     }
   }, [district, isOfficer]);
+
 
   if (loading) return <div style={{ textAlign: 'center', padding: '60px' }}><Spinner size={32} /></div>;
 
