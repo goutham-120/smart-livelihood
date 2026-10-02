@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
 import { api } from '../api';
-import { Compass, Sparkles, TrendingUp, CheckCircle, ArrowRight } from 'lucide-react';
+import { Compass, TrendingUp, Sparkles, ArrowRight, Lock, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const WhatIf = () => {
   const [selectedSkills, setSelectedSkills] = useState(['sewing_machine_operation']);
   const [district, setDistrict] = useState('Warangal');
+  const [employmentPreference, setEmploymentPreference] = useState('either');
+  const [incomeGoal, setIncomeGoal] = useState(15000);
+  const [travelRequired, setTravelRequired] = useState(true);
+
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -33,43 +37,89 @@ export const WhatIf = () => {
   const handleSimulate = async () => {
     setLoading(true);
     try {
-      const res = await api.runWhatIf(selectedSkills, district);
-      setResults(res.topMatches || []);
+      const res = await api.runWhatIf({
+        skills: selectedSkills,
+        district,
+        employmentPreference,
+        incomeGoal,
+        travelRequired
+      });
+      setResults(res);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="container" style={{ maxWidth: '900px' }}>
+    <div className="container" style={{ maxWidth: '960px' }}>
       <div style={{ marginBottom: '24px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Compass size={24} color="#4f46e5" /> What-If Career & Skilling Simulator
+          <Compass size={24} color="var(--primary-600)" /> What-If Career and Skilling Simulator
         </h1>
-        <p style={{ color: '#64748b', fontSize: '14px' }}>
-          Simulate acquiring new skills or changing your district to see how your livelihood opportunities and income potential expand.
+        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
+          Simulate acquiring new trade skills or adjusting employment preferences to unlock higher income livelihood pathways.
         </p>
       </div>
 
       <div className="card" style={{ marginBottom: '24px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+        <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '14px' }}>Adjust Simulation Levers</h3>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '16px', marginBottom: '16px' }}>
           <div>
-            <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Target District</label>
+            <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Target District Location</label>
             <select
               value={district}
               onChange={(e) => setDistrict(e.target.value)}
-              style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+              style={{ width: '100%', padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-medium)' }}
             >
               <option value="Warangal">Warangal, Telangana</option>
               <option value="Adilabad">Adilabad, Telangana</option>
               <option value="Nalgonda">Nalgonda, Telangana</option>
             </select>
           </div>
+
+          <div>
+            <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Employment Track Preference</label>
+            <select
+              value={employmentPreference}
+              onChange={(e) => setEmploymentPreference(e.target.value)}
+              style={{ width: '100%', padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-medium)' }}
+            >
+              <option value="either">Either Track (Wage or Micro Enterprise)</option>
+              <option value="self">Micro Enterprise (Self Employment)</option>
+              <option value="wage">Wage Placement</option>
+            </select>
+          </div>
+
+          <div>
+            <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Target Monthly Income: ₹{incomeGoal.toLocaleString()}</label>
+            <input
+              type="range"
+              min="8000"
+              max="35000"
+              step="1000"
+              value={incomeGoal}
+              onChange={(e) => setIncomeGoal(Number(e.target.value))}
+              style={{ width: '100%', marginTop: '6px' }}
+            />
+          </div>
+
+          <div>
+            <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Travel & Geographic Mobility</label>
+            <select
+              value={travelRequired ? 'yes' : 'no'}
+              onChange={(e) => setTravelRequired(e.target.value === 'yes')}
+              style={{ width: '100%', padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-medium)' }}
+            >
+              <option value="yes">Open to Travel / Relocation in District</option>
+              <option value="no">Strictly Home Village / Local Block Only</option>
+            </select>
+          </div>
         </div>
 
-        <div>
-          <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '8px' }}>Select Hypothesized Skills to Test</label>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '8px' }}>Select Hypothesized Trade Skills to Test</label>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {availableSkills.map((sk) => {
               const active = selectedSkills.includes(sk.key);
               return (
@@ -80,9 +130,9 @@ export const WhatIf = () => {
                   style={{
                     padding: '6px 12px',
                     borderRadius: '20px',
-                    border: active ? '1px solid #4f46e5' : '1px solid #cbd5e1',
-                    background: active ? '#eef2ff' : '#fff',
-                    color: active ? '#4338ca' : '#475569',
+                    border: active ? '1px solid var(--primary-600)' : '1px solid var(--border-medium)',
+                    background: active ? 'var(--primary-50)' : '#fff',
+                    color: active ? 'var(--primary-600)' : 'var(--text-main)',
                     fontSize: '13px',
                     cursor: 'pointer',
                     fontWeight: active ? 600 : 400
@@ -96,40 +146,100 @@ export const WhatIf = () => {
         </div>
 
         <button onClick={handleSimulate} className="btn btn-primary" disabled={loading}>
-          {loading ? 'Simulating Impact...' : 'Simulate Opportunity Impact'}
+          {loading ? 'Simulating Impact...' : 'Run What-If Simulation'}
         </button>
       </div>
 
       {results && (
-        <div>
-          <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <TrendingUp size={18} color="#16a34a" /> Projected Top Career Matches
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {results.map((r, idx) => (
-              <div key={idx} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {results.comparison && (
+            <div className="card" style={{ background: '#f8fafc' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <TrendingUp size={18} color="var(--accent-green)" /> Baseline vs Simulated Opportunity Score Comparison
+              </h3>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '12px' }}>
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <h4 style={{ fontSize: '16px', fontWeight: 700 }}>{r.title}</h4>
-                    <span className="badge badge-blue">NSQF Level {r.nsqfLevel}</span>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>Baseline Average Alignment Fit</div>
+                  <div style={{ background: '#e2e8f0', borderRadius: 'var(--radius-sm)', height: '24px', overflow: 'hidden' }}>
+                    <div style={{ width: `${results.comparison.beforeAvgScore}%`, background: 'var(--text-muted)', height: '100%', display: 'flex', alignItems: 'center', paddingLeft: '8px', color: '#fff', fontSize: '12px', fontWeight: 700 }}>
+                      {results.comparison.beforeAvgScore}%
+                    </div>
                   </div>
-                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>{r.sector}</div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '12px', color: '#64748b' }}>Projected Income:</div>
-                    <strong style={{ color: '#15803d', fontSize: '15px' }}>₹{r.potentialMonthlyIncome?.toLocaleString()}/mo</strong>
+                <div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>Simulated Average Alignment Fit</div>
+                  <div style={{ background: '#e2e8f0', borderRadius: 'var(--radius-sm)', height: '24px', overflow: 'hidden' }}>
+                    <div style={{ width: `${results.comparison.afterAvgScore}%`, background: 'var(--primary-600)', height: '100%', display: 'flex', alignItems: 'center', paddingLeft: '8px', color: '#fff', fontSize: '12px', fontWeight: 700 }}>
+                      {results.comparison.afterAvgScore}%
+                    </div>
                   </div>
-                  <span className="badge badge-green" style={{ fontSize: '13px', padding: '6px 10px' }}>
-                    {r.readinessScore}% Match
-                  </span>
-                  <Link to={`/roadmap?occ=${r.occupationKey}`} className="btn btn-secondary" style={{ fontSize: '12px', padding: '6px 10px' }}>
-                    Explore &rarr;
-                  </Link>
                 </div>
               </div>
-            ))}
+
+              <div style={{ fontSize: '13px', color: 'var(--accent-green)', fontWeight: 600 }}>
+                Net Opportunity Fit Gain: +{results.comparison.impactGainPct}% across district trade pathways.
+              </div>
+            </div>
+          )}
+
+          {results.unlockedOptions && results.unlockedOptions.length > 0 && (
+            <div>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--accent-gold)' }}>
+                <Sparkles size={18} /> Newly Unlocked Career Pathways ({results.unlockedOptions.length})
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
+                {results.unlockedOptions.map((unlocked, idx) => (
+                  <div key={idx} className="card" style={{ borderColor: 'var(--accent-gold)', background: '#fffbeb' }}>
+                    <span className="badge badge-amber" style={{ marginBottom: '6px' }}>Unlocked Pathway</span>
+                    <h4 style={{ fontSize: '15px', fontWeight: 700 }}>{unlocked.title}</h4>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      Sector: {unlocked.sector} | NSQF Level {unlocked.nsqfLevel}
+                    </div>
+                    <div style={{ marginTop: '8px', fontSize: '13px', color: 'var(--accent-green)', fontWeight: 700 }}>
+                      Simulated Fit: {unlocked.matchScore}% (was {unlocked.baselineScore}%)
+                    </div>
+                    <Link to={`/roadmap?occ=${unlocked.occupationKey}`} className="btn btn-primary" style={{ fontSize: '11px', marginTop: '10px', width: '100%' }}>
+                      Explore Roadmap
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div>
+            <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '12px' }}>Top Simulated Career Matches</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {(results.topMatches || []).map((r, idx) => (
+                <div key={idx} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <h4 style={{ fontSize: '16px', fontWeight: 700 }}>{r.title}</h4>
+                      <span className="badge badge-blue">NSQF Level {r.nsqfLevel}</span>
+                      <span className={`badge ${r.track === 'self' ? 'badge-amber' : 'badge-green'}`}>
+                        {r.track === 'self' ? 'Self Employment' : 'Wage Placement'}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>{r.sector}</div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Projected Income:</div>
+                      <strong style={{ color: 'var(--accent-green)', fontSize: '15px' }}>₹{r.potentialMonthlyIncome?.toLocaleString()}/mo</strong>
+                    </div>
+                    <span className="badge badge-green" style={{ fontSize: '13px', padding: '6px 10px' }}>
+                      {r.matchScore}% Match
+                    </span>
+                    <Link to={`/roadmap?occ=${r.occupationKey}`} className="btn btn-secondary" style={{ fontSize: '12px', padding: '6px 10px' }}>
+                      Explore &rarr;
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

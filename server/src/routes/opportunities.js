@@ -1,12 +1,11 @@
 import express from 'express';
 import { Occupation } from '../models/Occupation.js';
-import { RegionDemand } from '../models/RegionDemand.js';
-import { TrainingCenter } from '../models/TrainingCenter.js';
-import { Scheme } from '../models/Scheme.js';
-import { Counselor } from '../models/Counselor.js';
 import { Profile } from '../models/Profile.js';
 import { authenticate } from '../middleware/auth.js';
 import { sanitizeString } from '../middleware/security.js';
+import { calculateOpportunityMatchV2 } from '../services/matching.js';
+import { getRegionalDataForDistrict } from '../services/regional.js';
+import { getSelfEmploymentGuide, createFinancialCounselorTask } from '../services/selfEmployment.js';
 
 const router = express.Router();
 
@@ -15,99 +14,37 @@ router.get('/', authenticate, async (req, res) => {
   try {
     const profile = await Profile.findOne({ user: req.user._id });
     const district = profile ? profile.district : (req.user.district || 'Warangal');
-    const userSkills = new Set((profile ? profile.skills : []).map((s) => s.toLowerCase()));
-    const userPref = profile ? profile.employmentPreference : 'either';
 
     const occupations = await Occupation.find();
-    const demands = await RegionDemand.find({ district: new RegExp(`^${district}$`, 'i') });
-    const demandMap = new Map();
-    demands.forEach((d) => demandMap.set(d.occupationKey, d));
+    const regionalData = await getRegionalDataForDistrict(district);
 
-    const centers = await TrainingCenter.find({ district: new RegExp(`^${district}$`, 'i') });
-    const allSchemes = await Scheme.find();
+    const matchPromises = occupations.map((occ) =>
+      calculateOpportunityMatchV2(occ, profile || {}, district, regionalData)
+    );
 
-    const opportunities = occupations.map((occ) => {
-      const demand = demandMap.get(occ.key) || {
-        demandLevel: 3,
-        openings: 15,
-        avgIncome: (occ.incomeMin + occ.incomeMax) / 2
-      };
+    const results = await Promise.all(matchPromises);
 
-      // Matched training centers offering this trade
-      const matchedCenters = centers.filter((c) =>
-        c.trades.some((t) => t.toLowerCase().includes(occ.key.toLowerCase()) || occ.sector.toLowerCase().includes(t.toLowerCase()))
-      );
-
-      // Matched schemes
-      const matchedSchemes = allSchemes.filter((s) =>
-        s.targetTrades.length === 0 ||
-        s.targetTrades.some((t) => t.toLowerCase() === occ.key.toLowerCase() || t.toLowerCase() === occ.sector.toLowerCase())
-      );
-
-      // Score breakdown calculation
-      let skillMatchScore = 20; // baseline
-      const reqSkills = occ.requiredSkills || [];
-      if (reqSkills.length > 0) {
-        let matchedCount = 0;
-        reqSkills.forEach((rs) => {
-          if (userSkills.has(rs.toLowerCase())) matchedCount++;
-        });
-        skillMatchScore = Math.round((matchedCount / reqSkills.length) * 100);
-      }
-
-      const demandScore = demand.demandLevel * 20; // scale 1-5 to 20-100
-      let preferenceScore = 70;
-      if (userPref === 'self' && occ.selfEmploymentViable) preferenceScore = 100;
-      if (userPref === 'wage' && !occ.travelRequired) preferenceScore = 90;
-
-      const totalScore = Math.round(
-        skillMatchScore * 0.45 + demandScore * 0.35 + preferenceScore * 0.20
-      );
-
-      const track = occ.selfEmploymentViable && (userPref === 'self' || userPref === 'either')
-        ? 'self'
-        : 'wage';
-
-      const breakdown = [
-        {
-          factor: 'Skill Match',
-          score: skillMatchScore,
-          weight: '45%',
-          note: `${skillMatchScore}% alignment with your identified abilities`
-        },
-        {
-          factor: 'Local Demand',
-          score: demandScore,
-          weight: '35%',
-          note: `Level ${demand.demandLevel} market demand in ${district}`
-        },
-        {
-          factor: 'Pathway Preference',
-          score: preferenceScore,
-          weight: '20%',
-          note: `Suits your preference for ${track === 'self' ? 'micro-enterprise' : 'regular wage placement'}`
-        }
-      ];
-
+    const opportunities = results.map((resItem) => {
+      const occ = resItem.occupation;
       return {
         id: occ._id,
         occupationKey: occ.key,
         title: occ.title,
         titles: occ.titles,
         sector: occ.sector,
-        nsqfLevel: occ.nsqfLevel,
+        nsqfLevel: resItem.nsqfLevel,
         ncoCode: occ.ncoCode,
         incomeRange: { min: occ.incomeMin, max: occ.incomeMax },
-        track,
-        matchScore: totalScore,
-        breakdown,
-        demand: {
-          level: demand.demandLevel,
-          openings: demand.openings,
-          avgIncome: demand.avgIncome
-        },
-        centers: matchedCenters.slice(0, 3),
-        schemes: matchedSchemes.slice(0, 3),
+        track: resItem.track,
+        matchScore: resItem.matchScore,
+        matchPct: resItem.matchPct,
+        matched: resItem.matched,
+        missing: resItem.missing,
+        breakdown: resItem.breakdown,
+        demand: resItem.demand,
+        centers: (resItem.centers || []).slice(0, 3),
+        schemes: (resItem.schemes || []).slice(0, 3),
+        notes: resItem.notes,
         source: occ.source
       };
     });
@@ -124,42 +61,30 @@ router.get('/', authenticate, async (req, res) => {
 router.get(['/self-employment/:occupationKey', '/:occupationKey/self-employment'], async (req, res) => {
   try {
     const occupationKey = sanitizeString(req.params.occupationKey, 60);
-    const occ = await Occupation.findOne({ key: occupationKey });
-    if (!occ) {
-      return res.status(404).json({ error: 'Occupation not found' });
+    const district = sanitizeString(req.query.district, 80) || 'Warangal';
+    const lang = sanitizeString(req.query.lang, 10) || 'en';
+
+    const guide = await getSelfEmploymentGuide(occupationKey, district, lang);
+    if (!guide) {
+      return res.status(404).json({ error: 'Occupation not found or self employment guide unavailable' });
     }
 
-    const schemes = await Scheme.find({
-      type: { $in: ['loan', 'subsidy', 'composite'] }
-    }).limit(4);
-
-    const counselors = await Counselor.find({ verified: true }).limit(3);
-
-    const businessPlan = {
-      occupationTitle: occ.title,
-      summary: `Micro enterprise operational roadmap for setting up a viable ${occ.title} business under PM-AJAY support.`,
-      keySteps: [
-        'Complete NSQF Level ' + occ.nsqfLevel + ' trade skilling module',
-        'Register for PM Vishwakarma / PMEGP collateral free loan',
-        'Acquire essential toolkit and setup workshop or home-based unit',
-        'Link with local market cooperatives and digital platforms'
-      ],
-      estimatedMonthlyRevenue: occ.incomeMax * 1.25,
-      breakevenMonths: 3
-    };
-
-    const startupCostInr = occ.incomeMin * 3;
-
-    return res.json({
-      occupationKey: occ.key,
-      title: occ.title,
-      businessPlan,
-      startupCostInr,
-      schemes,
-      counselors
-    });
+    return res.json(guide);
   } catch (err) {
-    return res.status(500).json({ error: 'Failed to fetch self-employment pathway' });
+    return res.status(500).json({ error: 'Failed to fetch self employment pathway' });
+  }
+});
+
+// POST /api/opportunities/counselor-request
+router.post('/counselor-request', authenticate, async (req, res) => {
+  try {
+    const district = sanitizeString(req.body.district, 80) || req.user.district || 'Warangal';
+    const titleNote = sanitizeString(req.body.titleNote, 100);
+
+    const task = await createFinancialCounselorTask(req.user._id, district, null, titleNote);
+    return res.status(201).json({ message: 'Financial counselor request created', task });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to create counselor request' });
   }
 });
 

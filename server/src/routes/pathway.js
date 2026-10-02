@@ -3,11 +3,10 @@ import { Profile } from '../models/Profile.js';
 import { Journey } from '../models/Journey.js';
 import { Occupation } from '../models/Occupation.js';
 import { Course } from '../models/Course.js';
-import { TrainingCenter } from '../models/TrainingCenter.js';
-import { Scheme } from '../models/Scheme.js';
 import { authenticate } from '../middleware/auth.js';
 import { sanitizeString, sanitizeNumber } from '../middleware/security.js';
-import { computeSkillGapsAndRoadmap } from '../services/matching.js';
+import { computeSkillGapsAndRoadmap, calculateOpportunityMatchV2 } from '../services/matching.js';
+import { getRegionalDataForDistrict } from '../services/regional.js';
 
 const router = express.Router();
 
@@ -64,10 +63,13 @@ router.get('/roadmap/:occupationKey', authenticate, async (req, res) => {
 
     return res.json({
       occupationKey: req.params.occupationKey,
+      occupation: result.occupation,
       roadmap: result.roadmap,
       readinessScore: result.readinessScore,
       skillsSummary: result.skillsSummary,
-      applicableSchemes: result.applicableSchemes
+      applicableSchemes: result.applicableSchemes,
+      nearbyCenters: result.nearbyCenters,
+      localDemand: result.localDemand
     });
   } catch (err) {
     return res.status(500).json({ error: 'Failed to build career roadmap' });
@@ -137,39 +139,92 @@ router.get('/meta', async (req, res) => {
   }
 });
 
-// POST /api/pathway/what-if (Interactive simulation for exploring hypothetical skills & income impact)
+// POST /api/pathway/what-if (Interactive simulation with before/after analysis)
 router.post('/what-if', authenticate, async (req, res) => {
   try {
-    const hypotheticalSkills = req.body.skills || [];
-    const district = sanitizeString(req.body.district, 80) || req.user.district || 'Warangal';
+    const hypotheticalSkills = Array.isArray(req.body.skills) ? req.body.skills : [];
+    const targetDistrict = sanitizeString(req.body.district, 80) || req.user.district || 'Warangal';
+    const employmentPreference = ['self', 'wage', 'either'].includes(req.body.employmentPreference)
+      ? req.body.employmentPreference
+      : 'either';
+    const incomeGoal = sanitizeNumber(req.body.incomeGoal, 15000);
+    const travelRequired = req.body.travelRequired === true;
+
+    const currentProfile = await Profile.findOne({ user: req.user._id });
+    const baselineSkills = currentProfile ? currentProfile.skills : [];
+    const baselineDistrict = currentProfile ? currentProfile.district : 'Warangal';
 
     const occupations = await Occupation.find();
-    const matches = occupations.map((occ) => {
-      const required = occ.requiredSkills || [];
-      const skillSet = new Set(hypotheticalSkills.map((s) => s.toLowerCase()));
-      let matchedCount = 0;
-      required.forEach((r) => {
-        if (skillSet.has(r.toLowerCase())) matchedCount++;
-      });
+    const regDataTarget = await getRegionalDataForDistrict(targetDistrict);
+    const regDataBaseline = await getRegionalDataForDistrict(baselineDistrict);
 
-      const readinessScore = required.length > 0 ? Math.round((matchedCount / required.length) * 100) : 100;
-      const potentialMonthlyIncome = Math.round((occ.incomeMin + occ.incomeMax) / 2);
+    const simulatedProfile = {
+      skills: Array.from(new Set([...baselineSkills, ...hypotheticalSkills])),
+      employmentPreference,
+      incomeGoal,
+      mobilityConstraints: travelRequired ? [] : ['no_travel'],
+      education: currentProfile ? currentProfile.education : 'Middle School'
+    };
 
-      return {
-        occupationKey: occ.key,
+    const baselineMatches = await Promise.all(
+      occupations.map((occ) => calculateOpportunityMatchV2(occ, currentProfile || {}, baselineDistrict, regDataBaseline))
+    );
+
+    const simulatedMatches = await Promise.all(
+      occupations.map((occ) => calculateOpportunityMatchV2(occ, simulatedProfile, targetDistrict, regDataTarget))
+    );
+
+    const baselineMap = new Map();
+    baselineMatches.forEach((m) => baselineMap.set(m.occupationKey, m.matchScore));
+
+    const topMatches = [];
+    const unlockedOptions = [];
+
+    simulatedMatches.forEach((sim) => {
+      const baseScore = baselineMap.get(sim.occupationKey) || 0;
+      const scoreDiff = sim.matchScore - baseScore;
+      const occ = sim.occupation;
+      const estIncome = Math.round((occ.incomeMin + occ.incomeMax) / 2);
+
+      const item = {
+        occupationKey: sim.occupationKey,
         title: occ.title,
         sector: occ.sector,
         nsqfLevel: occ.nsqfLevel,
-        readinessScore,
-        potentialMonthlyIncome
+        readinessScore: sim.matchScore,
+        matchScore: sim.matchScore,
+        baselineScore: baseScore,
+        scoreDiff,
+        potentialMonthlyIncome: estIncome,
+        track: sim.track
       };
+
+      topMatches.push(item);
+      if (baseScore < 50 && sim.matchScore >= 70) {
+        unlockedOptions.push(item);
+      }
     });
 
-    matches.sort((a, b) => b.readinessScore - a.readinessScore);
+    topMatches.sort((a, b) => b.matchScore - a.matchScore);
+
+    const avgBaselineScore = baselineMatches.length > 0
+      ? Math.round(baselineMatches.reduce((acc, curr) => acc + curr.matchScore, 0) / baselineMatches.length)
+      : 0;
+
+    const avgSimulatedScore = simulatedMatches.length > 0
+      ? Math.round(simulatedMatches.reduce((acc, curr) => acc + curr.matchScore, 0) / simulatedMatches.length)
+      : 0;
 
     return res.json({
       testedSkills: hypotheticalSkills,
-      topMatches: matches.slice(0, 5)
+      targetDistrict,
+      comparison: {
+        beforeAvgScore: avgBaselineScore,
+        afterAvgScore: avgSimulatedScore,
+        impactGainPct: avgSimulatedScore - avgBaselineScore
+      },
+      unlockedOptions,
+      topMatches: topMatches.slice(0, 6)
     });
   } catch (err) {
     return res.status(500).json({ error: 'What-if simulation failed' });
