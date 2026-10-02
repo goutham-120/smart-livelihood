@@ -1,27 +1,29 @@
-import React, { useState, useCallback } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Mic, MicOff, Volume2, Briefcase, User, ShieldCheck, Sparkles, TrendingUp, Award, Compass, HelpCircle, LogOut } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { useLang } from './lang.js';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import {
+  Mic, MicOff, Volume2, Briefcase, User, ShieldCheck, Sparkles, TrendingUp,
+  Award, Compass, LogOut, Menu, X, Home, BookOpen, Layers, PhoneCall,
+  CheckCircle, AlertCircle, FileText, FolderKanban, Building2, Users
+} from 'lucide-react';
 
 export const QuickDemoBar = ({ onLogin }) => {
   return (
-    <div style={{ background: '#0f172a', color: '#fff', padding: '8px 16px', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+    <div style={{ background: '#0f172a', color: '#fff', padding: '8px 20px', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#fbbf24', fontWeight: 600 }}>
         <Sparkles size={14} />
-        <span>Quick Demo Switcher</span>
+        <span>SIH26097 Demo Mode Switcher</span>
       </div>
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-        <button onClick={() => onLogin('beneficiary', 'Warangal')} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}>
+        <button onClick={() => onLogin('beneficiary', 'Warangal')} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>
           Beneficiary (Warangal)
         </button>
-        <button onClick={() => onLogin('officer', 'Warangal')} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}>
+        <button onClick={() => onLogin('officer', 'Warangal')} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>
           Officer (Warangal)
         </button>
-        <button onClick={() => onLogin('officer', 'Adilabad')} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}>
+        <button onClick={() => onLogin('officer', 'Adilabad')} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>
           Officer (Adilabad)
         </button>
-        <button onClick={() => onLogin('admin', 'Warangal')} style={{ background: '#ea580c', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontWeight: 600 }}>
+        <button onClick={() => onLogin('admin', 'Warangal')} style={{ background: '#ea580c', color: '#fff', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontWeight: 600, fontSize: '12px' }}>
           Admin (Ministry)
         </button>
       </div>
@@ -29,74 +31,192 @@ export const QuickDemoBar = ({ onLogin }) => {
   );
 };
 
-export const Navbar = ({ user, onLogout }) => {
+export const AppSidebar = ({ user, mobileOpen, setMobileOpen }) => {
   const location = useLocation();
   const isOfficer = user?.role === 'officer' || user?.role === 'admin';
 
-  return (
-    <header style={{ background: '#0f172a', borderBottom: '1px solid #1e293b', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 50 }}>
-      <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <div style={{ background: 'linear-gradient(135deg, #ea580c, #4f46e5)', color: '#fff', padding: '4px 8px', borderRadius: '6px', fontWeight: 800, fontSize: '12px' }}>PM-AJAY</div>
-        <div>
-          <div style={{ fontWeight: 700, fontSize: '16px', color: '#f8fafc' }}>Livelihood Assistant</div>
-          <div style={{ fontSize: '11px', color: '#94a3b8' }}>AI Voice Skilling & Mapping</div>
-        </div>
-      </Link>
+  const beneficiaryNav = [
+    { to: '/dashboard', label: 'Dashboard', icon: Home },
+    { to: '/assistant', label: 'AI Voice Assistant', icon: Mic },
+    { to: '/opportunities', label: 'Opportunities', icon: Briefcase },
+    { to: '/skill-gaps', label: 'Skill Gaps', icon: Layers },
+    { to: '/training', label: 'Certified Training', icon: BookOpen },
+    { to: '/roadmap', label: 'Career Roadmap', icon: TrendingUp },
+    { to: '/what-if', label: 'What-If Simulator', icon: Compass },
+    { to: '/self-employment', label: 'Self-Employment', icon: Award },
+    { to: '/progress', label: 'Active Milestones', icon: CheckCircle }
+  ];
 
-      <nav style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-        <Link to="/assistant" style={{ fontWeight: 600, color: location.pathname === '/assistant' ? '#fbbf24' : '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Mic size={16} /> Voice Assistant
-        </Link>
-        <Link to="/opportunities" style={{ fontWeight: 600, color: location.pathname === '/opportunities' ? '#fbbf24' : '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Briefcase size={16} /> Opportunities
-        </Link>
-        <Link to="/progress" style={{ fontWeight: 600, color: location.pathname === '/progress' ? '#fbbf24' : '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Award size={16} /> Progress
-        </Link>
-        <Link to="/what-if" style={{ fontWeight: 600, color: location.pathname === '/what-if' ? '#fbbf24' : '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Compass size={16} /> What-If Sim
-        </Link>
+  const accountNav = [
+    { to: '/profile', label: 'Livelihood Profile', icon: User }
+  ];
+
+  const channelNav = [
+    { to: '/kiosk', label: 'Kiosk Touch Mode', icon: Building2 },
+    { to: '/channel-demo', label: 'Channel Simulator', icon: PhoneCall }
+  ];
+
+  const adminNav = [
+    { to: '/admin/overview', label: 'District Overview', icon: TrendingUp },
+    { to: '/admin/beneficiaries', label: 'Beneficiaries', icon: Users },
+    { to: '/admin/placements', label: 'Placements', icon: Award },
+    { to: '/admin/coordination', label: 'Task Coordination', icon: FolderKanban },
+    { to: '/admin/plan', label: 'Perspective Plan', icon: FileText },
+    { to: '/admin/directory', label: 'Resource Directory', icon: Building2 }
+  ];
+
+  return (
+    <aside className={`app-sidebar ${mobileOpen ? 'open' : ''}`}>
+      <div className="app-sidebar-header">
+        <span className="app-sidebar-brand-badge">PM-AJAY</span>
+        <div>
+          <div className="app-sidebar-brand-title">Livelihood Assistant</div>
+          <div className="app-sidebar-brand-sub">AI Skilling & Livelihood</div>
+        </div>
+      </div>
+
+      <nav className="app-sidebar-nav">
+        <div>
+          <div className="nav-group-title">Beneficiary</div>
+          {beneficiaryNav.map((item) => {
+            const Icon = item.icon;
+            const active = location.pathname === item.to;
+            return (
+              <Link key={item.to} to={item.to} className={`nav-item ${active ? 'active' : ''}`} onClick={() => setMobileOpen(false)}>
+                <Icon size={18} />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+
+        <div>
+          <div className="nav-group-title">Account</div>
+          {accountNav.map((item) => {
+            const Icon = item.icon;
+            const active = location.pathname === item.to;
+            return (
+              <Link key={item.to} to={item.to} className={`nav-item ${active ? 'active' : ''}`} onClick={() => setMobileOpen(false)}>
+                <Icon size={18} />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+
+        <div>
+          <div className="nav-group-title">Channels</div>
+          {channelNav.map((item) => {
+            const Icon = item.icon;
+            const active = location.pathname === item.to;
+            return (
+              <Link key={item.to} to={item.to} className={`nav-item ${active ? 'active' : ''}`} onClick={() => setMobileOpen(false)}>
+                <Icon size={18} />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+
         {isOfficer && (
-          <Link to="/dashboard" style={{ fontWeight: 600, color: location.pathname === '/dashboard' ? '#fbbf24' : '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <TrendingUp size={16} /> Officer Cockpit
-          </Link>
+          <div>
+            <div className="nav-group-title">District Command</div>
+            {adminNav.map((item) => {
+              const Icon = item.icon;
+              const active = location.pathname === item.to;
+              return (
+                <Link key={item.to} to={item.to} className={`nav-item ${active ? 'active' : ''}`} onClick={() => setMobileOpen(false)}>
+                  <Icon size={18} />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
         )}
       </nav>
+    </aside>
+  );
+};
 
+export const AppHeader = ({ user, onLogout, toggleMobileNav }) => {
+  const location = useLocation();
+
+  const getPageTitle = (path) => {
+    if (path.includes('assistant')) return 'Empathetic AI Voice Assistant';
+    if (path.includes('opportunities')) return 'Tailored Livelihood Opportunities';
+    if (path.includes('skill-gaps')) return 'Skill Gap & Competency Analysis';
+    if (path.includes('training')) return 'Certified Skilling Programs';
+    if (path.includes('roadmap')) return 'Career Livelihood Roadmap';
+    if (path.includes('what-if')) return 'What-If Career Simulator';
+    if (path.includes('self-employment')) return 'Micro-Enterprise Business Guide';
+    if (path.includes('progress')) return 'Active Livelihood Milestones';
+    if (path.includes('profile')) return 'Livelihood Profile';
+    if (path.includes('kiosk')) return 'Touch & Voice Kiosk';
+    if (path.includes('channel-demo')) return 'Channel Integration Simulator';
+    if (path.includes('admin/overview')) return 'District Officer Overview';
+    if (path.includes('admin/beneficiaries')) return 'Assisted Beneficiary Registration';
+    if (path.includes('admin/placements')) return 'Placements & Enrolment';
+    if (path.includes('admin/coordination')) return 'Inter-Agency Task Coordination';
+    if (path.includes('admin/plan')) return 'District Perspective Action Plan';
+    if (path.includes('admin/directory')) return 'Resource Directory Catalog';
+    return 'Livelihood Assistant';
+  };
+
+  return (
+    <header className="app-header">
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <button className="btn btn-ghost" onClick={toggleMobileNav} style={{ padding: '6px', display: 'flex' }}>
+          <Menu size={20} />
+        </button>
+        <h1 className="app-header-title">{getPageTitle(location.pathname)}</h1>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
         {user ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: '#f8fafc' }}>{user.name} ({user.role})</span>
-            <button onClick={onLogout} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }} title="Logout">
-              <LogOut size={16} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span className="badge badge-blue">{user.district || 'Warangal'}</span>
+            <div style={{ fontSize: '13px', textAlign: 'right' }}>
+              <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>{user.name}</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: '11px', textTransform: 'capitalize' }}>{user.role}</div>
+            </div>
+            <button onClick={onLogout} className="btn btn-ghost" style={{ padding: '6px', color: 'var(--status-danger)' }} title="Sign Out">
+              <LogOut size={18} />
             </button>
           </div>
         ) : (
-          <Link to="/login" className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '13px' }}>Sign In</Link>
+          <Link to="/login" className="btn btn-primary" style={{ padding: '6px 14px', fontSize: '13px' }}>Sign In</Link>
         )}
       </div>
     </header>
   );
 };
 
-export const VoiceInput = ({ onSend, isProcessing }) => {
+export const VoiceInput = ({ onSend, isProcessing, voiceState = 'IDLE', errorMessage = null }) => {
   const [text, setText] = useState('');
-  const [isListening, setIsListening] = useState(false);
+  const [currentState, setCurrentState] = useState(voiceState);
+
+  useEffect(() => {
+    setCurrentState(voiceState);
+  }, [voiceState]);
 
   const startListening = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert('Browser speech recognition unavailable. Please type your message.');
+      alert('Browser speech recognition is unavailable. Please type your message in text.');
       return;
     }
 
     const rec = new SpeechRecognition();
-    rec.lang = 'te-IN'; // Default Telugu (and Indic mix)
-    rec.onstart = () => setIsListening(true);
-    rec.onend = () => setIsListening(false);
+    rec.lang = 'te-IN';
+    rec.onstart = () => setCurrentState('LISTENING');
+    rec.onend = () => {
+      if (currentState === 'LISTENING') setCurrentState('IDLE');
+    };
+    rec.onerror = () => setCurrentState('ERROR');
     rec.onresult = (e) => {
       const transcript = e.results[0][0].transcript;
       setText(transcript);
+      setCurrentState('PROCESSING');
       onSend(transcript);
     };
     rec.start();
@@ -105,45 +225,55 @@ export const VoiceInput = ({ onSend, isProcessing }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (text.trim()) {
+      setCurrentState('PROCESSING');
       onSend(text);
       setText('');
     }
   };
 
+  const getStateText = () => {
+    if (isProcessing || currentState === 'PROCESSING') return 'Understanding your response...';
+    if (currentState === 'LISTENING') return 'Listening in Telugu / Hindi / English...';
+    if (currentState === 'SPEAKING') return 'Assistant speaking response...';
+    if (currentState === 'ERROR' || errorMessage) return errorMessage || 'Could not recognize audio. Try again or type below.';
+    return 'Tap mic to speak or type message below';
+  };
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', margin: '20px 0' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', margin: '20px 0', width: '100%' }}>
       <button
+        type="button"
         onClick={startListening}
         disabled={isProcessing}
         style={{
-          width: '80px',
-          height: '80px',
+          width: '84px',
+          height: '84px',
           borderRadius: '50%',
-          background: isListening ? '#dc2626' : '#ea580c',
+          background: currentState === 'LISTENING' ? 'var(--status-danger)' : 'var(--primary-600)',
           color: '#fff',
           border: 'none',
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: isListening ? '0 0 20px rgba(220,38,38,0.5)' : '0 4px 12px rgba(234,88,12,0.3)',
+          boxShadow: currentState === 'LISTENING' ? '0 0 24px rgba(220, 38, 38, 0.6)' : 'var(--shadow-md)',
           transition: 'all 0.3s'
         }}
       >
-        {isListening ? <MicOff size={36} /> : <Mic size={36} />}
+        {currentState === 'LISTENING' ? <MicOff size={38} /> : <Mic size={38} />}
       </button>
 
-      <div style={{ fontSize: '13px', color: '#94a3b8' }}>
-        {isProcessing ? 'AI analyzing response...' : isListening ? 'Listening in Telugu / Hindi / English...' : 'Tap mic to speak or type below'}
+      <div style={{ fontSize: '13px', fontWeight: 600, color: currentState === 'ERROR' ? 'var(--status-danger)' : 'var(--text-muted)' }}>
+        {getStateText()}
       </div>
 
-      <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '8px', width: '100%', maxWidth: '600px' }}>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '8px', width: '100%', maxWidth: '640px' }}>
         <input
           type="text"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Describe your skills, past work, or interests..."
-          style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid #334155', background: '#1e293b', color: '#f8fafc', fontSize: '14px' }}
+          placeholder="Describe your skills, past work, education, or work goals..."
+          style={{ flex: 1, padding: '12px 16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-medium)', fontSize: '14px' }}
         />
         <button type="submit" className="btn btn-primary" disabled={isProcessing}>Send</button>
       </form>
@@ -151,247 +281,45 @@ export const VoiceInput = ({ onSend, isProcessing }) => {
   );
 };
 
-/* Spinner */
-export function Spinner({ size = 24, color = 'var(--color-saffron)' }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={color}
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      style={{
-        animation: 'spin 0.8s linear infinite',
-        display: 'block',
-      }}
-      aria-label="Loading"
-      role="img"
-    >
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      <circle cx="12" cy="12" r="10" strokeOpacity="0.2" />
-      <path d="M12 2a10 10 0 0 1 10 10" />
-    </svg>
-  );
-}
+export const Card = ({ title, children, style = {}, className = '' }) => (
+  <div className={`card ${className}`} style={style}>
+    {title && <h3 className="card-title">{title}</h3>}
+    {children}
+  </div>
+);
 
-/* Skeleton card placeholder */
-export function SkeletonCard({ rows = 3, height = 120 }) {
-  return (
-    <div className="card" aria-hidden="true" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
-      <div className="skeleton" style={{ height: 20, width: '60%' }} />
-      {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="skeleton" style={{ height: 14, width: `${80 - i * 15}%` }} />
-      ))}
-      <div className="skeleton" style={{ height: 36, width: '40%', marginTop: 'var(--sp-2)' }} />
+export const Badge = ({ children, type = 'blue', style = {} }) => (
+  <span className={`badge badge-${type}`} style={style}>
+    {children}
+  </span>
+);
+
+export const Skeleton = ({ height = 16, width = '100%', style = {} }) => (
+  <div className="skeleton" style={{ height, width, ...style }} />
+);
+
+export const EmptyState = ({ title = 'No Data Found', description = 'There are no items matching your request.', action = null }) => (
+  <div className="empty-state">
+    <AlertCircle size={36} color="var(--text-subtle)" />
+    <h3 className="empty-state-title">{title}</h3>
+    <p className="empty-state-desc">{description}</p>
+    {action}
+  </div>
+);
+
+export const ErrorState = ({ message = 'An unexpected error occurred.', onRetry = null }) => (
+  <div style={{ padding: '16px', background: '#fee2e2', borderRadius: 'var(--radius-md)', border: '1px solid #fca5a5', color: '#b91c1c', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 600 }}>
+      <AlertCircle size={18} /> {message}
     </div>
-  );
-}
+    {onRetry && (
+      <button onClick={onRetry} className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '12px' }}>
+        Retry
+      </button>
+    )}
+  </div>
+);
 
-/* Empty state */
-export function EmptyState({ icon = '📭', title, description, action }) {
-  return (
-    <div className="empty-state">
-      <div className="empty-icon" role="img" aria-hidden="true">{icon}</div>
-      {title && <h3 className="text-lg font-semibold">{title}</h3>}
-      {description && <p className="text-muted text-sm" style={{ maxWidth: 360 }}>{description}</p>}
-      {action}
-    </div>
-  );
-}
-
-/* Badge shown when isSynthetic data is displayed */
-export function SyntheticBadge() {
-  const { t } = useTranslation();
-  return (
-    <span className="badge badge-synthetic" title="This is illustrative data for demonstration purposes">
-      🔬 {t ? t('common.synthetic', 'Demo Data') : 'Demo Data'}
-    </span>
-  );
-}
-
-/* Risk badge with color coding */
-export function RiskBadge({ score }) {
-  if (score == null) return null;
-  let cls = 'badge-success';
-  let label = 'Low Risk';
-  if (score >= 60) { cls = 'badge-danger'; label = 'High Risk'; }
-  else if (score >= 30) { cls = 'badge-warning'; label = 'Medium Risk'; }
-  return (
-    <span className={`badge ${cls}`}>
-      {score >= 60 ? '⚠ ' : score >= 30 ? '● ' : '✓ '}
-      {label} ({score}/100)
-    </span>
-  );
-}
-
-/* Read aloud button using Web Speech API */
-export function ReadAloudButton({ text, lang = 'en' }) {
-  const { t } = useTranslation();
-  const [speaking, setSpeaking] = useState(false);
-
-  const langMap = { en: 'en-IN', hi: 'hi-IN', te: 'te-IN' };
-
-  const handleSpeak = useCallback(() => {
-    if (!('speechSynthesis' in window)) {
-      alert('Speech synthesis is not supported in this browser.');
-      return;
-    }
-    if (speaking) {
-      window.speechSynthesis.cancel();
-      setSpeaking(false);
-      return;
-    }
-
-    const pageText = text || document.body.innerText;
-    const utterance = new SpeechSynthesisUtterance(pageText.slice(0, 4000));
-    utterance.lang = langMap[lang] || 'en-IN';
-    utterance.rate = 0.9;
-    utterance.onend = () => setSpeaking(false);
-    utterance.onerror = () => setSpeaking(false);
-    setSpeaking(true);
-    window.speechSynthesis.speak(utterance);
-  }, [speaking, text, lang]);
-
-  return (
-    <button
-      className={`btn btn-ghost btn-sm ${speaking ? 'text-primary' : ''}`}
-      onClick={handleSpeak}
-      aria-label={speaking ? 'Stop reading' : (t ? t('common.readPage', 'Read page') : 'Read page')}
-      title={speaking ? 'Stop reading' : (t ? t('common.readPage', 'Read page') : 'Read page')}
-      id="btn-read-aloud"
-    >
-      {speaking ? '⏹' : '🔊'} {speaking ? 'Stop' : (t ? t('common.readPage', 'Read page') : 'Read page')}
-    </button>
-  );
-}
-
-/* Language switcher pill */
-export function LanguageSwitcher() {
-  const { lang, setLang, languages } = useLang();
-
-  return (
-    <div
-      className="tab-group"
-      role="group"
-      aria-label="Choose language"
-      style={{ display: 'inline-flex', width: 'auto' }}
-    >
-      {languages.map((l) => (
-        <button
-          key={l.code}
-          className={`tab ${lang === l.code ? 'active' : ''}`}
-          onClick={() => setLang(l.code)}
-          aria-pressed={lang === l.code}
-          id={`lang-btn-${l.code}`}
-          title={`Switch to ${l.label}`}
-        >
-          {l.flag} {l.native}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-/* Modal overlay */
-export function Modal({ open, onClose, title, children, size = 'md' }) {
-  if (!open) return null;
-
-  const widths = { sm: 400, md: 600, lg: 800 };
-
-  return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="modal-title"
-      style={{
-        position: 'fixed', inset: 0,
-        zIndex: 'var(--z-modal)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: 'var(--sp-4)',
-        background: 'hsl(222 28% 4% / 0.85)',
-        backdropFilter: 'blur(4px)',
-      }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div
-        className="card"
-        style={{ width: '100%', maxWidth: widths[size], maxHeight: '90dvh', overflowY: 'auto' }}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h2 id="modal-title" className="text-xl font-bold">{title}</h2>
-          <button
-            className="btn btn-ghost btn-icon btn-sm"
-            onClick={onClose}
-            aria-label="Close dialog"
-            id="btn-modal-close"
-          >
-            ×
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
-  );
-}
-
-/* Confirm dialog */
-export function ConfirmDialog({ open, onConfirm, onCancel, message, danger = false }) {
-  const { t } = useTranslation();
-  if (!open) return null;
-  return (
-    <Modal open title={t ? t('common.confirm', 'Confirm') : 'Confirm'} onClose={onCancel} size="sm">
-      <p className="text-sm mb-6" style={{ lineHeight: 1.7 }}>{message}</p>
-      <div className="flex gap-3 justify-between">
-        <button className="btn btn-secondary flex-1" onClick={onCancel} id="btn-confirm-cancel">
-          {t ? t('common.cancel', 'Cancel') : 'Cancel'}
-        </button>
-        <button
-          className={`btn flex-1 ${danger ? 'btn-danger' : 'btn-primary'}`}
-          onClick={onConfirm}
-          id="btn-confirm-ok"
-        >
-          {t ? t('common.confirm', 'Confirm') : 'Confirm'}
-        </button>
-      </div>
-    </Modal>
-  );
-}
-
-/* Progress bar component */
-export function ProgressBar({ value = 0, max = 100, label, color }) {
-  const pct = Math.min(100, Math.round((value / max) * 100));
-  return (
-    <div>
-      {label && (
-        <div className="flex justify-between text-xs text-muted mb-1">
-          <span>{label}</span>
-          <span>{pct}%</span>
-        </div>
-      )}
-      <div className="progress-bar" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
-        <div
-          className="progress-fill"
-          style={{ width: `${pct}%`, background: color || undefined }}
-        />
-      </div>
-    </div>
-  );
-}
-
-/* Stat card for dashboard metrics */
-export function StatCard({ icon, label, value, sub, color }) {
-  return (
-    <div className="card" style={{ borderTop: `3px solid ${color || 'var(--color-saffron)'}` }}>
-      <div className="flex items-center gap-3 mb-2">
-        <span style={{ fontSize: '1.5rem' }} aria-hidden="true">{icon}</span>
-        <span className="text-sm text-muted font-medium">{label}</span>
-      </div>
-      <div className="text-3xl font-bold" style={{ color: color || 'var(--color-saffron)' }}>
-        {value}
-      </div>
-      {sub && <div className="text-xs text-muted mt-1">{sub}</div>}
-    </div>
-  );
-}
+export const Spinner = ({ size = 24 }) => (
+  <div style={{ width: size, height: size, border: '3px solid var(--border-light)', borderTopColor: 'var(--primary-600)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+);

@@ -1,14 +1,8 @@
-/* App.jsx: Complete unified application router
-   Combines P2 Voice AI & Channels, P3 Matching & Simulators, and P4 Admin Suite & Design System
-   SIH26097 PM-AJAY Livelihood Assistant */
-import React, { useState, useEffect, Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { api } from './api.js';
-import { useAuth } from './AuthContext.jsx';
-import { useTranslation } from 'react-i18next';
-import { QuickDemoBar, Navbar, Spinner } from './components.jsx';
+import { QuickDemoBar, AppSidebar, AppHeader, Spinner } from './components.jsx';
 
-/* Core Pages (P2 & P3) */
 import { Login } from './pages/Login.jsx';
 import { Assistant } from './pages/Assistant.jsx';
 import { Dashboard } from './pages/Dashboard.jsx';
@@ -20,53 +14,9 @@ import { WhatIf } from './pages/WhatIf.jsx';
 import { Progress } from './pages/Progress.jsx';
 import { Profile } from './pages/Profile.jsx';
 import { SelfEmployment } from './pages/SelfEmployment.jsx';
-import { Kiosk } from './pages/Kiosk.jsx';
-import { ChannelDemo } from './pages/ChannelDemo.jsx';
-
-/* Consent & Admin Pages (P4) */
-const Consent            = lazy(() => import('./pages/Consent.jsx'));
-const AdminLayout        = lazy(() => import('./layouts/AdminLayout.jsx'));
-const AdminOverview      = lazy(() => import('./pages/admin/Overview.jsx'));
-const AdminBeneficiaries = lazy(() => import('./pages/admin/Beneficiaries.jsx'));
-const AdminPlacements    = lazy(() => import('./pages/admin/Placements.jsx'));
-const AdminCoordination  = lazy(() => import('./pages/admin/Coordination.jsx'));
-const AdminPlan          = lazy(() => import('./pages/admin/PerspectivePlan.jsx'));
-const AdminDirectory     = lazy(() => import('./pages/admin/Directory.jsx'));
-
-function PageFallback() {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-      <Spinner size={36} />
-    </div>
-  );
-}
-
-function OfflineBanner() {
-  const { t } = useTranslation();
-  const [offline, setOffline] = useState(!navigator.onLine);
-
-  useEffect(() => {
-    const on = () => setOffline(false);
-    const off = () => setOffline(true);
-    window.addEventListener('online', on);
-    window.addEventListener('offline', off);
-    return () => {
-      window.removeEventListener('online', on);
-      window.removeEventListener('offline', off);
-    };
-  }, []);
-
-  if (!offline) return null;
-  return (
-    <div className="offline-banner" role="alert">
-      📡 {t ? t('common.offline', 'Offline mode active') : 'Offline mode active'}
-    </div>
-  );
-}
 
 export default function App() {
-  const auth = useAuth?.();
-  const [localUser, setLocalUser] = useState(() => {
+  const [activeUser, setActiveUser] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem('pmajay_user') || 'null');
     } catch {
@@ -74,14 +24,13 @@ export default function App() {
     }
   });
   const [loading, setLoading] = useState(true);
-
-  const activeUser = auth?.user || localUser;
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     api.getMe().then((res) => {
       if (res?.user) {
-        setLocalUser(res.user);
-        if (auth?.setUser) auth.setUser(res.user);
+        setActiveUser(res.user);
+        localStorage.setItem('pmajay_user', JSON.stringify(res.user));
       }
       setLoading(false);
     }).catch(() => setLoading(false));
@@ -90,15 +39,13 @@ export default function App() {
   const handleLoginSuccess = (token, newUser) => {
     localStorage.setItem('pmajay_token', token);
     localStorage.setItem('pmajay_user', JSON.stringify(newUser));
-    setLocalUser(newUser);
-    if (auth?.setUser) auth.setUser(newUser);
+    setActiveUser(newUser);
   };
 
   const handleLogout = () => {
     localStorage.removeItem('pmajay_token');
     localStorage.removeItem('pmajay_user');
-    setLocalUser(null);
-    if (auth?.logout) auth.logout();
+    setActiveUser(null);
     window.location.href = '/login';
   };
 
@@ -124,21 +71,17 @@ export default function App() {
 
   return (
     <Router>
-      <OfflineBanner />
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--surface-900)', color: 'var(--surface-100)' }}>
-        <QuickDemoBar onLogin={handleDemoLogin} />
-        <Navbar user={activeUser} onLogout={handleLogout} />
+      <div className="app-shell">
+        <AppSidebar user={activeUser} mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
 
-        <main style={{ flex: 1 }}>
-          <Suspense fallback={<PageFallback />}>
+        <div className="app-main-layout">
+          <QuickDemoBar onLogin={handleDemoLogin} />
+          <AppHeader user={activeUser} onLogout={handleLogout} toggleMobileNav={() => setMobileOpen(!mobileOpen)} />
+
+          <main className="app-content">
             <Routes>
-              {/* Standalone Channel Experiences */}
-              <Route path="/kiosk" element={<Kiosk />} />
-              <Route path="/channel-demo" element={<ChannelDemo />} />
-
-              {/* Authentication & Privacy */}
+              {/* Authentication */}
               <Route path="/login" element={<Login onLoginSuccess={handleLoginSuccess} />} />
-              <Route path="/consent" element={<Consent />} />
 
               {/* Beneficiary Pathways & AI Voice Assistant */}
               <Route path="/assistant" element={<Assistant />} />
@@ -152,23 +95,12 @@ export default function App() {
               <Route path="/profile" element={<Profile />} />
               <Route path="/self-employment" element={<SelfEmployment />} />
 
-              {/* Officer / Admin Command Suite */}
-              <Route path="/admin" element={<AdminLayout />}>
-                <Route index element={<Navigate to="/admin/overview" replace />} />
-                <Route path="overview" element={<AdminOverview />} />
-                <Route path="beneficiaries" element={<AdminBeneficiaries />} />
-                <Route path="placements" element={<AdminPlacements />} />
-                <Route path="coordination" element={<AdminCoordination />} />
-                <Route path="plan" element={<AdminPlan />} />
-                <Route path="directory" element={<AdminDirectory />} />
-              </Route>
-
               {/* Default redirects */}
               <Route path="/" element={<Navigate to={activeUser ? (activeUser.role === 'officer' || activeUser.role === 'admin' ? '/dashboard' : '/assistant') : '/login'} replace />} />
               <Route path="*" element={<Navigate to="/assistant" replace />} />
             </Routes>
-          </Suspense>
-        </main>
+          </main>
+        </div>
       </div>
     </Router>
   );
