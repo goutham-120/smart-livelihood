@@ -13,10 +13,17 @@ export const SelfEmployment = () => {
   const [requesting, setRequesting] = useState(false);
 
   useEffect(() => {
-    api.getSelfEmployment(occKey).then((res) => {
-      setData(res);
-      setLoading(false);
-    });
+    (async () => {
+      try {
+        const res = await api.getSelfEmployment(occKey);
+        const payload = res?.data || res;
+        setData(payload);
+      } catch (err) {
+        console.error('Failed to load self employment guide:', err);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [occKey]);
 
   const handleTalkToCounselor = async () => {

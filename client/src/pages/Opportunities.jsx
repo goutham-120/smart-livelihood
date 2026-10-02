@@ -10,10 +10,17 @@ export const Opportunities = () => {
   const [expandedBreakdown, setExpandedBreakdown] = useState({});
 
   useEffect(() => {
-    api.getOpportunities().then((res) => {
-      setOpportunities(res.opportunities || []);
-      setLoading(false);
-    });
+    (async () => {
+      try {
+        const res = await api.getOpportunities();
+        const payload = res?.data || res;
+        setOpportunities(payload?.opportunities || (Array.isArray(payload) ? payload : []));
+      } catch (err) {
+        console.error('Failed to load opportunities:', err);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
   const toggleBreakdown = (key) => {
@@ -48,6 +55,12 @@ export const Opportunities = () => {
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>Calculating personalized opportunity matches...</div>
+      ) : filtered.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '60px 20px', background: 'var(--surface-800)', borderRadius: 'var(--radius-lg)' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>No opportunities found for this filter</h3>
+          <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '16px' }}>Try switching to "All Tracks" or refresh the opportunities list.</p>
+          <button onClick={() => setFilter('all')} className="btn btn-primary">Show All Opportunities</button>
+        </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px' }}>
           {filtered.map((op) => {

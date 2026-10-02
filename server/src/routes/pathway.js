@@ -3,7 +3,7 @@ import { Profile } from '../models/Profile.js';
 import { Journey } from '../models/Journey.js';
 import { Occupation } from '../models/Occupation.js';
 import { Course } from '../models/Course.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, optionalAuth } from '../middleware/auth.js';
 import { sanitizeString, sanitizeNumber } from '../middleware/security.js';
 import { computeSkillGapsAndRoadmap, calculateOpportunityMatchV2 } from '../services/matching.js';
 import { getRegionalDataForDistrict } from '../services/regional.js';
@@ -11,11 +11,11 @@ import { getRegionalDataForDistrict } from '../services/regional.js';
 const router = express.Router();
 
 // GET /api/pathway/skill-gaps/:occupationKey
-router.get('/skill-gaps/:occupationKey', authenticate, async (req, res) => {
+router.get('/skill-gaps/:occupationKey', optionalAuth, async (req, res) => {
   try {
-    const profile = await Profile.findOne({ user: req.user._id });
+    const profile = req.user ? await Profile.findOne({ user: req.user._id }) : null;
     const userSkills = profile ? profile.skills : [];
-    const district = profile ? profile.district : (req.user.district || 'Warangal');
+    const district = profile ? profile.district : (req.user?.district || req.query.district || 'Warangal');
 
     const result = await computeSkillGapsAndRoadmap(req.params.occupationKey, userSkills, district);
     if (!result) {
@@ -50,11 +50,11 @@ router.get('/training/:occupationKey', async (req, res) => {
 });
 
 // GET /api/pathway/roadmap/:occupationKey
-router.get('/roadmap/:occupationKey', authenticate, async (req, res) => {
+router.get('/roadmap/:occupationKey', optionalAuth, async (req, res) => {
   try {
-    const profile = await Profile.findOne({ user: req.user._id });
+    const profile = req.user ? await Profile.findOne({ user: req.user._id }) : null;
     const userSkills = profile ? profile.skills : [];
-    const district = profile ? profile.district : (req.user.district || 'Warangal');
+    const district = profile ? profile.district : (req.user?.district || req.query.district || 'Warangal');
 
     const result = await computeSkillGapsAndRoadmap(req.params.occupationKey, userSkills, district);
     if (!result) {
@@ -140,17 +140,17 @@ router.get('/meta', async (req, res) => {
 });
 
 // POST /api/pathway/what-if (Interactive simulation with before/after analysis)
-router.post('/what-if', authenticate, async (req, res) => {
+router.post('/what-if', optionalAuth, async (req, res) => {
   try {
     const hypotheticalSkills = Array.isArray(req.body.skills) ? req.body.skills : [];
-    const targetDistrict = sanitizeString(req.body.district, 80) || req.user.district || 'Warangal';
+    const targetDistrict = sanitizeString(req.body.district, 80) || req.user?.district || 'Warangal';
     const employmentPreference = ['self', 'wage', 'either'].includes(req.body.employmentPreference)
       ? req.body.employmentPreference
       : 'either';
     const incomeGoal = sanitizeNumber(req.body.incomeGoal, 15000);
     const travelRequired = req.body.travelRequired === true;
 
-    const currentProfile = await Profile.findOne({ user: req.user._id });
+    const currentProfile = req.user ? await Profile.findOne({ user: req.user._id }) : null;
     const baselineSkills = currentProfile ? currentProfile.skills : [];
     const baselineDistrict = currentProfile ? currentProfile.district : 'Warangal';
 
