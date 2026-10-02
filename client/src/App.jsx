@@ -14,6 +14,14 @@ import { WhatIf } from './pages/WhatIf.jsx';
 import { Progress } from './pages/Progress.jsx';
 import { Profile } from './pages/Profile.jsx';
 import { SelfEmployment } from './pages/SelfEmployment.jsx';
+import { Kiosk } from './pages/Kiosk.jsx';
+import { ChannelDemo } from './pages/ChannelDemo.jsx';
+import Overview from './pages/admin/Overview.jsx';
+import Beneficiaries from './pages/admin/Beneficiaries.jsx';
+import Placements from './pages/admin/Placements.jsx';
+import Coordination from './pages/admin/Coordination.jsx';
+import PerspectivePlan from './pages/admin/PerspectivePlan.jsx';
+import Directory from './pages/admin/Directory.jsx';
 
 export default function App() {
   const [activeUser, setActiveUser] = useState(() => {
@@ -94,6 +102,18 @@ export default function App() {
               <Route path="/progress" element={<Progress />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/self-employment" element={<SelfEmployment />} />
+
+              {/* Assistive Channels and Kiosk */}
+              <Route path="/kiosk" element={<Kiosk />} />
+              <Route path="/channel-demo" element={<ChannelDemo />} />
+
+              {/* District Command and Officer Administration */}
+              <Route path="/admin/overview" element={<Overview />} />
+              <Route path="/admin/beneficiaries" element={<Beneficiaries />} />
+              <Route path="/admin/placements" element={<Placements />} />
+              <Route path="/admin/coordination" element={<Coordination />} />
+              <Route path="/admin/plan" element={<PerspectivePlan />} />
+              <Route path="/admin/directory" element={<Directory />} />
 
               {/* Default redirects */}
               <Route path="/" element={<Navigate to={activeUser ? (activeUser.role === 'officer' || activeUser.role === 'admin' ? '/dashboard' : '/assistant') : '/login'} replace />} />

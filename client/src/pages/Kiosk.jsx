@@ -373,3 +373,5 @@ export const Kiosk = () => {
     </div>
   );
 };
+
+export default Kiosk;

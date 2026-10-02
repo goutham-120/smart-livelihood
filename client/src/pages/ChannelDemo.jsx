@@ -395,3 +395,5 @@ export const ChannelDemo = () => {
     </div>
   );
 };
+
+export default ChannelDemo;

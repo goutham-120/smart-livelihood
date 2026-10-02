@@ -1,56 +1,77 @@
 /* Progress.jsx: Training journey timeline and milestones for beneficiaries
-   SIH26097 PM-AJAY Livelihood Assistant */
+   PM-AJAY Livelihood Assistant */
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { Award, CheckCircle2, Clock, Circle } from 'lucide-react';
+import { Award, CheckCircle2, Clock, Sparkles } from 'lucide-react';
 import { SkeletonCard, EmptyState, ReadAloudButton } from '../components.jsx';
 import { getPlacements, api } from '../api.js';
 import { useLang } from '../lang.js';
 import './Progress.css';
 
 const STATUS_META = {
-  enrolled:  { icon: '📚', color: 'var(--color-info)',    label: 'Enrolled'  },
-  completed: { icon: '🏅', color: 'var(--color-accent)',  label: 'Completed' },
-  placed:    { icon: '✅', color: 'var(--color-success)', label: 'Placed'    },
-  dropped:   { icon: '⚠️', color: 'var(--color-danger)',  label: 'Dropped'   },
+  enrolled:  { icon: '📚', color: '#2563eb', bg: '#eff6ff', label: 'Enrolled Courses'  },
+  completed: { icon: '🏅', color: '#d97706', bg: '#fffbeb', label: 'Completed Modules' },
+  placed:    { icon: '✅', color: '#15803d', bg: '#f0fdf4', label: 'Placed or Linked'  },
+  dropped:   { icon: '⚠️', color: '#dc2626', bg: '#fef2f2', label: 'Flagged Follow-ups' }
+};
+
+const formatCourseTitle = (key) => {
+  if (!key) return 'Certified Skilling Program';
+  return key
+    .replace(/^crs_/, '')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 };
 
 function TimelineItem({ placement, isLast }) {
   const meta = STATUS_META[placement.status] || STATUS_META.enrolled;
-  const date = new Date(placement.at).toLocaleDateString('en-IN', {
+  const date = new Date(placement.at || Date.now()).toLocaleDateString('en-IN', {
     day: 'numeric', month: 'short', year: 'numeric',
   });
 
   return (
     <div className="timeline-item">
       <div className="timeline-connector">
-        <div className="timeline-dot" style={{ background: meta.color }}>
+        <div className="timeline-dot" style={{ borderColor: meta.color, background: meta.bg }}>
           <span aria-hidden="true">{meta.icon}</span>
         </div>
         {!isLast && <div className="timeline-line" />}
       </div>
-      <div className="timeline-content card">
-        <div className="flex items-center gap-2 mb-2">
+      <div className="timeline-content">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
           <span
-            className="badge"
-            style={{ background: `${meta.color}22`, color: meta.color }}
+            style={{
+              background: meta.bg,
+              color: meta.color,
+              padding: '2px 8px',
+              borderRadius: '9999px',
+              fontSize: '11px',
+              fontWeight: 700,
+              textTransform: 'uppercase'
+            }}
           >
             {meta.label}
           </span>
-          <span className="text-xs text-muted">{date}</span>
+          <span style={{ fontSize: '12px', color: '#64748b' }}>{date}</span>
         </div>
-        <h3 className="font-semibold text-base">{placement.courseKey}</h3>
+        <h4 style={{ margin: '0 0 4px 0', fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>
+          {placement.courseTitle || placement.title || formatCourseTitle(placement.courseKey)}
+        </h4>
         {placement.employer && (
-          <p className="text-sm text-muted mt-1">🏢 {placement.employer}</p>
+          <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#475569' }}>
+            🏢 {placement.employer}
+          </p>
         )}
         {placement.wage > 0 && (
-          <p className="text-sm text-accent mt-1">
+          <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#15803d', fontWeight: 700 }}>
             💰 ₹{placement.wage.toLocaleString()} / month
           </p>
         )}
         {placement.notes && (
-          <p className="text-xs text-muted mt-2 italic">{placement.notes}</p>
+          <p style={{ margin: '8px 0 0 0', fontSize: '12px', color: '#64748b', fontStyle: 'italic' }}>
+            {placement.notes}
+          </p>
         )}
       </div>
     </div>
@@ -69,7 +90,7 @@ export function Progress() {
       getPlacements().catch(() => ({ data: { placements: [] } })),
       api.getProgress().catch(() => ({ journey: null }))
     ]).then(([plRes, progRes]) => {
-      setPlacements(plRes.data?.placements || []);
+      setPlacements(plRes?.data?.placements || []);
       setJourney(progRes?.journey || null);
     }).finally(() => setLoading(false));
   }, []);
@@ -77,95 +98,152 @@ export function Progress() {
   const counts = { enrolled: 0, completed: 0, placed: 0, dropped: 0 };
   placements.forEach((p) => { if (counts[p.status] !== undefined) counts[p.status]++; });
 
-  if (loading) return <div className="progress-root"><SkeletonCard rows={5} /></div>;
+  const milestones = journey?.milestones?.length > 0 ? journey.milestones : [
+    { name: 'Voice Assessment & Skill Identification', status: 'completed' },
+    { name: 'NSQF Course Enrollment', status: 'in_progress' },
+    { name: 'Practical Assessment & Certification', status: 'pending' },
+    { name: 'Placement / Enterprise Linkage', status: 'pending' }
+  ];
+
+  const completedCount = milestones.filter((m) => m.status === 'completed').length;
+  const progressPct = Math.round((completedCount / milestones.length) * 100);
+
+  if (loading) {
+    return (
+      <div className="progress-root page-enter">
+        <SkeletonCard rows={5} />
+      </div>
+    );
+  }
 
   return (
     <div className="progress-root page-enter">
-      <div className="flex items-center justify-between mb-6">
+      {/* Page Header */}
+      <div className="progress-header">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Award size={28} color="var(--color-saffron)" /> {t ? t('progress.title', 'My Progress & Milestones') : 'My Progress & Milestones'}
+          <h1 className="progress-header-title">
+            <Award size={28} color="#ea580c" />
+            {t ? t('progress.title', 'Active Livelihood Milestones') : 'Active Livelihood Milestones'}
           </h1>
-          <p className="text-muted text-sm mt-1">
-            Live milestone tracking under PM-AJAY GIA Welfare & Skilling Initiative
+          <p className="progress-header-subtitle">
+            Real-time tracking of PM-AJAY skilling, assessment, certification, and livelihood placement
           </p>
         </div>
         <ReadAloudButton lang={lang} />
       </div>
 
-      {/* Current stage banner */}
-      <div className="card mb-6" style={{ background: 'var(--surface-800)', border: '1px solid var(--surface-700)' }}>
-        <div className="flex justify-between items-center flex-wrap gap-3">
+      {/* Hero Stage Banner */}
+      <div className="progress-hero-banner">
+        <div className="progress-hero-top">
           <div>
-            <div className="text-xs text-muted font-bold">CURRENT STAGE</div>
-            <div className="text-xl font-bold text-primary mt-1" style={{ textTransform: 'capitalize' }}>
-              {journey?.currentStage?.replace(/_/g, ' ') || 'Skill Discovery & Skilling'}
+            <div className="progress-stage-label">
+              <Sparkles size={14} /> CURRENT LIVELIHOOD STAGE
             </div>
+            <h2 className="progress-stage-title" style={{ textTransform: 'capitalize' }}>
+              {journey?.currentStage?.replace(/_/g, ' ') || 'Trade Skill Discovery'}
+            </h2>
           </div>
-          <Link to="/opportunities" className="btn btn-primary btn-sm">
+          <Link to="/opportunities" className="progress-hero-btn">
             Browse New Pathways &rarr;
           </Link>
         </div>
-      </div>
 
-      {/* Welfare & Certification Milestones */}
-      {journey?.milestones?.length > 0 && (
-        <div className="card mb-6">
-          <h3 className="text-base font-bold mb-4">Welfare & Certification Milestones</h3>
-          <div className="flex-col gap-3 flex">
-            {journey.milestones.map((m, idx) => (
-              <div key={idx} className="flex items-center gap-3 p-3 rounded-lg" style={{ background: 'var(--surface-700)', border: '1px solid var(--surface-600)' }}>
-                {m.status === 'completed' ? (
-                  <CheckCircle2 size={22} color="var(--color-success)" />
-                ) : m.status === 'in_progress' ? (
-                  <Clock size={22} color="var(--color-saffron)" />
-                ) : (
-                  <Circle size={22} color="var(--surface-400)" />
-                )}
-                <div className="flex-1">
-                  <div className="font-semibold text-sm">{m.name}</div>
-                  <div className="text-xs text-muted" style={{ textTransform: 'capitalize' }}>
-                    Status: {m.status.replace(/_/g, ' ')}
-                  </div>
-                </div>
-                <span className={`badge ${m.status === 'completed' ? 'badge-success' : m.status === 'in_progress' ? 'badge-primary' : 'badge-muted'}`}>
-                  {m.status.toUpperCase()}
-                </span>
-              </div>
-            ))}
+        <div className="progress-bar-container">
+          <div className="progress-bar-labels">
+            <span>Overall Milestone Completion</span>
+            <span>{completedCount} of {milestones.length} Completed ({progressPct}%)</span>
+          </div>
+          <div className="progress-bar-track">
+            <div className="progress-bar-fill" style={{ width: `${progressPct}%` }} />
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Summary pills */}
-      <div className="flex flex-wrap gap-3 mb-6">
+      {/* Welfare & Certification Milestones List */}
+      <div className="milestones-card">
+        <div className="milestones-header">
+          <h3 className="milestones-title">
+            <CheckCircle2 size={20} color="#2563eb" /> Welfare & Certification Milestones
+          </h3>
+          <span className="milestones-counter">
+            {completedCount} of {milestones.length} Steps Done
+          </span>
+        </div>
+
+        <div className="milestones-list">
+          {milestones.map((m, idx) => {
+            const isDone = m.status === 'completed';
+            const isInProg = m.status === 'in_progress';
+            return (
+              <div key={idx} className={`milestone-item ${m.status}`}>
+                <div className="milestone-icon-wrap">
+                  {isDone ? (
+                    <CheckCircle2 size={22} color="#16a34a" />
+                  ) : isInProg ? (
+                    <Clock size={22} color="#d97706" />
+                  ) : (
+                    <span>{idx + 1}</span>
+                  )}
+                </div>
+
+                <div className="milestone-content">
+                  <h4 className="milestone-name">{m.name}</h4>
+                  <div className="milestone-sub">
+                    {isDone ? (
+                      <span style={{ color: '#15803d', fontWeight: 600 }}>Completed milestone</span>
+                    ) : isInProg ? (
+                      <span style={{ color: '#b45309', fontWeight: 600 }}>Currently in active progression</span>
+                    ) : (
+                      <span>Scheduled after preceding milestones</span>
+                    )}
+                  </div>
+                </div>
+
+                <span className={`milestone-badge ${m.status}`}>
+                  {isDone ? 'Completed' : isInProg ? 'In Progress' : 'Pending'}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Summary Metrics Grid */}
+      <div className="progress-stats-grid">
         {Object.entries(STATUS_META).map(([key, meta]) => (
-          <div key={key} className="progress-stat-pill" style={{ borderColor: meta.color }}>
-            <span aria-hidden="true">{meta.icon}</span>
-            <span className="font-bold" style={{ color: meta.color }}>{counts[key]}</span>
-            <span className="text-xs text-muted">{meta.label}</span>
+          <div key={key} className="progress-stat-card">
+            <div className="progress-stat-icon" style={{ background: meta.bg }}>
+              <span>{meta.icon}</span>
+            </div>
+            <div>
+              <div className="progress-stat-num" style={{ color: meta.color }}>
+                {counts[key]}
+              </div>
+              <div className="progress-stat-lbl">{meta.label}</div>
+            </div>
           </div>
         ))}
       </div>
 
-      {/* Placement Timeline */}
-      <div className="card">
-        <h3 className="text-base font-bold mb-4">Training & Placement Records</h3>
+      {/* Training & Placement Records Timeline */}
+      <div className="timeline-card">
+        <h3 className="milestones-title" style={{ marginBottom: '16px' }}>
+          <Award size={20} color="#2563eb" /> Certified Training & Placement Timeline
+        </h3>
         {placements.length === 0 ? (
           <EmptyState
-            icon="🗺️"
-            title="No training enrolled yet"
-            description="You have not enrolled in any training courses yet. Explore NSQF-aligned pathways tailored to your profile."
+            title="No Active Training Enrollments Yet"
+            description="You have not enrolled in certified skilling programs yet. Explore NSQF accredited courses and government toolkit schemes tailored to your local district demand."
             action={
-              <Link to="/opportunities" className="btn btn-primary btn-sm">
-                ✨ Find Training
+              <Link to="/opportunities" className="btn btn-primary" style={{ marginTop: '12px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <Sparkles size={16} /> Explore Tailored Pathways
               </Link>
             }
           />
         ) : (
           <div className="timeline">
             {placements.map((p, i) => (
-              <TimelineItem key={p._id} placement={p} isLast={i === placements.length - 1} />
+              <TimelineItem key={p._id || i} placement={p} isLast={i === placements.length - 1} />
             ))}
           </div>
         )}

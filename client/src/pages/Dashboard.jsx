@@ -25,11 +25,11 @@ export const Dashboard = ({ user }) => {
       });
     } else {
       Promise.all([
-        api.getProfile(),
-        api.getOpportunities()
+        api.getProfile().catch(() => ({ profile: null })),
+        api.getOpportunities().catch(() => ({ opportunities: [] }))
       ]).then(([profRes, oppRes]) => {
-        setProfile(profRes.profile || null);
-        setOpportunities(oppRes.opportunities || []);
+        setProfile(profRes?.profile || null);
+        setOpportunities(Array.isArray(oppRes?.opportunities) ? oppRes.opportunities : []);
         setLoading(false);
       }).catch((err) => {
         console.error('Beneficiary load error:', err);
@@ -240,3 +240,5 @@ export const Dashboard = ({ user }) => {
     </div>
   );
 };
+
+export default Dashboard;

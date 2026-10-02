@@ -160,6 +160,16 @@ apiInstance.getSelfEmployment = async (occupationKey) => {
   return res.data;
 };
 
+apiInstance.getProfile = async (forUserId) => {
+  const res = await apiInstance.get('/profile', forUserId ? { params: { forUserId } } : {});
+  return res.data;
+};
+
+apiInstance.putProfile = async (data) => {
+  const res = await apiInstance.put('/profile', data);
+  return res.data;
+};
+
 apiInstance.getOfficerAnalytics = async (district) => {
   const res = await apiInstance.get('/analytics/overview', district ? { params: { district } } : {});
   return res.data;

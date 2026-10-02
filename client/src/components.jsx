@@ -191,7 +191,7 @@ export const AppHeader = ({ user, onLogout, toggleMobileNav }) => {
   );
 };
 
-export const VoiceInput = ({ onSend, isProcessing, voiceState = 'IDLE', errorMessage = null }) => {
+export const VoiceInput = ({ onSend, isProcessing, voiceState = 'IDLE', errorMessage = null, lang = 'te' }) => {
   const [text, setText] = useState('');
   const [currentState, setCurrentState] = useState(voiceState);
 
@@ -207,7 +207,8 @@ export const VoiceInput = ({ onSend, isProcessing, voiceState = 'IDLE', errorMes
     }
 
     const rec = new SpeechRecognition();
-    rec.lang = 'te-IN';
+    const langMap = { te: 'te-IN', hi: 'hi-IN', en: 'en-IN' };
+    rec.lang = langMap[lang] || 'te-IN';
     rec.onstart = () => setCurrentState('LISTENING');
     rec.onend = () => {
       if (currentState === 'LISTENING') setCurrentState('IDLE');
@@ -233,7 +234,13 @@ export const VoiceInput = ({ onSend, isProcessing, voiceState = 'IDLE', errorMes
 
   const getStateText = () => {
     if (isProcessing || currentState === 'PROCESSING') return 'Understanding your response...';
-    if (currentState === 'LISTENING') return 'Listening in Telugu / Hindi / English...';
+    if (currentState === 'LISTENING') {
+      return lang === 'te'
+        ? 'తెలుగులో వింటున్నాను... మాట్లాడండి'
+        : lang === 'hi'
+          ? 'हिंदी में सुन रहे हैं... बोलिए'
+          : 'Listening in English... please speak';
+    }
     if (currentState === 'SPEAKING') return 'Assistant speaking response...';
     if (currentState === 'ERROR' || errorMessage) return errorMessage || 'Could not recognize audio. Try again or type below.';
     return 'Tap mic to speak or type message below';
@@ -272,7 +279,13 @@ export const VoiceInput = ({ onSend, isProcessing, voiceState = 'IDLE', errorMes
           type="text"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Describe your skills, past work, education, or work goals..."
+          placeholder={
+            lang === 'te'
+              ? 'మీ నైపుణ్యాలు, గత పని అనుభవం లేదా నేర్చుకోవాలనుకుంటున్న పనుల గురించి రాయండి...'
+              : lang === 'hi'
+                ? 'अपने कौशल, पुराने काम या भविष्य के लक्ष्य यहाँ लिखें...'
+                : 'Describe your skills, past work, education, or work goals...'
+          }
           style={{ flex: 1, padding: '12px 16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-medium)', fontSize: '14px' }}
         />
         <button type="submit" className="btn btn-primary" disabled={isProcessing}>Send</button>
@@ -393,23 +406,24 @@ export const SyntheticBadge = () => (
   </span>
 );
 
-export const StatCard = ({ title, value, subtext, icon: Icon, color = 'var(--primary-600)' }) => (
+export const StatCard = ({ title, label, value, subtext, icon: Icon, color = 'var(--primary-600)' }) => (
   <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
     {Icon && (
       <div style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-md)', background: 'var(--surface-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', color, flexShrink: 0 }}>
-        <Icon size={24} />
+        {typeof Icon === 'string' ? <span style={{ fontSize: '24px' }}>{Icon}</span> : <Icon size={24} />}
       </div>
     )}
     <div>
-      <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>{title}</div>
+      <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>{title || label}</div>
       <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-main)' }}>{value}</div>
       {subtext && <div style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>{subtext}</div>}
     </div>
   </div>
 );
 
-export const Modal = ({ isOpen, onClose, title, children }) => {
-  if (!isOpen) return null;
+export const Modal = ({ isOpen, open, onClose, title, children }) => {
+  const visible = isOpen !== undefined ? isOpen : open;
+  if (!visible) return null;
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>

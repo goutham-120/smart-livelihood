@@ -112,28 +112,28 @@ export function Login({ onLoginSuccess }) {
         <div className="login-orb login-orb-2" />
       </div>
 
-      <div className="login-card card-glass">
+      <div className="login-card">
         {/* Logo and language */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="login-card-header">
           <div className="flex items-center gap-3">
-            <span style={{ fontSize: '2.5rem' }} aria-hidden="true">🌱</span>
+            <span className="login-brand-icon" aria-hidden="true">🌱</span>
             <div>
-              <h1 className="text-xl font-bold text-primary">{t ? t('appName', 'PM-AJAY Livelihood') : 'PM-AJAY Livelihood'}</h1>
-              <p className="text-xs text-muted">{t ? t('tagline', 'AI Voice Skilling & Mapping') : 'AI Voice Skilling & Mapping'}</p>
+              <h1 className="login-brand-title">{t ? t('appName', 'PM-AJAY Livelihood') : 'PM-AJAY Livelihood'}</h1>
+              <p className="login-brand-tagline">{t ? t('tagline', 'AI Voice Skilling & Mapping') : 'AI Voice Skilling & Mapping'}</p>
             </div>
           </div>
           <LanguageSwitcher />
         </div>
 
-        <h2 className="text-2xl font-bold mb-1">{t ? t('login.title', 'Sign In') : 'Sign In'}</h2>
-        <p className="text-muted text-sm mb-6">{t ? t('login.subtitle', 'Access your skilling dashboard or voice assistant') : 'Access your skilling dashboard'}</p>
+        <h2 className="login-title">{t ? t('login.title', 'Sign In') : 'Sign In'}</h2>
+        <p className="login-subtitle">{t ? t('login.subtitle', 'Access your skilling dashboard or voice assistant') : 'Access your livelihood journey'}</p>
 
         {/* Tab selector */}
-        <div className="tab-group mb-6" role="tablist" aria-label="Login method">
+        <div className="login-tabs" role="tablist" aria-label="Login method">
           {['demo', 'email', 'phone'].map((t2) => (
             <button
               key={t2}
-              className={`tab ${tab === t2 ? 'active' : ''}`}
+              className={`login-tab ${tab === t2 ? 'active' : ''}`}
               role="tab"
               aria-selected={tab === t2}
               id={`tab-${t2}`}
@@ -148,21 +148,23 @@ export function Login({ onLoginSuccess }) {
 
         {/* Demo quick login */}
         {tab === 'demo' && (
-          <div className="flex-col gap-3 flex">
-            <p className="text-sm text-muted mb-2">
+          <div className="login-demo-list">
+            <p className="login-demo-desc">
               🧪 Select a persona to test the platform. Instant access without passwords:
             </p>
             {DEMO_ROLES.map(({ role, district, label }) => (
               <button
                 key={`${role}-${district}`}
                 id={`btn-demo-${role}-${district || 'admin'}`}
-                className="btn btn-secondary"
-                style={{ justifyContent: 'flex-start', padding: 'var(--sp-4)', textAlign: 'left', width: '100%' }}
+                className="login-demo-btn"
                 disabled={loading}
                 onClick={() => handleDemoLogin(role, district)}
               >
-                {loading ? <Spinner size={18} /> : null}
-                <span style={{ fontSize: '13px' }}>{label}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {loading ? <Spinner size={16} /> : null}
+                  <span>{label}</span>
+                </div>
+                <span className="login-demo-badge">{role}</span>
               </button>
             ))}
           </div>
