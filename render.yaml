@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: livelihood-assistant-api
+    env: node
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: ALLOW_DEMO
+        value: "true"
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: LLM_API_KEY
+        sync: false
+      - key: SARVAM_API_KEY
+        sync: false
+      - key: SPEECH_PROVIDER
+        value: sarvam
+      - key: CORS_ORIGIN
+        value: "*"
