@@ -1,0 +1,56 @@
+/* Dashboard.css */
+.dash-root {
+  padding-bottom: var(--sp-8);
+}
+
+.dash-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-6);
+}
+
+.dash-hero-donut {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-shrink: 0;
+}
+
+.dash-check-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) 0;
+  font-size: 0.9rem;
+  border-bottom: 1px solid var(--surface-700);
+}
+
+.dash-check-dot {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  background: var(--surface-700);
+  color: var(--surface-400);
+}
+
+.dash-check-dot.done {
+  background: hsl(145 60% 38% / 0.2);
+  color: var(--color-success);
+}
+
+@media (max-width: 600px) {
+  .dash-hero {
+    flex-direction: column;
+  }
+  .dash-hero-donut {
+    flex-direction: row;
+  }
+}

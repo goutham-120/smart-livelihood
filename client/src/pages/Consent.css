@@ -1,0 +1,60 @@
+/* Consent.css */
+.consent-root {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-6) var(--sp-4);
+  background: var(--surface-900);
+}
+
+.consent-card {
+  width: 100%;
+  max-width: 620px;
+  padding: var(--sp-8);
+}
+
+.consent-body {
+  background: var(--surface-800);
+  border-radius: var(--radius-md);
+  padding: var(--sp-6);
+  margin-bottom: var(--sp-6);
+}
+
+.consent-rights-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+}
+
+.consent-rights-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+}
+
+.consent-guarantee {
+  background: hsl(145 55% 45% / 0.08);
+  border: 1px solid hsl(145 55% 45% / 0.2);
+  border-radius: var(--radius-md);
+  padding: var(--sp-4);
+  display: flex;
+  gap: var(--sp-3);
+  align-items: flex-start;
+  font-size: 1.2rem;
+}
+
+.consent-actions {
+  display: flex;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-4);
+  flex-wrap: wrap;
+}
+
+@media (max-width: 480px) {
+  .consent-card { padding: var(--sp-5) var(--sp-4); }
+  .consent-actions { flex-direction: column; }
+  .consent-actions .btn { width: 100%; }
+}

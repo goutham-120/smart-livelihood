@@ -1,0 +1,12 @@
+/* Profile.css */
+.profile-root { padding-bottom: var(--sp-8); }
+
+.profile-section-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--sp-4);
+}
+
+@media (max-width: 600px) {
+  .profile-section-grid { grid-template-columns: 1fr; }
+}

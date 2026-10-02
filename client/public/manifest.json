@@ -1,0 +1,42 @@
+{
+  "name": "Livelihood Assistant | PM-AJAY",
+  "short_name": "Livelihood",
+  "description": "AI Voice Assistant for livelihood mapping and skilling under PM-AJAY GIA",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d1117",
+  "theme_color": "#ff7c00",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["government", "education", "productivity"],
+  "lang": "en-IN",
+  "shortcuts": [
+    {
+      "name": "Voice Assistant",
+      "short_name": "Assistant",
+      "description": "Open the voice interview assistant",
+      "url": "/assistant",
+      "icons": [{"src": "/icon-192.png", "sizes": "192x192"}]
+    },
+    {
+      "name": "My Opportunities",
+      "short_name": "Opportunities",
+      "description": "View livelihood opportunities",
+      "url": "/opportunities",
+      "icons": [{"src": "/icon-192.png", "sizes": "192x192"}]
+    }
+  ]
+}

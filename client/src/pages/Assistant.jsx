@@ -588,3 +588,6 @@ export const Assistant = () => {
     </div>
   );
 };
+
+export default Assistant;
+
