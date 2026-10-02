@@ -323,3 +323,117 @@ export const ErrorState = ({ message = 'An unexpected error occurred.', onRetry 
 export const Spinner = ({ size = 24 }) => (
   <div style={{ width: size, height: size, border: '3px solid var(--border-light)', borderTopColor: 'var(--primary-600)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
 );
+
+export const LanguageSwitcher = () => {
+  const [lang, setLang] = useState(localStorage.getItem('pmajay_lang') || 'en');
+  const changeLanguage = (l) => {
+    setLang(l);
+    localStorage.setItem('pmajay_lang', l);
+    window.location.reload();
+  };
+
+  return (
+    <div style={{ display: 'flex', gap: '4px' }}>
+      {[
+        { code: 'te', label: 'తెలుగు' },
+        { code: 'hi', label: 'हिंदी' },
+        { code: 'en', label: 'English' }
+      ].map((l) => (
+        <button
+          key={l.code}
+          onClick={() => changeLanguage(l.code)}
+          className={`btn ${lang === l.code ? 'btn-primary' : 'btn-ghost'}`}
+          style={{ padding: '4px 8px', fontSize: '12px' }}
+        >
+          {l.label}
+        </button>
+      ))}
+    </div>
+  );
+};
+
+export const SkeletonCard = ({ height = 160 }) => (
+  <div className="skeleton skeleton-card" style={{ height }} />
+);
+
+export const ReadAloudButton = ({ text }) => {
+  const [speaking, setSpeaking] = useState(false);
+  const speak = () => {
+    if (!('speechSynthesis' in window)) return;
+    if (speaking) {
+      window.speechSynthesis.cancel();
+      setSpeaking(false);
+      return;
+    }
+    const uttr = new SpeechSynthesisUtterance(text);
+    uttr.onend = () => setSpeaking(false);
+    uttr.onerror = () => setSpeaking(false);
+    setSpeaking(true);
+    window.speechSynthesis.speak(uttr);
+  };
+  return (
+    <button onClick={speak} className="btn btn-ghost" style={{ padding: '4px 8px', fontSize: '12px' }} title="Read Aloud">
+      <Volume2 size={16} color={speaking ? 'var(--primary-600)' : 'currentColor'} />
+      <span>{speaking ? 'Stop' : 'Listen'}</span>
+    </button>
+  );
+};
+
+export const RiskBadge = ({ risk = 'low', level = null }) => {
+  const r = (level || risk || 'low').toLowerCase();
+  let type = 'green';
+  if (r.includes('high') || r === 'high') type = 'red';
+  else if (r.includes('medium') || r === 'medium') type = 'amber';
+  return <span className={`badge badge-${type}`}>{r.toUpperCase()} RISK</span>;
+};
+
+export const SyntheticBadge = () => (
+  <span className="badge badge-teal" title="Synthetic Calibrated Label for Zero-Caste Policy Compliance">
+    SYNTHETIC DEMO DATA
+  </span>
+);
+
+export const StatCard = ({ title, value, subtext, icon: Icon, color = 'var(--primary-600)' }) => (
+  <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+    {Icon && (
+      <div style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-md)', background: 'var(--surface-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', color, flexShrink: 0 }}>
+        <Icon size={24} />
+      </div>
+    )}
+    <div>
+      <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>{title}</div>
+      <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-main)' }}>{value}</div>
+      {subtext && <div style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>{subtext}</div>}
+    </div>
+  </div>
+);
+
+export const Modal = ({ isOpen, onClose, title, children }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: 700 }}>{title}</h3>
+          <button onClick={onClose} className="btn btn-ghost" style={{ padding: '4px' }}><X size={20} /></button>
+        </div>
+        <div>{children}</div>
+      </div>
+    </div>
+  );
+};
+
+export const ConfirmDialog = ({ isOpen, onClose, onConfirm, title = 'Confirm Action', message = 'Are you sure?' }) => {
+  if (!isOpen) return null;
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={title}>
+      <p style={{ marginBottom: '20px', color: 'var(--text-muted)', fontSize: '14px' }}>{message}</p>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+        <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+        <button className="btn btn-primary" onClick={() => { onConfirm(); onClose(); }}>Confirm</button>
+      </div>
+    </Modal>
+  );
+};
+
+
