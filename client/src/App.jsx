@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { api } from './api.js';
-import { QuickDemoBar, AppSidebar, AppHeader, Spinner, ErrorBoundary } from './components.jsx';
-
+import { AppSidebar, AppHeader, Spinner, ErrorBoundary } from './components.jsx';
 
 import { Login } from './pages/Login.jsx';
 import { Assistant } from './pages/Assistant.jsx';
@@ -25,11 +24,86 @@ import PerspectivePlan from './pages/admin/PerspectivePlan.jsx';
 import Directory from './pages/admin/Directory.jsx';
 import Consent from './pages/Consent.jsx';
 
-const ProtectedRoute = ({ user, children }) => {
+// Authenticated Shell Component (Only renders Sidebar & Header for logged-in users)
+function AppShell({ user, onLogout, children }) {
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    try {
+      const stored = localStorage.getItem('pmajay_sidebar_open');
+      if (stored !== null) return stored === 'true';
+    } catch {}
+    return typeof window !== 'undefined' ? window.innerWidth >= 1024 : true;
+  });
+
+  const toggleSidebar = () => {
+    setSidebarOpen((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('pmajay_sidebar_open', String(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && sidebarOpen && window.innerWidth < 1024) {
+        setSidebarOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [sidebarOpen]);
+
+  return (
+    <div className={`app-shell ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+      {/* Backdrop overlay for mobile screen when sidebar is open */}
+      {sidebarOpen && (
+        <div
+          className="sidebar-backdrop"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      <AppSidebar
+        user={user}
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+      />
+
+      <div className={`app-main-layout ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+        <AppHeader
+          user={user}
+          onLogout={onLogout}
+          toggleSidebar={toggleSidebar}
+          sidebarOpen={sidebarOpen}
+        />
+        <main className="app-content">
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+const ProtectedRoute = ({ user, onLogout, children, requireUnlocked = false }) => {
   if (!user) {
     return <Navigate to="/login" replace />;
   }
-  return children;
+  const isOfficer = user?.role === 'officer' || user?.role === 'admin';
+  const isUnlocked = isOfficer || (typeof localStorage !== 'undefined' && localStorage.getItem('pmajay_voice_unlocked') === 'true');
+
+  if (requireUnlocked && !isUnlocked) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return (
+    <AppShell user={user} onLogout={onLogout}>
+      {children}
+    </AppShell>
+  );
 };
 
 export default function App() {
@@ -41,7 +115,6 @@ export default function App() {
     }
   });
   const [loading, setLoading] = useState(true);
-  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     api.getMe().then((res) => {
@@ -66,76 +139,99 @@ export default function App() {
     window.location.href = '/login';
   };
 
-  const handleDemoLogin = async (role, district) => {
-    try {
-      const res = await api.demoLogin(role, district);
-      if (res?.token) {
-        handleLoginSuccess(res.token, res.user);
-      }
-    } catch (e) {
-      console.error('Demo login error:', e);
-    }
-  };
-
   if (loading && !activeUser) {
     return (
-      <div style={{ textAlign: 'center', padding: '60px', color: '#94a3b8' }}>
-        <Spinner size={32} />
-        <div style={{ marginTop: '12px' }}>Loading Livelihood Assistant...</div>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#f8fafc', color: '#64748b' }}>
+        <Spinner size={36} />
+        <div style={{ marginTop: '16px', fontWeight: 600, fontSize: '14px' }}>Loading PM-AJAY Livelihood Assistant...</div>
       </div>
     );
   }
 
   return (
     <Router>
-      <div className="app-shell">
-        <AppSidebar user={activeUser} mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
+      <ErrorBoundary>
+        <Routes>
+          {/* PUBLIC ROUTES (No Sidebar, No Authenticated Header) */}
+          <Route
+            path="/"
+            element={
+              activeUser ? (
+                <Navigate to="/dashboard" replace />
+              ) : (
+                <Login onLoginSuccess={handleLoginSuccess} />
+              )
+            }
+          />
+          <Route
+            path="/login"
+            element={
+              activeUser ? (
+                <Navigate to="/dashboard" replace />
+              ) : (
+                <Login onLoginSuccess={handleLoginSuccess} initialTab="email" />
+              )
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              activeUser ? (
+                <Navigate to="/dashboard" replace />
+              ) : (
+                <Login onLoginSuccess={handleLoginSuccess} initialMode="register" />
+              )
+            }
+          />
+          <Route
+            path="/forgot-password"
+            element={
+              activeUser ? (
+                <Navigate to="/dashboard" replace />
+              ) : (
+                <Login onLoginSuccess={handleLoginSuccess} initialMode="forgot" />
+              )
+            }
+          />
+          <Route
+            path="/otp"
+            element={
+              activeUser ? (
+                <Navigate to="/dashboard" replace />
+              ) : (
+                <Login onLoginSuccess={handleLoginSuccess} initialTab="phone" />
+              )
+            }
+          />
 
-        <div className="app-main-layout">
-          <QuickDemoBar onLogin={handleDemoLogin} />
-          <AppHeader user={activeUser} onLogout={handleLogout} toggleMobileNav={() => setMobileOpen(!mobileOpen)} />
+          {/* PROTECTED ROUTES (Wrapped in ProtectedRoute -> AppShell -> Sidebar + Header) */}
+          <Route path="/dashboard" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Dashboard user={activeUser} /></ProtectedRoute>} />
+          <Route path="/assistant" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Assistant /></ProtectedRoute>} />
+          <Route path="/opportunities" element={<ProtectedRoute user={activeUser} onLogout={handleLogout} requireUnlocked><Opportunities /></ProtectedRoute>} />
+          <Route path="/skill-gaps" element={<ProtectedRoute user={activeUser} onLogout={handleLogout} requireUnlocked><SkillGaps /></ProtectedRoute>} />
+          <Route path="/training" element={<ProtectedRoute user={activeUser} onLogout={handleLogout} requireUnlocked><Training /></ProtectedRoute>} />
+          <Route path="/roadmap" element={<ProtectedRoute user={activeUser} onLogout={handleLogout} requireUnlocked><Roadmap /></ProtectedRoute>} />
+          <Route path="/what-if" element={<ProtectedRoute user={activeUser} onLogout={handleLogout} requireUnlocked><WhatIf /></ProtectedRoute>} />
+          <Route path="/progress" element={<ProtectedRoute user={activeUser} onLogout={handleLogout} requireUnlocked><Progress /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Profile /></ProtectedRoute>} />
+          <Route path="/self-employment" element={<ProtectedRoute user={activeUser} onLogout={handleLogout} requireUnlocked><SelfEmployment /></ProtectedRoute>} />
+          <Route path="/kiosk" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Kiosk /></ProtectedRoute>} />
+          <Route path="/channel-demo" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><ChannelDemo /></ProtectedRoute>} />
 
-          <main className="app-content">
-            <ErrorBoundary>
-              <Routes>
-                {/* Authentication */}
-                <Route path="/login" element={<Login onLoginSuccess={handleLoginSuccess} />} />
+          {/* Admin Command Routes */}
+          <Route path="/admin/overview" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Overview /></ProtectedRoute>} />
+          <Route path="/admin/beneficiaries" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Beneficiaries /></ProtectedRoute>} />
+          <Route path="/admin/placements" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Placements /></ProtectedRoute>} />
+          <Route path="/admin/coordination" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Coordination /></ProtectedRoute>} />
+          <Route path="/admin/plan" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><PerspectivePlan /></ProtectedRoute>} />
+          <Route path="/admin/directory" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Directory /></ProtectedRoute>} />
 
-                {/* Beneficiary Pathways & AI Voice Assistant */}
-                <Route path="/assistant" element={<ProtectedRoute user={activeUser}><Assistant /></ProtectedRoute>} />
-                <Route path="/dashboard" element={<ProtectedRoute user={activeUser}><Dashboard user={activeUser} /></ProtectedRoute>} />
-                <Route path="/opportunities" element={<ProtectedRoute user={activeUser}><Opportunities /></ProtectedRoute>} />
-                <Route path="/skill-gaps" element={<ProtectedRoute user={activeUser}><SkillGaps /></ProtectedRoute>} />
-                <Route path="/training" element={<ProtectedRoute user={activeUser}><Training /></ProtectedRoute>} />
-                <Route path="/roadmap" element={<ProtectedRoute user={activeUser}><Roadmap /></ProtectedRoute>} />
-                <Route path="/what-if" element={<ProtectedRoute user={activeUser}><WhatIf /></ProtectedRoute>} />
-                <Route path="/progress" element={<ProtectedRoute user={activeUser}><Progress /></ProtectedRoute>} />
-                <Route path="/profile" element={<ProtectedRoute user={activeUser}><Profile /></ProtectedRoute>} />
-                <Route path="/self-employment" element={<ProtectedRoute user={activeUser}><SelfEmployment /></ProtectedRoute>} />
+          <Route path="/consent" element={<Consent />} />
 
-                {/* Channels */}
-                <Route path="/kiosk" element={<Kiosk />} />
-                <Route path="/channel-demo" element={<ChannelDemo />} />
-                <Route path="/consent" element={<Consent />} />
-
-                {/* District Command (Officer & Admin) */}
-                <Route path="/admin/overview" element={<ProtectedRoute user={activeUser}><Overview /></ProtectedRoute>} />
-                <Route path="/admin/beneficiaries" element={<ProtectedRoute user={activeUser}><Beneficiaries /></ProtectedRoute>} />
-                <Route path="/admin/placements" element={<ProtectedRoute user={activeUser}><Placements /></ProtectedRoute>} />
-                <Route path="/admin/coordination" element={<ProtectedRoute user={activeUser}><Coordination /></ProtectedRoute>} />
-                <Route path="/admin/plan" element={<ProtectedRoute user={activeUser}><PerspectivePlan /></ProtectedRoute>} />
-                <Route path="/admin/directory" element={<ProtectedRoute user={activeUser}><Directory /></ProtectedRoute>} />
-
-                {/* Default redirects */}
-                <Route path="/" element={<Navigate to={activeUser ? (activeUser.role === 'officer' || activeUser.role === 'admin' ? '/admin/overview' : '/assistant') : '/login'} replace />} />
-                <Route path="*" element={<Navigate to={activeUser ? '/assistant' : '/login'} replace />} />
-              </Routes>
-            </ErrorBoundary>
-          </main>
-
-        </div>
-      </div>
+          {/* Catch-all fallback */}
+          <Route path="*" element={<Navigate to={activeUser ? '/dashboard' : '/login'} replace />} />
+        </Routes>
+      </ErrorBoundary>
     </Router>
   );
 }
-

@@ -1,6 +1,8 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { SarvamAIClient } from 'sarvamai';
 import { Skill } from '../models/Skill.js';
+import { resolveSkillToCanonicalKey } from './extract.js';
+
 
 let geminiClient = null;
 let sarvamClient = null;
@@ -66,6 +68,12 @@ You MUST return your output strictly in this JSON format with no additional text
   "replyText": "Warm spoken reply text here",
   "extractedSkills": ["skill_key_1", "skill_key_2"],
   "identifiedPreference": "self" | "wage" | "either" | null,
+  "familyOccupation": "e.g. Agriculture / Weaving / Carpentry / Business / Daily wage or null",
+  "currentLivelihood": "e.g. Farm machinery repair / Tailoring / Electrical work / Daily labour or null",
+  "education": "Secondary (10th)" | "Higher Secondary (12th)" | "Middle (8th)" | "Primary (5th)" | "Diploma / ITI" | "Graduate" | "Below Primary" | null,
+  "experienceYears": 3,
+  "incomeGoal": 18000,
+  "mobilityConstraints": ["Within Village Only" | "Within Block" | "Within District"] | null,
   "followUpQuestion": "A short guiding question to discover more about what they enjoy doing"
 }
 `;
@@ -78,12 +86,22 @@ You MUST return your output strictly in this JSON format with no additional text
       const text = result.response.text();
       const parsed = parseJsonSafely(text);
       if (parsed && parsed.replyText) {
-        // Sanitize and whitelist skill keys
-        const filteredSkills = (parsed.extractedSkills || []).filter((sk) => validSkillKeys.has(sk.toLowerCase()));
+        // Sanitize and whitelist skill keys via canonical resolver
+        const filteredSkills = Array.from(new Set(
+          (parsed.extractedSkills || [])
+            .map((sk) => resolveSkillToCanonicalKey(sk, allSkills))
+            .filter(Boolean)
+        ));
         return {
           replyText: parsed.replyText,
           extractedSkills: filteredSkills,
           identifiedPreference: ['self', 'wage', 'either'].includes(parsed.identifiedPreference) ? parsed.identifiedPreference : null,
+          familyOccupation: parsed.familyOccupation || null,
+          currentLivelihood: parsed.currentLivelihood || null,
+          education: parsed.education || null,
+          experienceYears: typeof parsed.experienceYears === 'number' ? parsed.experienceYears : null,
+          incomeGoal: typeof parsed.incomeGoal === 'number' ? parsed.incomeGoal : null,
+          mobilityConstraints: Array.isArray(parsed.mobilityConstraints) ? parsed.mobilityConstraints : null,
           followUpQuestion: parsed.followUpQuestion || null
         };
       }
@@ -100,7 +118,7 @@ You MUST return your output strictly in this JSON format with no additional text
         messages: [
           {
             role: 'system',
-            content: 'You are an empathetic Indian livelihood skilling counselor. Output strictly valid JSON with replyText and extractedSkills.'
+            content: 'You are an empathetic Indian livelihood skilling counselor. Output strictly valid JSON with replyText, extractedSkills, familyOccupation, currentLivelihood, education, experienceYears, incomeGoal.'
           },
           {
             role: 'user',
@@ -112,11 +130,21 @@ You MUST return your output strictly in this JSON format with no additional text
       const text = completion.choices?.[0]?.message?.content || '';
       const parsed = parseJsonSafely(text);
       if (parsed && parsed.replyText) {
-        const filteredSkills = (parsed.extractedSkills || []).filter((sk) => validSkillKeys.has(sk.toLowerCase()));
+        const filteredSkills = Array.from(new Set(
+          (parsed.extractedSkills || [])
+            .map((sk) => resolveSkillToCanonicalKey(sk, allSkills))
+            .filter(Boolean)
+        ));
         return {
           replyText: parsed.replyText,
           extractedSkills: filteredSkills,
           identifiedPreference: ['self', 'wage', 'either'].includes(parsed.identifiedPreference) ? parsed.identifiedPreference : null,
+          familyOccupation: parsed.familyOccupation || null,
+          currentLivelihood: parsed.currentLivelihood || null,
+          education: parsed.education || null,
+          experienceYears: typeof parsed.experienceYears === 'number' ? parsed.experienceYears : null,
+          incomeGoal: typeof parsed.incomeGoal === 'number' ? parsed.incomeGoal : null,
+          mobilityConstraints: Array.isArray(parsed.mobilityConstraints) ? parsed.mobilityConstraints : null,
           followUpQuestion: parsed.followUpQuestion || null
         };
       }
@@ -130,6 +158,12 @@ You MUST return your output strictly in this JSON format with no additional text
     replyText: `Namaste! Thank you for sharing. We are here to support your skilling and livelihood path. Tell us what kind of work you have done before or what skills you want to learn.`,
     extractedSkills: [],
     identifiedPreference: null,
+    familyOccupation: null,
+    currentLivelihood: null,
+    education: null,
+    experienceYears: null,
+    incomeGoal: null,
+    mobilityConstraints: null,
     followUpQuestion: 'Would you prefer to start your own micro business or take up a wage employment job?'
   };
 };

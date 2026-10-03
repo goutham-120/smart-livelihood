@@ -51,7 +51,7 @@ export const WhatIf = () => {
   };
 
   return (
-    <div className="container" style={{ maxWidth: '960px' }}>
+    <div className="page-container">
       <div style={{ marginBottom: '24px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Compass size={24} color="var(--primary-600)" /> What-If Career and Skilling Simulator

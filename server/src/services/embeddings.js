@@ -124,3 +124,24 @@ export const cosine = (a, b) => {
 export const clearEmbeddingCache = () => {
   embeddingCache.clear();
 };
+
+/**
+ * Calculate semantic similarity between two text strings.
+ * @param {string} textA
+ * @param {string} textB
+ * @returns {Promise<number>} Value between 0 and 1
+ */
+export const getEmbeddingSimilarity = async (textA, textB) => {
+  if (!textA || !textB) return 0;
+  const a = String(textA).toLowerCase().replace(/_/g, ' ').trim();
+  const b = String(textB).toLowerCase().replace(/_/g, ' ').trim();
+  if (a === b) return 1.0;
+  if (a.includes(b) || b.includes(a)) return 0.85;
+
+  try {
+    const [vecA, vecB] = await Promise.all([embed(a), embed(b)]);
+    return cosine(vecA, vecB);
+  } catch (err) {
+    return 0;
+  }
+};

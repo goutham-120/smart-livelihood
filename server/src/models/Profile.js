@@ -29,6 +29,8 @@ const profileSchema = new mongoose.Schema(
     skills: [{ type: String, trim: true }],
     education: { type: String, default: 'Middle School', trim: true },
     experienceYears: { type: Number, default: 0 },
+    voiceCompleted: { type: Boolean, default: false },
+    voiceCompletedAt: { type: Date },
     isSynthetic: { type: Boolean, default: false }
   },
   { timestamps: true }

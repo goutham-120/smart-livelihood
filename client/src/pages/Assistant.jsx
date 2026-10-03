@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api.js';
+import { useLang } from '../lang.js';
 import { VoiceInput, Card, Badge } from '../components.jsx';
 import { Sparkles, ArrowRight, Languages, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -29,13 +30,11 @@ const SAMPLE_PROMPTS = {
 };
 
 export const Assistant = ({ forUserId = null }) => {
-  const [lang, setLang] = useState(() => {
-    return localStorage.getItem('pmajay_lang') || 'te';
-  });
+  const { lang, setLang } = useLang();
   const [messages, setMessages] = useState(() => [
     {
       sender: 'ai',
-      text: GREETINGS[localStorage.getItem('pmajay_lang') || 'te'] || GREETINGS.te
+      text: GREETINGS[lang] || GREETINGS.te
     }
   ]);
   const [extractedSkills, setExtractedSkills] = useState([]);
@@ -94,7 +93,7 @@ export const Assistant = ({ forUserId = null }) => {
   const currentPrompts = SAMPLE_PROMPTS[lang] || SAMPLE_PROMPTS.en;
 
   return (
-    <div style={{ maxWidth: '860px', margin: '0 auto' }}>
+    <div className="page-container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
         <div>
           <h2 style={{ fontSize: '22px', fontWeight: 800 }}>Empathetic AI Voice Assistant</h2>
@@ -109,26 +108,48 @@ export const Assistant = ({ forUserId = null }) => {
         </div>
       </div>
 
-      {extractedSkills.length > 0 && (
-        <Card style={{ marginBottom: '20px', background: 'var(--primary-50)', borderColor: '#c7d2fe' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-            <div>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--primary-700)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Sparkles size={16} color="var(--primary-600)" /> Identified Profile Competencies ({extractedSkills.length})
+      {/* 2-Min Conversation Status & Identified Profile Banner */}
+      {(extractedSkills.length > 0 || updatedProfile) && (
+        <Card style={{ marginBottom: '20px', background: 'linear-gradient(135deg, #f0fdf4, #eff6ff)', borderColor: '#86efac' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+            <div style={{ flex: 1, minWidth: '260px' }}>
+              <div style={{ fontSize: '14px', fontWeight: 800, color: '#166534', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Sparkles size={18} color="#16a34a" /> 2-Min Voice Assessment: Skills & Profile Identified!
               </div>
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
-                {extractedSkills.map((s, idx) => (
-                  <Badge key={idx} type="blue">{s.replace(/_/g, ' ')}</Badge>
-                ))}
-              </div>
-              {updatedProfile?.education && (
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                  Education: <strong>{updatedProfile.education}</strong> | Preference: <strong>{updatedProfile.employmentPreference}</strong>
+              <p style={{ fontSize: '13px', color: '#15803d', marginTop: '2px' }}>
+                Your competencies have been extracted by AI. Verify your profile details to unlock your personalized Dashboard and livelihood pathways.
+              </p>
+
+              {extractedSkills.length > 0 && (
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
+                  {extractedSkills.map((s, idx) => (
+                    <Badge key={idx} type="blue">{s.replace(/_/g, ' ')}</Badge>
+                  ))}
                 </div>
               )}
+
+              <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', fontSize: '12px', color: 'var(--text-main)', marginTop: '8px' }}>
+                {updatedProfile?.education && (
+                  <div>Education: <strong>{updatedProfile.education}</strong></div>
+                )}
+                {updatedProfile?.employmentPreference && (
+                  <div>Preference: <strong>{updatedProfile.employmentPreference === 'self' ? 'Self-Employment' : updatedProfile.employmentPreference === 'wage' ? 'Wage Job' : 'Either Track'}</strong></div>
+                )}
+                {updatedProfile?.incomeGoal && (
+                  <div>Target: <strong>₹{updatedProfile.incomeGoal.toLocaleString()}/mo</strong></div>
+                )}
+                {updatedProfile?.experienceYears ? (
+                  <div>Experience: <strong>{updatedProfile.experienceYears} Years</strong></div>
+                ) : null}
+              </div>
             </div>
-            <Link to="/opportunities" className="btn btn-primary" style={{ fontSize: '13px' }}>
-              View Matched Opportunities <ArrowRight size={14} />
+
+            <Link
+              to="/profile?verify=1"
+              className="btn btn-primary"
+              style={{ fontSize: '13px', fontWeight: 700, padding: '10px 18px', display: 'inline-flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(202, 102, 3, 0.25)' }}
+            >
+              Verify Profile to Unlock Dashboard &rarr;
             </Link>
           </div>
         </Card>
@@ -189,4 +210,3 @@ export const Assistant = ({ forUserId = null }) => {
 };
 
 export default Assistant;
-

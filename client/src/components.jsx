@@ -1,39 +1,78 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useLang } from './lang.js';
+import { api } from './api.js';
 import {
   Mic, MicOff, Volume2, Briefcase, User, ShieldCheck, Sparkles, TrendingUp,
   Award, Compass, LogOut, Menu, X, Home, BookOpen, Layers, PhoneCall,
-  CheckCircle, AlertCircle, FileText, FolderKanban, Building2, Users
+  CheckCircle, AlertCircle, FileText, FolderKanban, Building2, Users, Lock
 } from 'lucide-react';
 
-export const QuickDemoBar = ({ onLogin }) => {
-  return (
-    <div style={{ background: '#0f172a', color: '#fff', padding: '8px 20px', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#fbbf24', fontWeight: 600 }}>
-        <Sparkles size={14} />
-        <span>SIH26097 Demo Mode Switcher</span>
-      </div>
-      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-        <button onClick={() => onLogin('beneficiary', 'Warangal')} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>
-          Beneficiary (Warangal)
-        </button>
-        <button onClick={() => onLogin('officer', 'Warangal')} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>
-          Officer (Warangal)
-        </button>
-        <button onClick={() => onLogin('officer', 'Adilabad')} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}>
-          Officer (Adilabad)
-        </button>
-        <button onClick={() => onLogin('admin', 'Warangal')} style={{ background: '#ea580c', color: '#fff', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontWeight: 600, fontSize: '12px' }}>
-          Admin (Ministry)
-        </button>
-      </div>
-    </div>
-  );
-};
+export const QuickDemoBar = () => null;
 
-export const AppSidebar = ({ user, mobileOpen, setMobileOpen }) => {
+
+export const AppSidebar = ({ user, sidebarOpen, setSidebarOpen }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const isOfficer = user?.role === 'officer' || user?.role === 'admin';
+
+  const [isUnlocked, setIsUnlocked] = useState(() => {
+    if (isOfficer) return true;
+    try {
+      return localStorage.getItem('pmajay_voice_unlocked') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const [popupMessage, setPopupMessage] = useState(null);
+  const popupTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    if (isOfficer) return;
+    const checkStatus = () => {
+      try {
+        const val = localStorage.getItem('pmajay_voice_unlocked') === 'true';
+        if (val) setIsUnlocked(true);
+      } catch {}
+    };
+    checkStatus();
+
+    // Check with server profile
+    api.getProfile().then((res) => {
+      const p = res?.profile || res?.data?.profile;
+      if (p?.voiceCompleted || (p?.skills && p.skills.length > 0 && localStorage.getItem('pmajay_voice_unlocked') === 'true')) {
+        setIsUnlocked(true);
+        localStorage.setItem('pmajay_voice_unlocked', 'true');
+      }
+    }).catch(() => {});
+
+    window.addEventListener('pmajay_voice_unlocked', checkStatus);
+    window.addEventListener('storage', checkStatus);
+    return () => {
+      window.removeEventListener('pmajay_voice_unlocked', checkStatus);
+      window.removeEventListener('storage', checkStatus);
+      if (popupTimeoutRef.current) clearTimeout(popupTimeoutRef.current);
+    };
+  }, [isOfficer]);
+
+  const triggerLockedPopup = () => {
+    if (popupTimeoutRef.current) clearTimeout(popupTimeoutRef.current);
+    setPopupMessage("Complete the 2-min conversation with AI Assistant to unlock these.");
+    popupTimeoutRef.current = setTimeout(() => {
+      setPopupMessage(null);
+    }, 4000); // 4 seconds (within 3-5 seconds requirement)
+  };
+
+  const lockedPaths = new Set([
+    '/opportunities',
+    '/skill-gaps',
+    '/training',
+    '/roadmap',
+    '/what-if',
+    '/self-employment',
+    '/progress'
+  ]);
 
   const beneficiaryNav = [
     { to: '/dashboard', label: 'Dashboard', icon: Home },
@@ -65,80 +104,123 @@ export const AppSidebar = ({ user, mobileOpen, setMobileOpen }) => {
     { to: '/admin/directory', label: 'Resource Directory', icon: Building2 }
   ];
 
+  const renderNavGroup = (title, items) => (
+    <div>
+      <div className="nav-group-title">{title}</div>
+      {items.map((item) => {
+        const Icon = item.icon;
+        const active = location.pathname === item.to;
+        const isLocked = !isUnlocked && lockedPaths.has(item.to);
+
+        return (
+          <Link
+            key={item.to}
+            to={isLocked ? '#' : item.to}
+            className={`nav-item ${active ? 'active' : ''} ${isLocked ? 'locked' : ''}`}
+            onClick={(e) => {
+              if (isLocked) {
+                e.preventDefault();
+                triggerLockedPopup();
+                return;
+              }
+              if (window.innerWidth < 1024) setSidebarOpen(false);
+            }}
+            title={isLocked ? "Complete the 2-minute conversation with AI Assistant to unlock these" : item.label}
+          >
+            <Icon size={18} />
+            <span style={{ flex: 1 }}>{item.label}</span>
+            {isLocked && (
+              <span className="nav-lock-badge" title="Locked">
+                <Lock size={13} />
+              </span>
+            )}
+          </Link>
+        );
+      })}
+    </div>
+  );
+
   return (
-    <aside className={`app-sidebar ${mobileOpen ? 'open' : ''}`}>
-      <div className="app-sidebar-header">
-        <span className="app-sidebar-brand-badge">PM-AJAY</span>
-        <div>
-          <div className="app-sidebar-brand-title">Livelihood Assistant</div>
-          <div className="app-sidebar-brand-sub">AI Skilling & Livelihood</div>
-        </div>
-      </div>
-
-      <nav className="app-sidebar-nav">
-        <div>
-          <div className="nav-group-title">Beneficiary</div>
-          {beneficiaryNav.map((item) => {
-            const Icon = item.icon;
-            const active = location.pathname === item.to;
-            return (
-              <Link key={item.to} to={item.to} className={`nav-item ${active ? 'active' : ''}`} onClick={() => setMobileOpen(false)}>
-                <Icon size={18} />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </div>
-
-        <div>
-          <div className="nav-group-title">Account</div>
-          {accountNav.map((item) => {
-            const Icon = item.icon;
-            const active = location.pathname === item.to;
-            return (
-              <Link key={item.to} to={item.to} className={`nav-item ${active ? 'active' : ''}`} onClick={() => setMobileOpen(false)}>
-                <Icon size={18} />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </div>
-
-        <div>
-          <div className="nav-group-title">Channels</div>
-          {channelNav.map((item) => {
-            const Icon = item.icon;
-            const active = location.pathname === item.to;
-            return (
-              <Link key={item.to} to={item.to} className={`nav-item ${active ? 'active' : ''}`} onClick={() => setMobileOpen(false)}>
-                <Icon size={18} />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </div>
-
-        {isOfficer && (
-          <div>
-            <div className="nav-group-title">District Command</div>
-            {adminNav.map((item) => {
-              const Icon = item.icon;
-              const active = location.pathname === item.to;
-              return (
-                <Link key={item.to} to={item.to} className={`nav-item ${active ? 'active' : ''}`} onClick={() => setMobileOpen(false)}>
-                  <Icon size={18} />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
+    <>
+      {popupMessage && (
+        <div
+          className="locked-popup-toast"
+          role="alert"
+        >
+          <div style={{
+            background: 'rgba(217, 119, 6, 0.25)',
+            border: '1px solid rgba(217, 119, 6, 0.45)',
+            width: '36px',
+            height: '36px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#fbbf24',
+            flexShrink: 0
+          }}>
+            <Lock size={18} />
           </div>
-        )}
-      </nav>
-    </aside>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontWeight: 800, fontSize: '13px', color: '#fbbf24', letterSpacing: '0.2px' }}>
+              FEATURE LOCKED
+            </div>
+            <div style={{ fontSize: '13px', color: '#f1f5f9', marginTop: '2px', fontWeight: 500 }}>
+              {popupMessage}
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              setPopupMessage(null);
+              navigate('/assistant');
+              if (window.innerWidth < 1024) setSidebarOpen(false);
+            }}
+            className="btn btn-primary"
+            style={{ fontSize: '12px', padding: '6px 14px', whiteSpace: 'nowrap', marginLeft: '6px' }}
+          >
+            Talk to AI Assistant &rarr;
+          </button>
+          <button
+            onClick={() => setPopupMessage(null)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#94a3b8',
+              cursor: 'pointer',
+              fontSize: '18px',
+              padding: '0 4px',
+              lineHeight: 1
+            }}
+            aria-label="Close"
+          >
+            &times;
+          </button>
+        </div>
+      )}
+
+      <aside className={`app-sidebar ${sidebarOpen ? 'sidebar-open open' : 'sidebar-closed'}`}>
+        <div className="app-sidebar-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+            <img src="/assets/pm-ajay-logo.png" alt="PM-AJAY Logo" className="app-sidebar-brand-logo" />
+            <div>
+              <div className="app-sidebar-brand-title">Livelihood Assistant</div>
+              <div className="app-sidebar-brand-sub">AI Skilling & Livelihood</div>
+            </div>
+          </div>
+        </div>
+
+        <nav className="app-sidebar-nav">
+          {renderNavGroup('Beneficiary', beneficiaryNav)}
+          {renderNavGroup('Account', accountNav)}
+          {renderNavGroup('Channels', channelNav)}
+          {isOfficer && renderNavGroup('District Command', adminNav)}
+        </nav>
+      </aside>
+    </>
   );
 };
 
-export const AppHeader = ({ user, onLogout, toggleMobileNav }) => {
+export const AppHeader = ({ user, onLogout, toggleSidebar, sidebarOpen }) => {
   const location = useLocation();
 
   const getPageTitle = (path) => {
@@ -164,20 +246,27 @@ export const AppHeader = ({ user, onLogout, toggleMobileNav }) => {
 
   return (
     <header className="app-header">
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <button className="btn btn-ghost" onClick={toggleMobileNav} style={{ padding: '6px', display: 'flex' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+        <button
+          type="button"
+          className="btn btn-ghost"
+          onClick={toggleSidebar}
+          style={{ padding: '6px', display: 'flex', flexShrink: 0 }}
+          title={sidebarOpen ? "Close Sidebar" : "Open Sidebar"}
+          aria-label="Toggle Sidebar"
+        >
           <Menu size={20} />
         </button>
         <h1 className="app-header-title">{getPageTitle(location.pathname)}</h1>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0 }}>
         {user ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <span className="badge badge-blue">{user.district || 'Warangal'}</span>
             <div style={{ fontSize: '13px', textAlign: 'right' }}>
-              <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>{user.name}</div>
-              <div style={{ color: 'var(--text-muted)', fontSize: '11px', textTransform: 'capitalize' }}>{user.role}</div>
+              <div style={{ fontWeight: 700, color: 'var(--text-main)', whiteSpace: 'nowrap' }}>{user.name}</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: '11px', textTransform: 'capitalize', whiteSpace: 'nowrap' }}>{user.role || 'Beneficiary'}</div>
             </div>
             <button onClick={onLogout} className="btn btn-ghost" style={{ padding: '6px', color: 'var(--status-danger)' }} title="Sign Out">
               <LogOut size={18} />
@@ -191,7 +280,9 @@ export const AppHeader = ({ user, onLogout, toggleMobileNav }) => {
   );
 };
 
-export const VoiceInput = ({ onSend, isProcessing, voiceState = 'IDLE', errorMessage = null, lang = 'te' }) => {
+export const VoiceInput = ({ onSend, isProcessing, voiceState = 'IDLE', errorMessage = null, lang: propLang }) => {
+  const { lang: contextLang } = useLang();
+  const lang = propLang || contextLang || 'te';
   const [text, setText] = useState('');
   const [currentState, setCurrentState] = useState(voiceState);
 
@@ -338,15 +429,10 @@ export const Spinner = ({ size = 24 }) => (
 );
 
 export const LanguageSwitcher = () => {
-  const [lang, setLang] = useState(localStorage.getItem('pmajay_lang') || 'en');
-  const changeLanguage = (l) => {
-    setLang(l);
-    localStorage.setItem('pmajay_lang', l);
-    window.location.reload();
-  };
+  const { lang, setLang } = useLang();
 
   return (
-    <div style={{ display: 'flex', gap: '4px' }}>
+    <div className="language-switcher" role="tablist" aria-label="Select Language" style={{ display: 'flex', gap: '4px' }}>
       {[
         { code: 'te', label: 'తెలుగు' },
         { code: 'hi', label: 'हिंदी' },
@@ -354,9 +440,12 @@ export const LanguageSwitcher = () => {
       ].map((l) => (
         <button
           key={l.code}
-          onClick={() => changeLanguage(l.code)}
+          type="button"
+          onClick={() => setLang(l.code)}
           className={`btn ${lang === l.code ? 'btn-primary' : 'btn-ghost'}`}
-          style={{ padding: '4px 8px', fontSize: '12px' }}
+          style={{ padding: '5px 10px', fontSize: '13px', fontWeight: lang === l.code ? 700 : 500 }}
+          role="tab"
+          aria-selected={lang === l.code}
         >
           {l.label}
         </button>
@@ -405,11 +494,7 @@ export const RiskBadge = ({ risk = 'low', level = null, score = null }) => {
   return <span className={`badge badge-${type}`}>{r.toUpperCase()} RISK</span>;
 };
 
-export const SyntheticBadge = () => (
-  <span className="badge badge-teal" title="Synthetic Calibrated Label for Zero-Caste Policy Compliance">
-    SYNTHETIC DEMO DATA
-  </span>
-);
+export const SyntheticBadge = () => null;
 
 export const StatCard = ({ title, label, value, subtext, icon: Icon, color = 'var(--primary-600)' }) => {
   const displayTitle = title || label;
@@ -499,6 +584,4 @@ export class ErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
-
-
 

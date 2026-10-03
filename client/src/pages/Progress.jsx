@@ -26,9 +26,9 @@ const formatCourseTitle = (key) => {
 
 function TimelineItem({ placement, isLast }) {
   const meta = STATUS_META[placement.status] || STATUS_META.enrolled;
-  const date = new Date(placement.at || Date.now()).toLocaleDateString('en-IN', {
+  const date = placement.at ? new Date(placement.at).toLocaleDateString('en-IN', {
     day: 'numeric', month: 'short', year: 'numeric',
-  });
+  }) : 'Recent';
 
   return (
     <div className="timeline-item">
@@ -129,7 +129,7 @@ export function Progress() {
             Real-time tracking of PM-AJAY skilling, assessment, certification, and livelihood placement
           </p>
         </div>
-        <ReadAloudButton lang={lang} />
+        <ReadAloudButton text="Active Livelihood Milestones. Track your progress across skilling, assessment, and placement." />
       </div>
 
       {/* Hero Stage Banner */}
