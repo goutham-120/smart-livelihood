@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { api } from '../api';
 import { BookOpen, Award, Filter } from 'lucide-react';
 
 export const Training = () => {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const occKey = searchParams.get('occ') || 'self_employed_tailor';
   const [trainingData, setTrainingData] = useState(null);
@@ -21,7 +23,7 @@ export const Training = () => {
     });
   }, [occKey]);
 
-  if (loading) return <div className="container" style={{ textAlign: 'center', padding: '40px' }}>Loading certified training details...</div>;
+  if (loading) return <div className="container" style={{ textAlign: 'center', padding: '40px' }}>{t('common.loading', 'Loading certified training details...')}</div>;
 
   const rawCourses = trainingData.courses || [];
   const filteredCourses = rawCourses.filter((course) => {
@@ -36,8 +38,8 @@ export const Training = () => {
   return (
     <div className="page-container">
       <div style={{ marginBottom: '20px' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: 800 }}>Certified Training Programs: {trainingData.occupation?.title}</h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Free government funded skilling with NSQF certification under PMKVY and PM-AJAY GIA</p>
+        <h1 style={{ fontSize: '24px', fontWeight: 800 }}>{t('training.title', 'Certified Training Programs')}: {trainingData.occupation?.title}</h1>
+        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{t('training.subtitle', 'Free government funded skilling with NSQF certification under PMKVY and PM-AJAY GIA')}</p>
       </div>
 
       <div className="card" style={{ marginBottom: '20px', background: 'var(--bg-subtle)' }}>

@@ -227,7 +227,8 @@ router.post('/what-if', optionalAuth, async (req, res) => {
       topMatches: topMatches.slice(0, 6)
     });
   } catch (err) {
-    return res.status(500).json({ error: 'What-if simulation failed' });
+    console.error('What-if route error:', err);
+    return res.status(500).json({ error: 'What-if simulation failed', details: err.message });
   }
 });
 

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { api } from '../api';
 import { ArrowRight, ChevronDown, ChevronUp, MapPin, Award, Building, Sparkles } from 'lucide-react';
 
 export const Opportunities = () => {
+  const { t } = useTranslation();
   const [opportunities, setOpportunities] = useState([]);
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
@@ -40,16 +42,16 @@ export const Opportunities = () => {
     <div className="page-container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '24px' }}>
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 800 }}>Tailored Livelihood Pathways</h1>
+          <h1 style={{ fontSize: '24px', fontWeight: 800 }}>{t('pages.opportunities', 'Tailored Livelihood Pathways')}</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
-            NSQF aligned opportunities matched with verified district market demand
+            {t('capabilities.cap2Desc', 'NSQF aligned opportunities matched with verified district market demand')}
           </p>
         </div>
 
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button onClick={() => setFilter('all')} className={`btn ${filter === 'all' ? 'btn-primary' : 'btn-secondary'}`}>All Tracks</button>
-          <button onClick={() => setFilter('self')} className={`btn ${filter === 'self' ? 'btn-primary' : 'btn-secondary'}`}>Micro Enterprise (Self)</button>
-          <button onClick={() => setFilter('wage')} className={`btn ${filter === 'wage' ? 'btn-primary' : 'btn-secondary'}`}>Wage Employment</button>
+          <button onClick={() => setFilter('all')} className={`btn ${filter === 'all' ? 'btn-primary' : 'btn-secondary'}`}>{t('opportunities.allTracks', 'All Tracks')}</button>
+          <button onClick={() => setFilter('self')} className={`btn ${filter === 'self' ? 'btn-primary' : 'btn-secondary'}`}>{t('opportunities.selfEmp', 'Micro Enterprise (Self)')}</button>
+          <button onClick={() => setFilter('wage')} className={`btn ${filter === 'wage' ? 'btn-primary' : 'btn-secondary'}`}>{t('opportunities.wageEmp', 'Wage Employment')}</button>
         </div>
       </div>
 

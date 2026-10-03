@@ -1,9 +1,9 @@
-/* Page specific styles for Kiosk.jsx using styles.css design tokens */
+/* Page specific styles for Kiosk.jsx - Light Warm Brown PM-AJAY Palette */
 
 .kiosk-wrapper {
   min-height: 100vh;
-  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
-  color: var(--text-inverse);
+  background: #E8D8C8;
+  color: #4F3728;
   display: flex;
   flex-direction: column;
   padding: 24px;
@@ -18,7 +18,7 @@
   flex-wrap: wrap;
   gap: 16px;
   padding-bottom: 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  border-bottom: 1px solid #D6C3B1;
 }
 
 .kiosk-emblem {
@@ -28,8 +28,8 @@
 }
 
 .kiosk-badge {
-  background: var(--accent-saffron);
-  color: #ffffff;
+  background: #CA6603;
+  color: #FEFCF6;
   padding: 6px 14px;
   border-radius: var(--radius-sm);
   font-weight: 800;
@@ -40,12 +40,12 @@
 .kiosk-heading {
   font-size: 24px;
   font-weight: 800;
-  color: #ffffff;
+  color: #4F3728;
 }
 
 .kiosk-subheading {
   font-size: 13px;
-  color: var(--text-subtle);
+  color: #6b5240;
 }
 
 .inactivity-indicator {
@@ -53,11 +53,11 @@
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  color: #fbbf24;
-  background: rgba(251, 191, 36, 0.1);
+  color: #4F3728;
+  background: #EEE7D9;
   padding: 6px 12px;
   border-radius: var(--radius-full);
-  border: 1px solid rgba(251, 191, 36, 0.2);
+  border: 1px solid #D6C3B1;
 }
 
 .kiosk-lang-selector {
@@ -69,45 +69,55 @@
 }
 
 .lang-card {
-  background: rgba(255, 255, 255, 0.08);
-  border: 2px solid rgba(255, 255, 255, 0.15);
+  background: #F5F1EB;
+  border: 2px solid #D6C3B1;
   border-radius: var(--radius-lg);
   padding: 14px 24px;
-  color: #ffffff;
+  color: #4F3728;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
   min-width: 140px;
   transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(79, 55, 40, 0.05);
 }
 
 .lang-card:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: #EEE7D9;
   transform: translateY(-2px);
 }
 
 .lang-card.active {
-  background: var(--primary-600);
-  border-color: #818cf8;
-  box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+  background: #CA6603;
+  border-color: #CA6603;
+  color: #FEFCF6;
+  box-shadow: 0 4px 12px rgba(202, 102, 3, 0.25);
 }
 
 .lang-native {
   font-size: 20px;
   font-weight: 800;
+  color: #4F3728;
+}
+
+.lang-card.active .lang-native {
+  color: #FEFCF6;
 }
 
 .lang-sub {
   font-size: 12px;
-  color: var(--text-subtle);
+  color: #6b5240;
+}
+
+.lang-card.active .lang-sub {
+  color: #FEFCF6;
 }
 
 .kiosk-main-card {
   flex: 1;
-  background: rgba(255, 255, 255, 0.04);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #F5F1EB;
+  border: 1px solid #D6C3B1;
   border-radius: var(--radius-lg);
   padding: 32px;
   display: flex;
@@ -119,13 +129,14 @@
   width: 100%;
   text-align: center;
   gap: 24px;
+  box-shadow: 0 4px 12px rgba(79, 55, 40, 0.06);
 }
 
 .prompt-display {
   font-size: 22px;
   font-weight: 700;
   line-height: 1.5;
-  color: #ffffff;
+  color: #4F3728;
   max-width: 720px;
 }
 
@@ -139,23 +150,23 @@
   height: 130px;
   border-radius: var(--radius-full);
   border: none;
-  background: var(--primary-600);
-  color: #ffffff;
+  background: #CA6603;
+  color: #FEFCF6;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 8px 32px rgba(79, 70, 229, 0.6);
+  box-shadow: 0 8px 24px rgba(202, 102, 3, 0.35);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .giant-mic-button:hover {
   transform: scale(1.06);
-  background: var(--primary-500);
+  background: #b35a02;
 }
 
 .giant-mic-button.listening {
-  background: var(--accent-red);
+  background: #dc2626;
   box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.8);
   animation: kiosk-pulse 1.4s infinite;
 }
@@ -176,12 +187,12 @@
   min-height: 36px;
   font-size: 18px;
   font-style: italic;
-  color: #a5b4fc;
+  color: #6b5240;
 }
 
 .phone-capture-box {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: #EEE7D9;
+  border: 1px solid #D6C3B1;
   border-radius: var(--radius-lg);
   padding: 24px;
   width: 100%;
@@ -190,22 +201,23 @@
   flex-direction: column;
   gap: 14px;
   margin-top: 16px;
+  color: #4F3728;
 }
 
 .kiosk-input {
   width: 100%;
   padding: 14px 18px;
   border-radius: var(--radius-md);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  background: rgba(0, 0, 0, 0.3);
-  color: #ffffff;
+  border: 1px solid #D6C3B1;
+  background: #FEFCF6;
+  color: #4F3728;
   font-size: 18px;
   text-align: center;
   outline: none;
 }
 
 .kiosk-input:focus {
-  border-color: #818cf8;
+  border-color: #CA6603;
 }
 
 .kiosk-btn-large {
@@ -214,14 +226,14 @@
   font-weight: 700;
   border-radius: var(--radius-md);
   border: none;
-  background: var(--accent-green);
-  color: #ffffff;
+  background: #CA6603;
+  color: #FEFCF6;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .kiosk-btn-large:hover {
-  background: #15803d;
+  background: #b35a02;
   transform: translateY(-2px);
 }
 
@@ -229,8 +241,9 @@
   position: absolute;
   top: 24px;
   right: 24px;
-  color: var(--text-subtle);
-  font-size: 12px;
+  color: #4F3728;
+  font-size: 13px;
+  font-weight: 700;
   text-decoration: underline;
   cursor: pointer;
 }

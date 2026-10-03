@@ -37,6 +37,7 @@
   --accent-sky:   #CA6603;
 
   /* Surfaces & Backgrounds */
+  /* Surfaces & Backgrounds */
   --surface-ground: #F9F5EC;
   --surface-card:   #F5F1EB;
   --surface-subtle: #EEE7D9;
@@ -203,7 +204,7 @@ a {
 .nav-group-title {
   font-size: 11px;
   font-weight: 700;
-  color: #64748b;
+  color: #a89485;
   letter-spacing: 1px;
   padding: 0 12px;
   margin-bottom: 6px;
@@ -217,7 +218,7 @@ a {
   gap: 12px;
   padding: 10px 14px;
   border-radius: var(--radius-md);
-  color: #94a3b8;
+  color: #d8c9bc;
   font-weight: 500;
   font-size: 14px;
   transition: all 0.2s;
@@ -227,12 +228,12 @@ a {
 
 .nav-item:hover {
   color: #fff;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .nav-item.active {
   color: #fff;
-  background: rgba(37, 99, 235, 0.18);
+  background: rgba(234, 88, 12, 0.24);
   font-weight: 700;
 }
 
@@ -243,7 +244,7 @@ a {
   top: 8px;
   bottom: 8px;
   width: 4px;
-  background: var(--primary-500);
+  background: var(--primary-600);
   border-radius: 0 4px 4px 0;
 }
 
@@ -268,7 +269,6 @@ a {
   position: sticky;
   top: 0;
   z-index: 90;
-  box-shadow: var(--shadow-sm);
 }
 
 .app-header-title {
@@ -527,10 +527,15 @@ a {
 }
 
 .skeleton {
-  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background: linear-gradient(90deg, #f4ede4 25%, #ede3d6 50%, #f4ede4 75%);
   background-size: 200% 100%;
   animation: skeleton-wave 1.5s infinite;
   border-radius: var(--radius-sm);
+}
+
+.skeleton-card {
+  height: 160px;
+  width: 100%;
 }
 
 @keyframes skeleton-wave {
@@ -543,3 +548,28 @@ a {
   to { transform: rotate(360deg); }
 }
 
+/* Modal Dialog */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(43, 31, 23, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 16px;
+}
+
+.modal-content {
+  background: var(--surface-card);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  max-width: 540px;
+  width: 100%;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-light);
+}

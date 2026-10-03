@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   MessageSquare,
   PhoneCall,
@@ -35,6 +36,7 @@ const SCENARIOS = [
 ];
 
 export const ChannelDemo = () => {
+  const { t } = useTranslation();
   // WhatsApp State
   const [waMessages, setWaMessages] = useState([
     {
@@ -227,16 +229,16 @@ export const ChannelDemo = () => {
       <div className="channel-demo-header">
         <h1 className="channel-demo-title">
           <Sparkles size={24} color="#ea580c" />
-          Omni-Channel Voice & Messaging Telephony Mockup
+          {t('pages.channelDemo', 'Omni-Channel Voice & Messaging Telephony Mockup')}
         </h1>
         <p className="channel-demo-subtitle">
-          Test interactive WhatsApp Bot and IVR Phone Telephony connected to live state engine
+          {t('channelDemo.subtitle', 'Test interactive WhatsApp Bot and IVR Phone Telephony connected to live state engine')}
         </p>
       </div>
 
       {/* Preset Personas */}
       <div className="scenario-chips-row">
-        <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>Load Test Scenario:</span>
+        <span style={{ fontSize: '13px', fontWeight: 700, color: '#475569' }}>{t('channelDemo.loadScenario', 'Load Test Scenario:')}</span>
         {SCENARIOS.map((sc, i) => (
           <button key={i} className="scenario-chip" onClick={() => handleApplyScenario(sc)}>
             {sc.title}

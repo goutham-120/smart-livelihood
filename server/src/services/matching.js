@@ -6,19 +6,14 @@ import { TrainingCenter } from '../models/TrainingCenter.js';
 import { Skill } from '../models/Skill.js';
 import { attachRegionalDataToOpportunity, getRegionalDataForDistrict } from './regional.js';
 
-let getEmbeddingSimilarity = null;
-try {
-  const emb = await import('./embeddings.js');
-  getEmbeddingSimilarity = emb.getEmbeddingSimilarity || emb.default;
-} catch (err) {
-  getEmbeddingSimilarity = (s1, s2) => {
-    if (!s1 || !s2) return 0;
-    const str1 = s1.toLowerCase().replace(/_/g, ' ');
-    const str2 = s2.toLowerCase().replace(/_/g, ' ');
-    if (str1.includes(str2) || str2.includes(str1)) return 0.8;
-    return 0;
-  };
-}
+export const getEmbeddingSimilarity = (s1, s2) => {
+  if (!s1 || !s2) return 0;
+  const str1 = String(s1).toLowerCase().replace(/_/g, ' ');
+  const str2 = String(s2).toLowerCase().replace(/_/g, ' ');
+  if (str1 === str2) return 1.0;
+  if (str1.includes(str2) || str2.includes(str1)) return 0.8;
+  return 0;
+};
 
 export const calculateOpportunityMatchV2 = async (occ, profile = {}, district = 'Warangal', regionalData = null) => {
   const userSkillsList = (profile.skills || []).map((s) => s.toLowerCase());

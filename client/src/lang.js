@@ -2,7 +2,7 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
-import { useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import en from './i18n/en.js';
 import hi from './i18n/hi.js';
@@ -33,17 +33,45 @@ i18n
 
 /* useLang: returns current language code and a setter that persists to localStorage */
 export function useLang() {
-  const { i18n: i18nInstance } = useTranslation();
+  const { t, i18n: i18nInstance } = useTranslation();
 
-  const lang = i18nInstance.language?.split('-')[0] || 'en';
+  const getActiveLangCode = useCallback(() => {
+    const stored = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
+    const current = stored || i18nInstance.language || 'en';
+    const code = current.split('-')[0];
+    return SUPPORTED_LANGUAGES.some((l) => l.code === code) ? code : 'en';
+  }, [i18nInstance]);
+
+  const [lang, setLangState] = useState(getActiveLangCode);
+
+  useEffect(() => {
+    const syncLang = (lng) => {
+      const targetLng = typeof lng === 'string' ? lng : i18nInstance.language;
+      const code = (targetLng || getActiveLangCode()).split('-')[0];
+      const validCode = SUPPORTED_LANGUAGES.some((l) => l.code === code) ? code : 'en';
+      setLangState(validCode);
+      if (typeof document !== 'undefined') {
+        document.documentElement.lang = validCode;
+      }
+    };
+
+    syncLang(i18nInstance.language);
+
+    i18nInstance.on('languageChanged', syncLang);
+    return () => {
+      i18nInstance.off('languageChanged', syncLang);
+    };
+  }, [i18nInstance, getActiveLangCode]);
 
   const setLang = useCallback(
     (code) => {
       if (!SUPPORTED_LANGUAGES.find((l) => l.code === code)) return;
       localStorage.setItem(STORAGE_KEY, code);
+      setLangState(code);
+      if (typeof document !== 'undefined') {
+        document.documentElement.lang = code;
+      }
       i18nInstance.changeLanguage(code);
-      /* Update the html lang attribute for correct font rendering */
-      document.documentElement.lang = code;
     },
     [i18nInstance]
   );
