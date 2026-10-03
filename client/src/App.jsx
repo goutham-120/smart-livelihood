@@ -16,7 +16,6 @@ import { Profile } from './pages/Profile.jsx';
 import { SelfEmployment } from './pages/SelfEmployment.jsx';
 import { Kiosk } from './pages/Kiosk.jsx';
 import { ChannelDemo } from './pages/ChannelDemo.jsx';
-
 import Overview from './pages/admin/Overview.jsx';
 import Beneficiaries from './pages/admin/Beneficiaries.jsx';
 import Placements from './pages/admin/Placements.jsx';
@@ -98,6 +97,23 @@ const ProtectedRoute = ({ user, onLogout, children }) => {
     </AppShell>
   );
 };
+
+function AppLayout({ activeUser, mobileOpen, setMobileOpen, handleDemoLogin, handleLogout, children }) {
+  return (
+    <div className="app-shell">
+      <AppSidebar user={activeUser} mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
+      <div className="app-main-layout">
+        <QuickDemoBar onLogin={handleDemoLogin} />
+        <AppHeader user={activeUser} onLogout={handleLogout} toggleMobileNav={() => setMobileOpen(!mobileOpen)} />
+        <main className="app-content">
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
+        </main>
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
   const [activeUser, setActiveUser] = useState(() => {

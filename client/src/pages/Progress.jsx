@@ -1,5 +1,5 @@
 /* Progress.jsx: Training journey timeline and milestones for beneficiaries
-   SIH26097 PM-AJAY Livelihood Assistant */
+   PM-AJAY Livelihood Assistant */
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -13,7 +13,7 @@ const STATUS_META = {
   enrolled:  { icon: '📚', color: 'var(--primary-600)',    label: 'Enrolled'  },
   completed: { icon: '🏅', color: 'var(--status-success)', label: 'Completed' },
   placed:    { icon: '✅', color: 'var(--accent-sky)',     label: 'Placed'    },
-  dropped:   { icon: '⚠️', color: 'var(--status-danger)',  label: 'Dropped'   },
+  dropped:   { icon: '⚠️', color: 'var(--status-danger)',  label: 'Dropped'   }
 };
 
 const DEFAULT_MILESTONES = [
@@ -32,32 +32,45 @@ function TimelineItem({ placement, isLast }) {
   return (
     <div className="timeline-item">
       <div className="timeline-connector">
-        <div className="timeline-dot" style={{ background: meta.color }}>
+        <div className="timeline-dot" style={{ borderColor: meta.color, background: meta.bg }}>
           <span aria-hidden="true">{meta.icon}</span>
         </div>
         {!isLast && <div className="timeline-line" />}
       </div>
-      <div className="timeline-content card">
-        <div className="flex items-center gap-2 mb-2">
+      <div className="timeline-content">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
           <span
-            className="badge"
-            style={{ background: `${meta.color}22`, color: meta.color }}
+            style={{
+              background: meta.bg,
+              color: meta.color,
+              padding: '2px 8px',
+              borderRadius: '9999px',
+              fontSize: '11px',
+              fontWeight: 700,
+              textTransform: 'uppercase'
+            }}
           >
             {meta.label}
           </span>
-          <span className="text-xs text-muted">{date}</span>
+          <span style={{ fontSize: '12px', color: '#64748b' }}>{date}</span>
         </div>
-        <h3 className="font-semibold text-base">{placement.courseKey}</h3>
+        <h4 style={{ margin: '0 0 4px 0', fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>
+          {placement.courseTitle || placement.title || formatCourseTitle(placement.courseKey)}
+        </h4>
         {placement.employer && (
-          <p className="text-sm text-muted mt-1">🏢 {placement.employer}</p>
+          <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#475569' }}>
+            🏢 {placement.employer}
+          </p>
         )}
         {placement.wage > 0 && (
-          <p className="text-sm text-accent mt-1">
+          <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#15803d', fontWeight: 700 }}>
             💰 ₹{placement.wage.toLocaleString()} / month
           </p>
         )}
         {placement.notes && (
-          <p className="text-xs text-muted mt-2 italic">{placement.notes}</p>
+          <p style={{ margin: '8px 0 0 0', fontSize: '12px', color: '#64748b', fontStyle: 'italic' }}>
+            {placement.notes}
+          </p>
         )}
       </div>
     </div>
@@ -76,7 +89,7 @@ export function Progress() {
       getPlacements().catch(() => ({ data: { placements: [] } })),
       api.getProgress().catch(() => ({ journey: null }))
     ]).then(([plRes, progRes]) => {
-      setPlacements(plRes.data?.placements || []);
+      setPlacements(plRes?.data?.placements || []);
       setJourney(progRes?.journey || null);
     }).finally(() => setLoading(false));
   }, []);
@@ -122,6 +135,9 @@ export function Progress() {
             <div style={{ fontSize: '20px', fontWeight: 800, color: '#fff', marginTop: '4px', textTransform: 'capitalize' }}>
               {journey?.currentStage?.replace(/_/g, ' ') || 'NSQF Course Enrollment'}
             </div>
+            <h2 className="progress-stage-title" style={{ textTransform: 'capitalize' }}>
+              {journey?.currentStage?.replace(/_/g, ' ') || 'Trade Skill Discovery'}
+            </h2>
           </div>
           <Link to="/opportunities" className="btn btn-primary" style={{ fontSize: '13px' }}>
             Browse New Pathways &rarr;

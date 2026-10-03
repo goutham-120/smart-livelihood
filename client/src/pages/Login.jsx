@@ -26,8 +26,8 @@ export function Login({ onLoginSuccess, initialTab = 'email', initialMode = 'aut
   const [showHelpModal, setShowHelpModal] = useState(false);
 
   // Email form state
-  const [identifier, setIdentifier] = useState('');
-  const [password, setPassword] = useState('');
+  const [identifier, setIdentifier] = useState('user@pmajay.gov.in');
+  const [password, setPassword] = useState('Demo@123');
 
   // Phone form state
   const [phone, setPhone] = useState('');
@@ -55,7 +55,7 @@ export function Login({ onLoginSuccess, initialTab = 'email', initialMode = 'aut
     if (user.role === 'admin' || user.role === 'officer') {
       navigate('/dashboard');
     } else {
-      navigate('/assistant');
+      navigate('/dashboard');
     }
   };
 
