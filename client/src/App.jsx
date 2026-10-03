@@ -15,6 +15,14 @@ import { WhatIf } from './pages/WhatIf.jsx';
 import { Progress } from './pages/Progress.jsx';
 import { Profile } from './pages/Profile.jsx';
 import { SelfEmployment } from './pages/SelfEmployment.jsx';
+import { Kiosk } from './pages/Kiosk.jsx';
+import { ChannelDemo } from './pages/ChannelDemo.jsx';
+import Overview from './pages/admin/Overview.jsx';
+import Beneficiaries from './pages/admin/Beneficiaries.jsx';
+import Placements from './pages/admin/Placements.jsx';
+import Coordination from './pages/admin/Coordination.jsx';
+import PerspectivePlan from './pages/admin/PerspectivePlan.jsx';
+import Directory from './pages/admin/Directory.jsx';
 
 const ProtectedRoute = ({ user, children }) => {
   if (!user) {
@@ -104,9 +112,21 @@ export default function App() {
                 <Route path="/profile" element={<ProtectedRoute user={activeUser}><Profile /></ProtectedRoute>} />
                 <Route path="/self-employment" element={<ProtectedRoute user={activeUser}><SelfEmployment /></ProtectedRoute>} />
 
+                {/* Channels */}
+                <Route path="/kiosk" element={<Kiosk />} />
+                <Route path="/channel-demo" element={<ChannelDemo />} />
+
+                {/* District Command (Officer & Admin) */}
+                <Route path="/admin/overview" element={<ProtectedRoute user={activeUser}><Overview /></ProtectedRoute>} />
+                <Route path="/admin/beneficiaries" element={<ProtectedRoute user={activeUser}><Beneficiaries /></ProtectedRoute>} />
+                <Route path="/admin/placements" element={<ProtectedRoute user={activeUser}><Placements /></ProtectedRoute>} />
+                <Route path="/admin/coordination" element={<ProtectedRoute user={activeUser}><Coordination /></ProtectedRoute>} />
+                <Route path="/admin/plan" element={<ProtectedRoute user={activeUser}><PerspectivePlan /></ProtectedRoute>} />
+                <Route path="/admin/directory" element={<ProtectedRoute user={activeUser}><Directory /></ProtectedRoute>} />
+
                 {/* Default redirects */}
                 <Route path="/" element={<Navigate to={activeUser ? (activeUser.role === 'officer' || activeUser.role === 'admin' ? '/dashboard' : '/assistant') : '/login'} replace />} />
-                <Route path="*" element={<Navigate to={activeUser ? '/assistant' : '/login'} replace />} />
+                <Route path="*" element={<Navigate to={activeUser ? '/dashboard' : '/login'} replace />} />
               </Routes>
             </ErrorBoundary>
           </main>
