@@ -15,7 +15,7 @@ const COLUMNS = [
 
 function PlacementCard({ placement, onMove }) {
   const user = placement.user || {};
-  const date = new Date(placement.at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+  const date = placement.at || placement.createdAt ? new Date(placement.at || placement.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '';
 
   return (
     <div className="plm-card card">
