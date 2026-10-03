@@ -31,6 +31,23 @@ const ProtectedRoute = ({ user, children }) => {
   return children;
 };
 
+function AppLayout({ activeUser, mobileOpen, setMobileOpen, handleDemoLogin, handleLogout, children }) {
+  return (
+    <div className="app-shell">
+      <AppSidebar user={activeUser} mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
+      <div className="app-main-layout">
+        <QuickDemoBar onLogin={handleDemoLogin} />
+        <AppHeader user={activeUser} onLogout={handleLogout} toggleMobileNav={() => setMobileOpen(!mobileOpen)} />
+        <main className="app-content">
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
+        </main>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [activeUser, setActiveUser] = useState(() => {
     try {
@@ -87,52 +104,53 @@ export default function App() {
 
   return (
     <Router>
-      <div className="app-shell">
-        <AppSidebar user={activeUser} mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
+      <Routes>
+        {/* Full-Screen Standalone Pages */}
+        <Route path="/login" element={<Login onLoginSuccess={handleLoginSuccess} />} />
+        <Route path="/kiosk" element={<Kiosk />} />
 
-        <div className="app-main-layout">
-          <QuickDemoBar onLogin={handleDemoLogin} />
-          <AppHeader user={activeUser} onLogout={handleLogout} toggleMobileNav={() => setMobileOpen(!mobileOpen)} />
+        {/* Authenticated App Shell Pages */}
+        <Route
+          path="/*"
+          element={
+            <ProtectedRoute user={activeUser}>
+              <AppLayout
+                activeUser={activeUser}
+                mobileOpen={mobileOpen}
+                setMobileOpen={setMobileOpen}
+                handleDemoLogin={handleDemoLogin}
+                handleLogout={handleLogout}
+              >
+                <Routes>
+                  <Route path="dashboard" element={<Dashboard user={activeUser} />} />
+                  <Route path="assistant" element={<Assistant />} />
+                  <Route path="opportunities" element={<Opportunities />} />
+                  <Route path="skill-gaps" element={<SkillGaps />} />
+                  <Route path="training" element={<Training />} />
+                  <Route path="roadmap" element={<Roadmap />} />
+                  <Route path="what-if" element={<WhatIf />} />
+                  <Route path="progress" element={<Progress />} />
+                  <Route path="profile" element={<Profile />} />
+                  <Route path="self-employment" element={<SelfEmployment />} />
+                  <Route path="channel-demo" element={<ChannelDemo />} />
 
-          <main className="app-content">
-            <ErrorBoundary>
-              <Routes>
-                {/* Authentication */}
-                <Route path="/login" element={<Login onLoginSuccess={handleLoginSuccess} />} />
+                  {/* District Command (Officer & Admin) */}
+                  <Route path="admin/overview" element={<Overview />} />
+                  <Route path="admin/beneficiaries" element={<Beneficiaries />} />
+                  <Route path="admin/placements" element={<Placements />} />
+                  <Route path="admin/coordination" element={<Coordination />} />
+                  <Route path="admin/plan" element={<PerspectivePlan />} />
+                  <Route path="admin/directory" element={<Directory />} />
 
-                {/* Beneficiary Pathways & AI Voice Assistant */}
-                <Route path="/assistant" element={<ProtectedRoute user={activeUser}><Assistant /></ProtectedRoute>} />
-                <Route path="/dashboard" element={<ProtectedRoute user={activeUser}><Dashboard user={activeUser} /></ProtectedRoute>} />
-                <Route path="/opportunities" element={<ProtectedRoute user={activeUser}><Opportunities /></ProtectedRoute>} />
-                <Route path="/skill-gaps" element={<ProtectedRoute user={activeUser}><SkillGaps /></ProtectedRoute>} />
-                <Route path="/training" element={<ProtectedRoute user={activeUser}><Training /></ProtectedRoute>} />
-                <Route path="/roadmap" element={<ProtectedRoute user={activeUser}><Roadmap /></ProtectedRoute>} />
-                <Route path="/what-if" element={<ProtectedRoute user={activeUser}><WhatIf /></ProtectedRoute>} />
-                <Route path="/progress" element={<ProtectedRoute user={activeUser}><Progress /></ProtectedRoute>} />
-                <Route path="/profile" element={<ProtectedRoute user={activeUser}><Profile /></ProtectedRoute>} />
-                <Route path="/self-employment" element={<ProtectedRoute user={activeUser}><SelfEmployment /></ProtectedRoute>} />
-
-                {/* Channels */}
-                <Route path="/kiosk" element={<Kiosk />} />
-                <Route path="/channel-demo" element={<ChannelDemo />} />
-
-                {/* District Command (Officer & Admin) */}
-                <Route path="/admin/overview" element={<ProtectedRoute user={activeUser}><Overview /></ProtectedRoute>} />
-                <Route path="/admin/beneficiaries" element={<ProtectedRoute user={activeUser}><Beneficiaries /></ProtectedRoute>} />
-                <Route path="/admin/placements" element={<ProtectedRoute user={activeUser}><Placements /></ProtectedRoute>} />
-                <Route path="/admin/coordination" element={<ProtectedRoute user={activeUser}><Coordination /></ProtectedRoute>} />
-                <Route path="/admin/plan" element={<ProtectedRoute user={activeUser}><PerspectivePlan /></ProtectedRoute>} />
-                <Route path="/admin/directory" element={<ProtectedRoute user={activeUser}><Directory /></ProtectedRoute>} />
-
-                {/* Default redirects */}
-                <Route path="/" element={<Navigate to={activeUser ? (activeUser.role === 'officer' || activeUser.role === 'admin' ? '/dashboard' : '/assistant') : '/login'} replace />} />
-                <Route path="*" element={<Navigate to={activeUser ? '/dashboard' : '/login'} replace />} />
-              </Routes>
-            </ErrorBoundary>
-          </main>
-
-        </div>
-      </div>
+                  {/* Default redirects */}
+                  <Route path="/" element={<Navigate to={activeUser?.role === 'officer' || activeUser?.role === 'admin' ? '/admin/overview' : '/dashboard'} replace />} />
+                  <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                </Routes>
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
     </Router>
   );
 }
