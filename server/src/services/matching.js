@@ -206,7 +206,7 @@ export const computeSkillGapsAndRoadmap = async (occupationKey, userSkills = [],
       step: 1,
       title: 'Prerequisite and Core Skill Training',
       description: orderedMissing.length > 0
-        ? `Enroll in NSQF Level ${occ.nsqfLevel} courses targeting prioritized skills: ${orderedMissing.join(', ')}.`
+        ? `Enroll in NSQF Level ${occ.nsqfLevel} courses targeting prioritized skills: ${orderedMissing.map((s) => s.replace(/_/g, ' ')).join(', ')}.`
         : `Verified competencies match NSQF Level ${occ.nsqfLevel} requirements.`,
       durationMonths: baseDuration,
       recommendedCourse: courses[0]?.title || 'NSQF Certified Skilling Course',

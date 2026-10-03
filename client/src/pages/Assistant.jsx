@@ -4,12 +4,38 @@ import { VoiceInput, Card, Badge } from '../components.jsx';
 import { Sparkles, ArrowRight, Languages, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-export const Assistant = () => {
-  const [lang, setLang] = useState('te');
-  const [messages, setMessages] = useState([
+const GREETINGS = {
+  te: 'నమస్కారం! PM-AJAY జీవనోపాధి సహాయకుడికి స్వాగతం. మీ అనుభవం, మీరు గతంలో చేసిన పనులు లేదా నేర్చుకోవాలనుకుంటున్న నైపుణ్యాల గురించి మాట్లాడండి.',
+  hi: 'नमस्ते! PM-AJAY आजीविका सहायक में आपका स्वागत है। अपने अनुभव, पुराने काम या जो हुनर आप सीखना चाहते हैं, उसके बारे में बताएं।',
+  en: 'Namaste! Welcome to the PM-AJAY Livelihood Assistant. Please speak or type about your past work, skills, or what you would like to learn.'
+};
+
+const SAMPLE_PROMPTS = {
+  te: [
+    { label: 'టైలరింగ్ & స్వయం ఉపాధి', text: 'నేను 10వ తరగతి వరకు చదువుకున్నాను. నాకు కుట్టుపని మరియు టైలరింగ్ అనుభవం ఉంది. ఇంట్లోనే చిన్న టైలరింగ్ షాప్ పెట్టి నెలకు 15000 సంపాదించాలనుకుంటున్నాను.' },
+    { label: 'వ్యవసాయం & వర్మీకంపోస్ట్', text: 'మా ఊరిలో సేంద్రీయ వ్యవసాయం మరియు వర్మీకంపోస్ట్ ఎరువుల తయారీ అనుభవం ఉంది.' },
+    { label: 'ఎలక్ట్రికల్ & మోటార్ రిపేర్', text: 'నాకు ఇంటి వైరింగ్ మరియు మోటార్ రీవైండింగ్ పనులు తెలుసు.' }
+  ],
+  hi: [
+    { label: 'सिलाई एवं स्वरोज़गार', text: 'मैंने 10वीं तक पढ़ाई की है। मुझे सिलाई मशीन और कपड़े सिलने का अच्छा अनुभव है। मैं घर से काम करके हर महीने 15000 कमाना चाहता हूँ।' },
+    { label: 'जैविक खेती एवं वर्मीकम्पोस्ट', text: 'मुझे अपने गांव में जैविक खाद और वर्मीकम्पोस्ट बनाने का अनुभव है।' },
+    { label: 'इलेक्ट्रिकल एवं मोटर रिपेयर', text: 'मुझे घर की बिजली फिटिंग और इलेक्ट्रिक मोटर रिपेयर का काम आता है।' }
+  ],
+  en: [
+    { label: 'Tailoring & Home Business', text: 'I studied until 10th class. I know basic tailoring and sewing machine operation. I want to work from home and earn 15000 rupees per month.' },
+    { label: 'Agriculture & Vermicompost', text: 'I have experience in organic farming and vermicompost bed preparation in my village.' },
+    { label: 'Electronics & Motor Repair', text: 'I know house wiring and basic electric motor rewinding.' }
+  ]
+};
+
+export const Assistant = ({ forUserId = null }) => {
+  const [lang, setLang] = useState(() => {
+    return localStorage.getItem('pmajay_lang') || 'te';
+  });
+  const [messages, setMessages] = useState(() => [
     {
       sender: 'ai',
-      text: 'నమస్కారం! PM-AJAY జీవనోపాధి సహాయకుడికి స్వాగతం. మీ అనుభవం, మీరు గతంలో చేసిన పనులు లేదా నేర్చుకోవాలనుకుంటున్న నైపుణ్యాల గురించి మాట్లాడండి.'
+      text: GREETINGS[localStorage.getItem('pmajay_lang') || 'te'] || GREETINGS.te
     }
   ]);
   const [extractedSkills, setExtractedSkills] = useState([]);
@@ -17,13 +43,30 @@ export const Assistant = () => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
-    api.getProfile().then((res) => {
-      if (res.profile) {
+    api.getProfile(forUserId).then((res) => {
+      if (res?.profile) {
         if (res.profile.skills) setExtractedSkills(res.profile.skills);
         setUpdatedProfile(res.profile);
       }
+    }).catch(() => {});
+  }, [forUserId]);
+
+  const handleLanguageChange = (newLang) => {
+    setLang(newLang);
+    localStorage.setItem('pmajay_lang', newLang);
+    setMessages((prev) => {
+      if (prev.length === 0) {
+        return [{ sender: 'ai', text: GREETINGS[newLang] || GREETINGS.en }];
+      }
+      const isGreeting = (txt) => (
+        txt === GREETINGS.te || txt === GREETINGS.hi || txt === GREETINGS.en
+      );
+      if (prev[0]?.sender === 'ai' && isGreeting(prev[0].text)) {
+        return [{ sender: 'ai', text: GREETINGS[newLang] || GREETINGS.en }, ...prev.slice(1)];
+      }
+      return prev;
     });
-  }, []);
+  };
 
   const handleSendMessage = async (text) => {
     const userMsg = { sender: 'user', text };
@@ -48,11 +91,7 @@ export const Assistant = () => {
     }
   };
 
-  const samplePrompts = [
-    { label: 'Tailoring & Home Business', text: 'I studied until 10th class. I know basic tailoring and sewing machine operation. I want to work from home and earn 15000 rupees per month.' },
-    { label: 'Agriculture & Vermicompost', text: 'I have experience in organic farming and vermicompost bed preparation in my village.' },
-    { label: 'Electronics & Motor Repair', text: 'I know house wiring and basic electric motor rewinding.' }
-  ];
+  const currentPrompts = SAMPLE_PROMPTS[lang] || SAMPLE_PROMPTS.en;
 
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto' }}>
@@ -64,9 +103,9 @@ export const Assistant = () => {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--surface-subtle)', padding: '4px 8px', borderRadius: 'var(--radius-md)' }}>
           <Languages size={16} color="var(--primary-600)" />
-          <button onClick={() => setLang('te')} className={`btn ${lang === 'te' ? 'btn-primary' : 'btn-ghost'}`} style={{ padding: '4px 8px', fontSize: '12px' }}>తెలుగు</button>
-          <button onClick={() => setLang('hi')} className={`btn ${lang === 'hi' ? 'btn-primary' : 'btn-ghost'}`} style={{ padding: '4px 8px', fontSize: '12px' }}>हिंदी</button>
-          <button onClick={() => setLang('en')} className={`btn ${lang === 'en' ? 'btn-primary' : 'btn-ghost'}`} style={{ padding: '4px 8px', fontSize: '12px' }}>English</button>
+          <button onClick={() => handleLanguageChange('te')} className={`btn ${lang === 'te' ? 'btn-primary' : 'btn-ghost'}`} style={{ padding: '4px 8px', fontSize: '12px' }}>తెలుగు</button>
+          <button onClick={() => handleLanguageChange('hi')} className={`btn ${lang === 'hi' ? 'btn-primary' : 'btn-ghost'}`} style={{ padding: '4px 8px', fontSize: '12px' }}>हिंदी</button>
+          <button onClick={() => handleLanguageChange('en')} className={`btn ${lang === 'en' ? 'btn-primary' : 'btn-ghost'}`} style={{ padding: '4px 8px', fontSize: '12px' }}>English</button>
         </div>
       </div>
 
@@ -120,7 +159,7 @@ export const Assistant = () => {
         <div style={{ marginBottom: '16px' }}>
           <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px', fontWeight: 600 }}>Quick Voice Samples:</div>
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-            {samplePrompts.map((p, idx) => (
+            {currentPrompts.map((p, idx) => (
               <button
                 key={idx}
                 type="button"
@@ -143,11 +182,10 @@ export const Assistant = () => {
           </div>
         </div>
 
-        <VoiceInput onSend={handleSendMessage} isProcessing={isProcessing} />
+        <VoiceInput onSend={handleSendMessage} isProcessing={isProcessing} lang={lang} />
       </Card>
     </div>
   );
 };
 
 export default Assistant;
-

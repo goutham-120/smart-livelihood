@@ -13,6 +13,14 @@ const COLUMNS = [
   { key: 'dropped',   label: 'Dropped',  icon: '⚠️', color: 'var(--color-danger)' },
 ];
 
+const formatCourseTitle = (key) => {
+  if (!key) return 'Certified Skilling Program';
+  return key
+    .replace(/^crs_/, '')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+};
+
 function PlacementCard({ placement, onMove }) {
   const user = placement.user || {};
   const date = new Date(placement.at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
@@ -20,7 +28,9 @@ function PlacementCard({ placement, onMove }) {
   return (
     <div className="plm-card card">
       <div className="font-semibold text-sm">{user.name || 'Unknown'}</div>
-      <div className="text-xs text-muted">{placement.courseKey}</div>
+      <div className="text-xs text-muted" style={{ fontWeight: 600 }}>
+        {placement.courseTitle || placement.title || formatCourseTitle(placement.courseKey)}
+      </div>
       {placement.employer && <div className="text-xs text-accent mt-1">🏢 {placement.employer}</div>}
       {placement.wage > 0 && <div className="text-xs text-success mt-1">₹{placement.wage.toLocaleString()}/mo</div>}
       {placement.user?.isSynthetic && <SyntheticBadge />}

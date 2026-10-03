@@ -3,6 +3,13 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { api } from '../api';
 import { Clock, ArrowRight, MapPin, Building, IndianRupee, Award, Layers } from 'lucide-react';
 
+const cleanText = (text) => {
+  if (!text) return '';
+  return text.replace(/\b([a-z0-9]+(?:_[a-z0-9]+)+)\b/gi, (match) => {
+    return match.replace(/^crs_/, '').replace(/_/g, ' ');
+  });
+};
+
 export const Roadmap = () => {
   const [searchParams] = useSearchParams();
   const occKey = searchParams.get('occ') || 'self_employed_tailor';
@@ -63,13 +70,13 @@ export const Roadmap = () => {
                 </span>
               </div>
 
-              <p style={{ color: 'var(--text-main)', fontSize: '13px', lineHeight: '1.5', marginBottom: '10px' }}>{step.description}</p>
+              <p style={{ color: 'var(--text-main)', fontSize: '13px', lineHeight: '1.5', marginBottom: '10px' }}>{cleanText(step.description)}</p>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px', background: 'var(--bg-subtle)', padding: '10px', borderRadius: 'var(--radius-sm)', fontSize: '12px' }}>
                 {step.nsqfProgression && (
                   <div>
                     <span style={{ color: 'var(--text-muted)', display: 'block' }}>NSQF Level Progression:</span>
-                    <strong style={{ color: 'var(--primary-600)' }}>{step.nsqfProgression}</strong>
+                    <strong style={{ color: 'var(--primary-600)' }}>{cleanText(step.nsqfProgression)}</strong>
                   </div>
                 )}
 
@@ -83,7 +90,7 @@ export const Roadmap = () => {
                 {step.recommendedCourse && (
                   <div style={{ gridColumn: '1 / -1' }}>
                     <span style={{ color: 'var(--text-muted)', display: 'block' }}>Recommended Skilling Course:</span>
-                    <strong style={{ color: 'var(--primary-700)' }}>{step.recommendedCourse}</strong>
+                    <strong style={{ color: 'var(--primary-700)' }}>{cleanText(step.recommendedCourse)}</strong>
                   </div>
                 )}
               </div>
