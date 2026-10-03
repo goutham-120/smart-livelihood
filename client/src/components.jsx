@@ -392,8 +392,13 @@ export const ReadAloudButton = ({ text }) => {
   );
 };
 
-export const RiskBadge = ({ risk = 'low', level = null }) => {
-  const r = (level || risk || 'low').toLowerCase();
+export const RiskBadge = ({ risk = 'low', level = null, score = null }) => {
+  let r = (level || risk || 'low').toLowerCase();
+  if (score !== null && score !== undefined) {
+    if (score >= 60) r = 'high';
+    else if (score >= 30) r = 'medium';
+    else r = 'low';
+  }
   let type = 'green';
   if (r.includes('high') || r === 'high') type = 'red';
   else if (r.includes('medium') || r === 'medium') type = 'amber';
@@ -406,24 +411,27 @@ export const SyntheticBadge = () => (
   </span>
 );
 
-export const StatCard = ({ title, label, value, subtext, icon: Icon, color = 'var(--primary-600)' }) => (
-  <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-    {Icon && (
-      <div style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-md)', background: 'var(--surface-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', color, flexShrink: 0 }}>
-        {typeof Icon === 'string' ? <span style={{ fontSize: '24px' }}>{Icon}</span> : <Icon size={24} />}
+export const StatCard = ({ title, label, value, subtext, icon: Icon, color = 'var(--primary-600)' }) => {
+  const displayTitle = title || label;
+  return (
+    <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+      {Icon && (
+        <div style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-md)', background: 'var(--surface-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', color, flexShrink: 0, fontSize: typeof Icon === 'string' ? '22px' : undefined }}>
+          {typeof Icon === 'function' || (typeof Icon === 'object' && Icon !== null) ? <Icon size={24} /> : <span>{Icon}</span>}
+        </div>
+      )}
+      <div>
+        <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>{displayTitle}</div>
+        <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-main)' }}>{value}</div>
+        {subtext && <div style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>{subtext}</div>}
       </div>
-    )}
-    <div>
-      <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>{title || label}</div>
-      <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-main)' }}>{value}</div>
-      {subtext && <div style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>{subtext}</div>}
     </div>
-  </div>
-);
+  );
+};
 
 export const Modal = ({ isOpen, open, onClose, title, children }) => {
-  const visible = isOpen !== undefined ? isOpen : open;
-  if (!visible) return null;
+  const isShown = isOpen ?? open;
+  if (!isShown) return null;
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -437,17 +445,60 @@ export const Modal = ({ isOpen, open, onClose, title, children }) => {
   );
 };
 
-export const ConfirmDialog = ({ isOpen, onClose, onConfirm, title = 'Confirm Action', message = 'Are you sure?' }) => {
-  if (!isOpen) return null;
+export const ConfirmDialog = ({ isOpen, open, onClose, onCancel, onConfirm, title = 'Confirm Action', message = 'Are you sure?', danger = false }) => {
+  const isShown = isOpen ?? open;
+  if (!isShown) return null;
+  const handleClose = onClose || onCancel || (() => {});
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={title}>
+    <Modal isOpen={isShown} onClose={handleClose} title={title}>
       <p style={{ marginBottom: '20px', color: 'var(--text-muted)', fontSize: '14px' }}>{message}</p>
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-        <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-        <button className="btn btn-primary" onClick={() => { onConfirm(); onClose(); }}>Confirm</button>
+        <button className="btn btn-secondary" onClick={handleClose}>Cancel</button>
+        <button className={`btn ${danger ? 'btn-danger' : 'btn-primary'}`} onClick={() => { onConfirm(); handleClose(); }}>Confirm</button>
       </div>
     </Modal>
   );
 };
+
+export class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: '40px 24px', textAlign: 'center', maxWidth: '540px', margin: '40px auto', background: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
+          <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>⚠️</div>
+          <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', marginBottom: '8px' }}>Something went wrong</h2>
+          <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '20px' }}>
+            {this.state.error?.message || 'An unexpected rendering error occurred while loading this view.'}
+          </p>
+          <button
+            onClick={() => {
+              this.setState({ hasError: false, error: null });
+              window.location.reload();
+            }}
+            className="btn btn-primary"
+            style={{ padding: '8px 16px', fontSize: '14px' }}
+          >
+            Try Again
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 
 

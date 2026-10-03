@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { api } from './api.js';
-import { QuickDemoBar, AppSidebar, AppHeader, Spinner } from './components.jsx';
+import { QuickDemoBar, AppSidebar, AppHeader, Spinner, ErrorBoundary } from './components.jsx';
+
 
 import { Login } from './pages/Login.jsx';
 import { Assistant } from './pages/Assistant.jsx';
@@ -22,6 +23,14 @@ import Placements from './pages/admin/Placements.jsx';
 import Coordination from './pages/admin/Coordination.jsx';
 import PerspectivePlan from './pages/admin/PerspectivePlan.jsx';
 import Directory from './pages/admin/Directory.jsx';
+import Consent from './pages/Consent.jsx';
+
+const ProtectedRoute = ({ user, children }) => {
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+};
 
 export default function App() {
   const [activeUser, setActiveUser] = useState(() => {
@@ -87,41 +96,46 @@ export default function App() {
           <AppHeader user={activeUser} onLogout={handleLogout} toggleMobileNav={() => setMobileOpen(!mobileOpen)} />
 
           <main className="app-content">
-            <Routes>
-              {/* Authentication */}
-              <Route path="/login" element={<Login onLoginSuccess={handleLoginSuccess} />} />
+            <ErrorBoundary>
+              <Routes>
+                {/* Authentication */}
+                <Route path="/login" element={<Login onLoginSuccess={handleLoginSuccess} />} />
 
-              {/* Beneficiary Pathways & AI Voice Assistant */}
-              <Route path="/assistant" element={<Assistant />} />
-              <Route path="/dashboard" element={<Dashboard user={activeUser} />} />
-              <Route path="/opportunities" element={<Opportunities />} />
-              <Route path="/skill-gaps" element={<SkillGaps />} />
-              <Route path="/training" element={<Training />} />
-              <Route path="/roadmap" element={<Roadmap />} />
-              <Route path="/what-if" element={<WhatIf />} />
-              <Route path="/progress" element={<Progress />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/self-employment" element={<SelfEmployment />} />
+                {/* Beneficiary Pathways & AI Voice Assistant */}
+                <Route path="/assistant" element={<ProtectedRoute user={activeUser}><Assistant /></ProtectedRoute>} />
+                <Route path="/dashboard" element={<ProtectedRoute user={activeUser}><Dashboard user={activeUser} /></ProtectedRoute>} />
+                <Route path="/opportunities" element={<ProtectedRoute user={activeUser}><Opportunities /></ProtectedRoute>} />
+                <Route path="/skill-gaps" element={<ProtectedRoute user={activeUser}><SkillGaps /></ProtectedRoute>} />
+                <Route path="/training" element={<ProtectedRoute user={activeUser}><Training /></ProtectedRoute>} />
+                <Route path="/roadmap" element={<ProtectedRoute user={activeUser}><Roadmap /></ProtectedRoute>} />
+                <Route path="/what-if" element={<ProtectedRoute user={activeUser}><WhatIf /></ProtectedRoute>} />
+                <Route path="/progress" element={<ProtectedRoute user={activeUser}><Progress /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute user={activeUser}><Profile /></ProtectedRoute>} />
+                <Route path="/self-employment" element={<ProtectedRoute user={activeUser}><SelfEmployment /></ProtectedRoute>} />
 
-              {/* Assistive Channels and Kiosk */}
-              <Route path="/kiosk" element={<Kiosk />} />
-              <Route path="/channel-demo" element={<ChannelDemo />} />
+                {/* Channels */}
+                <Route path="/kiosk" element={<Kiosk />} />
+                <Route path="/channel-demo" element={<ChannelDemo />} />
+                <Route path="/consent" element={<Consent />} />
 
-              {/* District Command and Officer Administration */}
-              <Route path="/admin/overview" element={<Overview />} />
-              <Route path="/admin/beneficiaries" element={<Beneficiaries />} />
-              <Route path="/admin/placements" element={<Placements />} />
-              <Route path="/admin/coordination" element={<Coordination />} />
-              <Route path="/admin/plan" element={<PerspectivePlan />} />
-              <Route path="/admin/directory" element={<Directory />} />
+                {/* District Command (Officer & Admin) */}
+                <Route path="/admin/overview" element={<ProtectedRoute user={activeUser}><Overview /></ProtectedRoute>} />
+                <Route path="/admin/beneficiaries" element={<ProtectedRoute user={activeUser}><Beneficiaries /></ProtectedRoute>} />
+                <Route path="/admin/placements" element={<ProtectedRoute user={activeUser}><Placements /></ProtectedRoute>} />
+                <Route path="/admin/coordination" element={<ProtectedRoute user={activeUser}><Coordination /></ProtectedRoute>} />
+                <Route path="/admin/plan" element={<ProtectedRoute user={activeUser}><PerspectivePlan /></ProtectedRoute>} />
+                <Route path="/admin/directory" element={<ProtectedRoute user={activeUser}><Directory /></ProtectedRoute>} />
 
-              {/* Default redirects */}
-              <Route path="/" element={<Navigate to={activeUser ? (activeUser.role === 'officer' || activeUser.role === 'admin' ? '/dashboard' : '/assistant') : '/login'} replace />} />
-              <Route path="*" element={<Navigate to="/assistant" replace />} />
-            </Routes>
+                {/* Default redirects */}
+                <Route path="/" element={<Navigate to={activeUser ? (activeUser.role === 'officer' || activeUser.role === 'admin' ? '/admin/overview' : '/assistant') : '/login'} replace />} />
+                <Route path="*" element={<Navigate to={activeUser ? '/assistant' : '/login'} replace />} />
+              </Routes>
+            </ErrorBoundary>
           </main>
+
         </div>
       </div>
     </Router>
   );
 }
+

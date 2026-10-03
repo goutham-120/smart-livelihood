@@ -11,7 +11,7 @@ import './PerspectivePlan.css';
 const DISTRICTS = ['Warangal', 'Adilabad', 'Nalgonda'];
 
 function PlanDocument({ plan }) {
-  const date = new Date(plan.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+  const date = plan.createdAt ? new Date(plan.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
   return (
     <div className="plan-doc" id="plan-print-area">
       {/* Header */}
