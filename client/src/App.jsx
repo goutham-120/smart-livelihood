@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { api } from './api.js';
-import { QuickDemoBar, AppSidebar, AppHeader, Spinner, ErrorBoundary } from './components.jsx';
-
+import { AppSidebar, AppHeader, Spinner, ErrorBoundary } from './components.jsx';
 
 import { Login } from './pages/Login.jsx';
 import { Assistant } from './pages/Assistant.jsx';
@@ -17,6 +16,7 @@ import { Profile } from './pages/Profile.jsx';
 import { SelfEmployment } from './pages/SelfEmployment.jsx';
 import { Kiosk } from './pages/Kiosk.jsx';
 import { ChannelDemo } from './pages/ChannelDemo.jsx';
+
 import Overview from './pages/admin/Overview.jsx';
 import Beneficiaries from './pages/admin/Beneficiaries.jsx';
 import Placements from './pages/admin/Placements.jsx';
@@ -24,20 +24,60 @@ import Coordination from './pages/admin/Coordination.jsx';
 import PerspectivePlan from './pages/admin/PerspectivePlan.jsx';
 import Directory from './pages/admin/Directory.jsx';
 
-const ProtectedRoute = ({ user, children }) => {
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-  return children;
-};
+// Authenticated Shell Component (Only renders Sidebar & Header for logged-in users)
+function AppShell({ user, onLogout, children }) {
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    try {
+      const stored = localStorage.getItem('pmajay_sidebar_open');
+      if (stored !== null) return stored === 'true';
+    } catch {}
+    return typeof window !== 'undefined' ? window.innerWidth >= 1024 : true;
+  });
 
-function AppLayout({ activeUser, mobileOpen, setMobileOpen, handleDemoLogin, handleLogout, children }) {
+  const toggleSidebar = () => {
+    setSidebarOpen((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('pmajay_sidebar_open', String(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && sidebarOpen && window.innerWidth < 1024) {
+        setSidebarOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [sidebarOpen]);
+
   return (
-    <div className="app-shell">
-      <AppSidebar user={activeUser} mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
-      <div className="app-main-layout">
-        <QuickDemoBar onLogin={handleDemoLogin} />
-        <AppHeader user={activeUser} onLogout={handleLogout} toggleMobileNav={() => setMobileOpen(!mobileOpen)} />
+    <div className={`app-shell ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+      {/* Backdrop overlay for mobile screen when sidebar is open */}
+      {sidebarOpen && (
+        <div
+          className="sidebar-backdrop"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      <AppSidebar
+        user={user}
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+      />
+
+      <div className={`app-main-layout ${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+        <AppHeader
+          user={user}
+          onLogout={onLogout}
+          toggleSidebar={toggleSidebar}
+          sidebarOpen={sidebarOpen}
+        />
         <main className="app-content">
           <ErrorBoundary>
             {children}
@@ -48,6 +88,17 @@ function AppLayout({ activeUser, mobileOpen, setMobileOpen, handleDemoLogin, han
   );
 }
 
+const ProtectedRoute = ({ user, onLogout, children }) => {
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  return (
+    <AppShell user={user} onLogout={onLogout}>
+      {children}
+    </AppShell>
+  );
+};
+
 export default function App() {
   const [activeUser, setActiveUser] = useState(() => {
     try {
@@ -57,7 +108,6 @@ export default function App() {
     }
   });
   const [loading, setLoading] = useState(true);
-  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     api.getMe().then((res) => {
@@ -82,76 +132,97 @@ export default function App() {
     window.location.href = '/login';
   };
 
-  const handleDemoLogin = async (role, district) => {
-    try {
-      const res = await api.demoLogin(role, district);
-      if (res?.token) {
-        handleLoginSuccess(res.token, res.user);
-      }
-    } catch (e) {
-      console.error('Demo login error:', e);
-    }
-  };
-
   if (loading && !activeUser) {
     return (
-      <div style={{ textAlign: 'center', padding: '60px', color: '#94a3b8' }}>
-        <Spinner size={32} />
-        <div style={{ marginTop: '12px' }}>Loading Livelihood Assistant...</div>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#f8fafc', color: '#64748b' }}>
+        <Spinner size={36} />
+        <div style={{ marginTop: '16px', fontWeight: 600, fontSize: '14px' }}>Loading PM-AJAY Livelihood Assistant...</div>
       </div>
     );
   }
 
   return (
     <Router>
-      <Routes>
-        {/* Full-Screen Standalone Pages */}
-        <Route path="/login" element={<Login onLoginSuccess={handleLoginSuccess} />} />
-        <Route path="/kiosk" element={<Kiosk />} />
+      <ErrorBoundary>
+        <Routes>
+          {/* PUBLIC ROUTES (No Sidebar, No Authenticated Header) */}
+          <Route
+            path="/"
+            element={
+              activeUser ? (
+                <Navigate to={activeUser.role === 'officer' || activeUser.role === 'admin' ? '/dashboard' : '/assistant'} replace />
+              ) : (
+                <Login onLoginSuccess={handleLoginSuccess} />
+              )
+            }
+          />
+          <Route
+            path="/login"
+            element={
+              activeUser ? (
+                <Navigate to={activeUser.role === 'officer' || activeUser.role === 'admin' ? '/dashboard' : '/assistant'} replace />
+              ) : (
+                <Login onLoginSuccess={handleLoginSuccess} initialTab="email" />
+              )
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              activeUser ? (
+                <Navigate to="/dashboard" replace />
+              ) : (
+                <Login onLoginSuccess={handleLoginSuccess} initialMode="register" />
+              )
+            }
+          />
+          <Route
+            path="/forgot-password"
+            element={
+              activeUser ? (
+                <Navigate to="/dashboard" replace />
+              ) : (
+                <Login onLoginSuccess={handleLoginSuccess} initialMode="forgot" />
+              )
+            }
+          />
+          <Route
+            path="/otp"
+            element={
+              activeUser ? (
+                <Navigate to="/dashboard" replace />
+              ) : (
+                <Login onLoginSuccess={handleLoginSuccess} initialTab="phone" />
+              )
+            }
+          />
 
-        {/* Authenticated App Shell Pages */}
-        <Route
-          path="/*"
-          element={
-            <ProtectedRoute user={activeUser}>
-              <AppLayout
-                activeUser={activeUser}
-                mobileOpen={mobileOpen}
-                setMobileOpen={setMobileOpen}
-                handleDemoLogin={handleDemoLogin}
-                handleLogout={handleLogout}
-              >
-                <Routes>
-                  <Route path="dashboard" element={<Dashboard user={activeUser} />} />
-                  <Route path="assistant" element={<Assistant />} />
-                  <Route path="opportunities" element={<Opportunities />} />
-                  <Route path="skill-gaps" element={<SkillGaps />} />
-                  <Route path="training" element={<Training />} />
-                  <Route path="roadmap" element={<Roadmap />} />
-                  <Route path="what-if" element={<WhatIf />} />
-                  <Route path="progress" element={<Progress />} />
-                  <Route path="profile" element={<Profile />} />
-                  <Route path="self-employment" element={<SelfEmployment />} />
-                  <Route path="channel-demo" element={<ChannelDemo />} />
+          {/* PROTECTED ROUTES (Wrapped in ProtectedRoute -> AppShell -> Sidebar + Header) */}
+          <Route path="/dashboard" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Dashboard user={activeUser} /></ProtectedRoute>} />
+          <Route path="/assistant" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Assistant /></ProtectedRoute>} />
+          <Route path="/opportunities" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Opportunities /></ProtectedRoute>} />
+          <Route path="/skill-gaps" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><SkillGaps /></ProtectedRoute>} />
+          <Route path="/training" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Training /></ProtectedRoute>} />
+          <Route path="/roadmap" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Roadmap /></ProtectedRoute>} />
+          <Route path="/what-if" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><WhatIf /></ProtectedRoute>} />
+          <Route path="/progress" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Progress /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Profile /></ProtectedRoute>} />
+          <Route path="/self-employment" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><SelfEmployment /></ProtectedRoute>} />
+          <Route path="/kiosk" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Kiosk /></ProtectedRoute>} />
+          <Route path="/channel-demo" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><ChannelDemo /></ProtectedRoute>} />
 
-                  {/* District Command (Officer & Admin) */}
-                  <Route path="admin/overview" element={<Overview />} />
-                  <Route path="admin/beneficiaries" element={<Beneficiaries />} />
-                  <Route path="admin/placements" element={<Placements />} />
-                  <Route path="admin/coordination" element={<Coordination />} />
-                  <Route path="admin/plan" element={<PerspectivePlan />} />
-                  <Route path="admin/directory" element={<Directory />} />
+          {/* Admin Command Routes */}
+          <Route path="/admin/overview" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Overview /></ProtectedRoute>} />
+          <Route path="/admin/beneficiaries" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Beneficiaries /></ProtectedRoute>} />
+          <Route path="/admin/placements" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Placements /></ProtectedRoute>} />
+          <Route path="/admin/coordination" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Coordination /></ProtectedRoute>} />
+          <Route path="/admin/plan" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><PerspectivePlan /></ProtectedRoute>} />
+          <Route path="/admin/directory" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Directory /></ProtectedRoute>} />
 
-                  {/* Default redirects */}
-                  <Route path="/" element={<Navigate to={activeUser?.role === 'officer' || activeUser?.role === 'admin' ? '/admin/overview' : '/dashboard'} replace />} />
-                  <Route path="*" element={<Navigate to="/dashboard" replace />} />
-                </Routes>
-              </AppLayout>
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
+          {/* Catch-all fallback */}
+          <Route path="*" element={<Navigate to={activeUser ? '/dashboard' : '/login'} replace />} />
+        </Routes>
+      </ErrorBoundary>
     </Router>
   );
 }
-

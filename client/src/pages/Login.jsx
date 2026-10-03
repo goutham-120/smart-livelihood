@@ -1,50 +1,61 @@
-/* Login.jsx: Multi-method authentication with Civic-Tech PM-AJAY Hero Layout */
-import React, { useState } from 'react';
+/* Login.jsx: Public Start / Landing / Login Experience
+   SIH26097 PM-AJAY Livelihood Assistant */
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import {
+  Mic, Target, BookOpen, Compass, ShieldCheck, HelpCircle,
+  User, Lock, Mail, Phone, X
+} from 'lucide-react';
 import { useAuth } from '../AuthContext.jsx';
 import { useToast } from '../ToastContext.jsx';
 import { Spinner, LanguageSwitcher } from '../components.jsx';
-import { authLogin, authOtpSend, authOtpVerify, authDemoLogin } from '../api.js';
+import { authLogin, authOtpSend, authOtpVerify, authRegister } from '../api.js';
 import './Login.css';
 
-const DEMO_ROLES = [
-  { role: 'beneficiary', district: 'Warangal', label: '🌾 Beneficiary (Warangal, Handloom Weaver)' },
-  { role: 'beneficiary', district: 'Adilabad', label: '🌱 Beneficiary (Adilabad, Dairy Farmer)' },
-  { role: 'officer', district: 'Warangal', label: '🏛️ District Officer (Warangal)' },
-  { role: 'officer', district: 'Adilabad', label: '🏛️ District Officer (Adilabad)' },
-  { role: 'admin', district: '', label: '🇮🇳 Ministry Admin' },
-];
-
-export function Login({ onLoginSuccess }) {
+export function Login({ onLoginSuccess, initialTab = 'email', initialMode = 'auth' }) {
   const { t } = useTranslation();
   const auth = useAuth?.();
   const toastCtx = useToast?.();
   const toast = toastCtx?.addToast || ((msg) => console.log(msg));
   const navigate = useNavigate();
 
-  const [tab, setTab] = useState('demo'); // 'demo' | 'email' | 'phone'
+  const [mode, setMode] = useState(initialMode); // 'auth' | 'register' | 'forgot'
+  const [tab, setTab] = useState(initialTab);   // 'email' | 'phone'
   const [loading, setLoading] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
 
   // Email form state
-  const [identifier, setIdentifier] = useState('user@pmajay.gov.in');
-  const [password, setPassword] = useState('Demo@123');
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
 
   // Phone form state
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
 
+  // Registration state
+  const [regName, setRegName] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+  const [regPhone, setRegPhone] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regDistrict, setRegDistrict] = useState('Warangal');
+
+  useEffect(() => {
+    setTab(initialTab);
+    setMode(initialMode);
+  }, [initialTab, initialMode]);
+
   const completeLogin = (token, user) => {
     localStorage.setItem('pmajay_token', token);
     localStorage.setItem('pmajay_user', JSON.stringify(user));
     if (auth?.setUser) auth.setUser(user);
     if (onLoginSuccess) onLoginSuccess(token, user);
-    toast(t ? t('login.welcome', `Welcome, ${user.name}!`) : `Welcome, ${user.name}!`, 'success');
+    toast(t('login.welcomeUser', 'Welcome, {{name}}!', { name: user.name }), 'success');
     if (user.role === 'admin' || user.role === 'officer') {
       navigate('/dashboard');
     } else {
-      navigate('/dashboard');
+      navigate('/assistant');
     }
   };
 
@@ -56,7 +67,7 @@ export function Login({ onLoginSuccess }) {
       const res = await authLogin({ identifier, password });
       completeLogin(res.data.token, res.data.user);
     } catch (err) {
-      toast(err.response?.data?.error || (t ? t('common.error', 'Invalid credentials') : 'Invalid credentials'), 'error');
+      toast(err.response?.data?.error || t('login.invalidCreds', 'Incorrect email/phone or password.'), 'error');
     } finally {
       setLoading(false);
     }
@@ -69,9 +80,9 @@ export function Login({ onLoginSuccess }) {
     try {
       await authOtpSend(phone);
       setOtpSent(true);
-      toast(t ? t('login.otpSent', 'OTP sent to mobile') : 'OTP sent to mobile', 'info');
+      toast(t('login.otpSentMsg', 'OTP sent to mobile phone.'), 'info');
     } catch (err) {
-      toast(err.response?.data?.error || 'Failed to send OTP', 'error');
+      toast(err.response?.data?.error || t('login.otpFailMsg', 'Failed to send OTP. Please check mobile number.'), 'error');
     } finally {
       setLoading(false);
     }
@@ -85,238 +96,547 @@ export function Login({ onLoginSuccess }) {
       const res = await authOtpVerify({ phone, otp });
       completeLogin(res.data.token, res.data.user);
     } catch (err) {
-      toast(err.response?.data?.error || 'Invalid OTP', 'error');
+      toast(err.response?.data?.error || t('login.invalidOtpMsg', 'Invalid 6-digit OTP. Please try again.'), 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDemoLogin = async (role, district) => {
+  const handleRegisterSubmit = async (e) => {
+    e.preventDefault();
+    if (!regName || (!regEmail && !regPhone) || !regPassword) {
+      toast(t('login.fillRequired', 'Please fill in required details'), 'error');
+      return;
+    }
     setLoading(true);
     try {
-      const res = await authDemoLogin(role, district);
+      const res = await authRegister({
+        name: regName,
+        email: regEmail,
+        phone: regPhone,
+        password: regPassword,
+        district: regDistrict,
+      });
       completeLogin(res.data.token, res.data.user);
     } catch (err) {
-      toast(err.response?.data?.error || 'Demo login failed', 'error');
+      toast(err.response?.data?.error || t('login.regFailMsg', 'Registration failed. Email or phone may already exist.'), 'error');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleForgotSubmit = (e) => {
+    e.preventDefault();
+    toast(t('login.resetSentMsg', 'Password reset instructions sent to your registered email/phone if valid.'), 'info');
+    setMode('auth');
   };
 
   return (
-    <div className="login-hero-root">
-      <div className="login-hero-overlay" />
-
-      <div className="login-hero-container">
-        {/* Left Side: Auth Card */}
-        <div className="login-hero-card">
-          <div className="login-card-topbar">
-            <div className="login-card-brand">
-              <span className="login-card-brand-icon">🌱</span>
-              <div>
-                <span className="login-card-brand-title">Livelihood Assistant</span>
-                <span className="login-card-brand-sub">PM-AJAY Portal</span>
-              </div>
+    <div className="start-page-root">
+      {/* PUBLIC HEADER */}
+      <header className="start-header">
+        <div className="start-header-inner">
+          <div className="start-brand">
+            <img src="/assets/pm-ajay-logo.png" alt="PM-AJAY Logo" className="start-brand-logo" />
+            <div>
+              <div className="start-brand-title">{t('appName', 'Livelihood Assistant')}</div>
+              <div className="start-brand-sub">{t('tagline', 'AI Voice Skilling & Mapping')}</div>
             </div>
-            <LanguageSwitcher />
           </div>
 
-          <h2 className="login-card-title">Welcome Back</h2>
-          <p className="login-card-subtitle">Sign in to access your livelihood dashboard or voice assistant</p>
-
-          {/* Tab Selector */}
-          <div className="login-hero-tabs" role="tablist">
-            <button
-              className={`login-hero-tab ${tab === 'demo' ? 'active' : ''}`}
-              onClick={() => { setTab('demo'); setOtpSent(false); }}
-            >
-              ⚡ Demo
-            </button>
-            <button
-              className={`login-hero-tab ${tab === 'email' ? 'active' : ''}`}
-              onClick={() => { setTab('email'); setOtpSent(false); }}
-            >
-              Email / ID
-            </button>
-            <button
-              className={`login-hero-tab ${tab === 'phone' ? 'active' : ''}`}
-              onClick={() => { setTab('phone'); setOtpSent(false); }}
-            >
-              Mobile OTP
-            </button>
-          </div>
-
-          {/* Quick Demo Personas */}
-          {tab === 'demo' && (
-            <div className="login-hero-demo-list">
-              <p className="login-hero-demo-caption">Select a persona to test with instant access:</p>
-              {DEMO_ROLES.map(({ role, district, label }) => (
-                <button
-                  key={`${role}-${district}`}
-                  className="login-hero-demo-btn"
-                  disabled={loading}
-                  onClick={() => handleDemoLogin(role, district)}
-                >
-                  <div className="login-hero-demo-btn-label">
-                    {loading ? <Spinner size={14} /> : null}
-                    <span>{label}</span>
-                  </div>
-                  <span className="login-hero-demo-tag">{role}</span>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Email / ID Login */}
-          {tab === 'email' && (
-            <form onSubmit={handleEmailLogin} className="login-hero-form">
-              <div className="login-hero-field">
-                <label className="login-hero-label">Email or Mobile Number</label>
-                <div className="login-hero-input-wrap">
-                  <span className="login-hero-input-icon">✉️</span>
-                  <input
-                    type="text"
-                    className="login-hero-input"
-                    placeholder="user@pmajay.gov.in"
-                    value={identifier}
-                    onChange={(e) => setIdentifier(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="login-hero-field">
-                <div className="login-hero-field-header">
-                  <label className="login-hero-label">Password</label>
-                  <a href="#forgot" onClick={(e) => { e.preventDefault(); toast('Please contact your district officer to reset password.', 'info'); }} className="login-hero-forgot">Forgot password?</a>
-                </div>
-                <div className="login-hero-input-wrap">
-                  <span className="login-hero-input-icon">🔒</span>
-                  <input
-                    type="password"
-                    className="login-hero-input"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
-              <button type="submit" className="login-hero-submit" disabled={loading}>
-                {loading ? <Spinner size={18} /> : 'Sign In'}
-              </button>
-            </form>
-          )}
-
-          {/* Mobile OTP Login */}
-          {tab === 'phone' && (
-            <form onSubmit={otpSent ? handleOtpVerify : handleOtpSend} className="login-hero-form">
-              <div className="login-hero-field">
-                <label className="login-hero-label">Mobile Number</label>
-                <div className="login-hero-input-wrap">
-                  <span className="login-hero-input-icon">📱</span>
-                  <input
-                    type="tel"
-                    className="login-hero-input"
-                    placeholder="9876543210"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    disabled={otpSent}
-                    required
-                  />
-                </div>
-              </div>
-
-              {otpSent && (
-                <div className="login-hero-field">
-                  <label className="login-hero-label">Enter 6-digit OTP</label>
-                  <div className="login-hero-input-wrap">
-                    <span className="login-hero-input-icon">🔢</span>
-                    <input
-                      type="number"
-                      className="login-hero-input"
-                      placeholder="123456"
-                      maxLength={6}
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-              )}
-
-              <button type="submit" className="login-hero-submit" disabled={loading}>
-                {loading ? <Spinner size={18} /> : otpSent ? 'Verify OTP & Enter' : 'Send OTP'}
-              </button>
-
-              {otpSent && (
-                <button
-                  type="button"
-                  className="login-hero-change-btn"
-                  onClick={() => { setOtpSent(false); setOtp(''); }}
-                >
-                  ← Change number
-                </button>
-              )}
-            </form>
-          )}
-
-          <div className="login-card-footer">
-            <span>New beneficiary or official? </span>
+          <div className="start-header-actions">
             <button
               type="button"
-              className="login-card-link"
-              onClick={() => handleDemoLogin('beneficiary', 'Warangal')}
+              className="start-help-btn"
+              onClick={() => setShowHelpModal(true)}
+              title={t('footer.help', 'Help')}
             >
-              Create Account
+              <HelpCircle size={16} />
+              <span>{t('footer.help', 'Help')}</span>
             </button>
+            <LanguageSwitcher />
           </div>
         </div>
+      </header>
 
-        {/* Right Side: Hero Content */}
-        <div className="login-hero-info">
-          <div className="login-hero-badge">
-            <span className="login-hero-badge-icon">🛡️</span>
-            <span>Ministry of Social Justice & Empowerment • PM-AJAY</span>
+      {/* HERO & AUTH CONTAINER */}
+      <main className="start-hero-container">
+        <img
+          src="/assets/login-background.jpg"
+          alt=""
+          className="login-bg-img"
+        />
+        <div className="login-bg-overlay" />
+        <div className="start-hero-inner">
+          {/* LEFT: HERO TEXT & PRODUCT VALUE */}
+          <div className="start-hero-content">
+            <div className="start-trust-tag">
+              <ShieldCheck size={16} />
+              <span>{t('login.trustTag', 'Ministry of Social Justice & Empowerment • PM-AJAY')}</span>
+            </div>
+
+            <h1 className="start-hero-title">
+              {t('login.heroTitle', 'AI-powered livelihood guidance for every voice.')}
+            </h1>
+
+            <p className="start-hero-subtitle">
+              {t('login.heroSubtitle', 'Tell us about your skills, experience, and goals. Get personalized livelihood opportunities, skill-gap insights, training recommendations, and a clear path forward — through voice or text.')}
+            </p>
+
+            <div className="start-feature-list">
+              <div className="start-feature-item">
+                <div className="start-feature-icon-box">
+                  <Mic size={18} />
+                </div>
+                <div>
+                  <div className="start-feature-title">{t('login.feat1Title', 'Voice-first guidance in local languages')}</div>
+                  <div className="start-feature-desc">{t('login.feat1Desc', 'Speak naturally in Telugu, Hindi, or English to share your background and goals.')}</div>
+                </div>
+              </div>
+
+              <div className="start-feature-item">
+                <div className="start-feature-icon-box">
+                  <Target size={18} />
+                </div>
+                <div>
+                  <div className="start-feature-title">{t('login.feat2Title', 'Personalized opportunity matching')}</div>
+                  <div className="start-feature-desc">{t('login.feat2Desc', 'Discover government schemes, jobs, and micro-enterprises tailored to your district.')}</div>
+                </div>
+              </div>
+
+              <div className="start-feature-item">
+                <div className="start-feature-icon-box">
+                  <Compass size={18} />
+                </div>
+                <div>
+                  <div className="start-feature-title">{t('login.feat3Title', 'Actionable livelihood pathways')}</div>
+                  <div className="start-feature-desc">{t('login.feat3Desc', 'Structured career roadmaps with milestone tracking from skilling to placement.')}</div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <h1 className="login-hero-heading">
-            AI-powered livelihood guidance for every voice.
-          </h1>
-
-          <p className="login-hero-description">
-            Tell us about your skills, experience, and goals. Get personalized livelihood opportunities,
-            skill-gap insights, training recommendations, and a clear path forward — through voice or text.
-          </p>
-
-          <div className="login-hero-features">
-            <div className="login-hero-feature-item">
-              <div className="login-hero-feature-icon">🎙️</div>
-              <div>
-                <h3 className="login-hero-feature-title">Voice-first guidance in local languages</h3>
-                <p className="login-hero-feature-desc">Speak naturally in Telugu, Hindi, or English to share your background and goals.</p>
+          {/* RIGHT: AUTHENTICATION CARD */}
+          <div className="start-auth-wrapper">
+            <div className="start-auth-card">
+              <div className="auth-card-header">
+                <h2 className="auth-card-title">
+                  {mode === 'register'
+                    ? t('login.registerTitle', 'Create Account')
+                    : mode === 'forgot'
+                    ? t('login.forgotTitle', 'Reset Password')
+                    : t('login.welcomeTitle', 'Welcome Back')}
+                </h2>
+                <p className="auth-card-sub">
+                  {mode === 'register'
+                    ? t('login.registerSub', 'Register to start your personalized livelihood journey')
+                    : mode === 'forgot'
+                    ? t('login.forgotSub', 'Enter your registered email or phone number to reset')
+                    : t('login.welcomeSub', 'Sign in to access your livelihood dashboard or voice assistant')}
+                </p>
               </div>
-            </div>
 
-            <div className="login-hero-feature-item">
-              <div className="login-hero-feature-icon">🎯</div>
-              <div>
-                <h3 className="login-hero-feature-title">Personalized opportunity matching</h3>
-                <p className="login-hero-feature-desc">Discover government schemes, jobs, and micro-enterprises tailored to your district.</p>
-              </div>
-            </div>
+              {/* AUTH MODE */}
+              {mode === 'auth' && (
+                <>
+                  <div className="tab-group mb-5" role="tablist" aria-label="Login method">
+                    <button
+                      type="button"
+                      className={`tab ${tab === 'email' ? 'active' : ''}`}
+                      role="tab"
+                      aria-selected={tab === 'email'}
+                      onClick={() => { setTab('email'); setOtpSent(false); }}
+                    >
+                      {t('login.emailTab', 'Email / ID')}
+                    </button>
+                    <button
+                      type="button"
+                      className={`tab ${tab === 'phone' ? 'active' : ''}`}
+                      role="tab"
+                      aria-selected={tab === 'phone'}
+                      onClick={() => { setTab('phone'); setOtpSent(false); }}
+                    >
+                      {t('login.phoneTab', 'Mobile OTP')}
+                    </button>
+                  </div>
 
-            <div className="login-hero-feature-item">
-              <div className="login-hero-feature-icon">🧭</div>
-              <div>
-                <h3 className="login-hero-feature-title">Actionable livelihood pathways</h3>
-                <p className="login-hero-feature-desc">Structured career roadmaps with milestone tracking from skilling to placement.</p>
-              </div>
+                  {/* Email Login Form */}
+                  {tab === 'email' && (
+                    <form onSubmit={handleEmailLogin} className="auth-form" noValidate>
+                      <div className="form-group">
+                        <label className="label" htmlFor="inp-identifier">{t('login.emailOrPhone', 'Email or Mobile Number')}</label>
+                        <div className="input-with-icon">
+                          <Mail size={18} className="input-icon" />
+                          <input
+                            id="inp-identifier"
+                            className="input input-padded"
+                            type="text"
+                            autoComplete="username"
+                            placeholder={t('login.emailPlaceholder', 'user@pmajay.gov.in')}
+                            value={identifier}
+                            onChange={(e) => setIdentifier(e.target.value)}
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <div className="form-group">
+                        <div className="label-row">
+                          <label className="label" htmlFor="inp-password">{t('login.password', 'Password')}</label>
+                          <button
+                            type="button"
+                            className="btn-link text-xs"
+                            onClick={() => setMode('forgot')}
+                          >
+                            {t('login.forgotLink', 'Forgot password?')}
+                          </button>
+                        </div>
+                        <div className="input-with-icon">
+                          <Lock size={18} className="input-icon" />
+                          <input
+                            id="inp-password"
+                            className="input input-padded"
+                            type="password"
+                            autoComplete="current-password"
+                            placeholder={t('login.passwordPlaceholder', '••••••••')}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      <button
+                        type="submit"
+                        className="btn btn-primary btn-lg w-full mt-2"
+                        disabled={loading}
+                      >
+                        {loading ? <Spinner size={20} /> : t('login.signIn', 'Sign In')}
+                      </button>
+                    </form>
+                  )}
+
+                  {/* Phone OTP Form */}
+                  {tab === 'phone' && (
+                    <form onSubmit={otpSent ? handleOtpVerify : handleOtpSend} className="auth-form" noValidate>
+                      <div className="form-group">
+                        <label className="label" htmlFor="inp-phone">{t('login.phoneLabel', 'Mobile Phone Number')}</label>
+                        <div className="input-with-icon">
+                          <Phone size={18} className="input-icon" />
+                          <input
+                            id="inp-phone"
+                            className="input input-padded"
+                            type="tel"
+                            placeholder={t('login.phonePlaceholder', '9876543210')}
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            disabled={otpSent}
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      {otpSent && (
+                        <div className="form-group">
+                          <label className="label" htmlFor="inp-otp">{t('login.enterOtp', 'Enter 6-digit OTP')}</label>
+                          <input
+                            id="inp-otp"
+                            className="input"
+                            type="number"
+                            inputMode="numeric"
+                            placeholder="123456"
+                            maxLength={6}
+                            value={otp}
+                            onChange={(e) => setOtp(e.target.value)}
+                            required
+                          />
+                        </div>
+                      )}
+
+                      <button
+                        type="submit"
+                        className="btn btn-primary btn-lg w-full mt-2"
+                        disabled={loading}
+                      >
+                        {loading ? <Spinner size={20} /> : otpSent ? t('login.verifyOtp', 'Verify OTP & Sign In') : t('login.sendOtp', 'Send Mobile OTP')}
+                      </button>
+
+                      {otpSent && (
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-sm w-full mt-1"
+                          onClick={() => { setOtpSent(false); setOtp(''); }}
+                        >
+                          {t('login.changePhone', '← Change phone number')}
+                        </button>
+                      )}
+                    </form>
+                  )}
+
+                  <div className="auth-card-footer">
+                    <span>{t('login.newAccountPrompt', 'New beneficiary or official?')} </span>
+                    <button
+                      type="button"
+                      className="btn-link font-bold"
+                      onClick={() => setMode('register')}
+                    >
+                      {t('login.createAccountLink', 'Create Account')}
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* REGISTER MODE */}
+              {mode === 'register' && (
+                <form onSubmit={handleRegisterSubmit} className="auth-form" noValidate>
+                  <div className="form-group">
+                    <label className="label">{t('login.fullName', 'Full Name')}</label>
+                    <div className="input-with-icon">
+                      <User size={18} className="input-icon" />
+                      <input
+                        className="input input-padded"
+                        type="text"
+                        placeholder={t('login.fullNamePlaceholder', 'e.g. Lakshmi Goud')}
+                        value={regName}
+                        onChange={(e) => setRegName(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="label">{t('login.emailAddr', 'Email Address')}</label>
+                    <div className="input-with-icon">
+                      <Mail size={18} className="input-icon" />
+                      <input
+                        className="input input-padded"
+                        type="email"
+                        placeholder="lakshmi@example.com"
+                        value={regEmail}
+                        onChange={(e) => setRegEmail(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="label">{t('login.phoneLabel', 'Mobile Phone Number')}</label>
+                    <div className="input-with-icon">
+                      <Phone size={18} className="input-icon" />
+                      <input
+                        className="input input-padded"
+                        type="tel"
+                        placeholder="9876543210"
+                        value={regPhone}
+                        onChange={(e) => setRegPhone(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="label">{t('login.district', 'District')}</label>
+                    <select
+                      className="input"
+                      value={regDistrict}
+                      onChange={(e) => setRegDistrict(e.target.value)}
+                    >
+                      <option value="Warangal">Warangal</option>
+                      <option value="Adilabad">Adilabad</option>
+                      <option value="Karimnagar">Karimnagar</option>
+                      <option value="Nalgonda">Nalgonda</option>
+                      <option value="Khammam">Khammam</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="label">{t('login.password', 'Password')}</label>
+                    <div className="input-with-icon">
+                      <Lock size={18} className="input-icon" />
+                      <input
+                        className="input input-padded"
+                        type="password"
+                        placeholder="••••••••"
+                        value={regPassword}
+                        onChange={(e) => setRegPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="btn btn-primary btn-lg w-full mt-2"
+                    disabled={loading}
+                  >
+                    {loading ? <Spinner size={20} /> : t('login.completeReg', 'Complete Registration')}
+                  </button>
+
+                  <div className="auth-card-footer">
+                    <span>{t('login.alreadyAccountPrompt', 'Already have an account?')} </span>
+                    <button
+                      type="button"
+                      className="btn-link font-bold"
+                      onClick={() => setMode('auth')}
+                    >
+                      {t('login.backToSignIn', 'Back to Sign In')}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* FORGOT PASSWORD MODE */}
+              {mode === 'forgot' && (
+                <form onSubmit={handleForgotSubmit} className="auth-form" noValidate>
+                  <div className="form-group">
+                    <label className="label">{t('login.emailOrPhone', 'Email or Mobile Number')}</label>
+                    <div className="input-with-icon">
+                      <Mail size={18} className="input-icon" />
+                      <input
+                        className="input input-padded"
+                        type="text"
+                        placeholder="user@pmajay.gov.in"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="btn btn-primary btn-lg w-full mt-2"
+                  >
+                    {t('login.sendResetLink', 'Send Reset Link / OTP')}
+                  </button>
+
+                  <div className="auth-card-footer">
+                    <button
+                      type="button"
+                      className="btn-link font-bold"
+                      onClick={() => setMode('auth')}
+                    >
+                      {t('login.backToSignIn', 'Back to Sign In')}
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
         </div>
-      </div>
+      </main>
+
+      {/* CORE CAPABILITIES SECTION */}
+      <section className="start-capabilities-section">
+        <div className="capabilities-container">
+          <div className="capabilities-header">
+            <h2 className="capabilities-title">{t('capabilities.title', 'Core Capabilities')}</h2>
+            <p className="capabilities-subtitle">
+              {t('capabilities.subtitle', 'Empowering PM-AJAY beneficiaries with empathetic AI voice interaction, skill mapping, and scheme alignment.')}
+            </p>
+          </div>
+
+          <div className="capabilities-grid">
+            <div className="capability-card">
+              <div className="capability-icon-box bg-blue-light">
+                <Mic size={24} className="text-blue" />
+              </div>
+              <h3 className="capability-card-title">{t('capabilities.cap1Title', 'Voice-First Guidance')}</h3>
+              <p className="capability-card-desc">
+                {t('capabilities.cap1Desc', 'Speak naturally in your preferred language to share your background, aspirations, and experience without complex forms.')}
+              </p>
+            </div>
+
+            <div className="capability-card">
+              <div className="capability-icon-box bg-teal-light">
+                <Target size={24} className="text-teal" />
+              </div>
+              <h3 className="capability-card-title">{t('capabilities.cap2Title', 'Personalized Opportunities')}</h3>
+              <p className="capability-card-desc">
+                {t('capabilities.cap2Desc', 'Discover tailored government skilling programs, micro-enterprise models, and job openings aligned with local demand.')}
+              </p>
+            </div>
+
+            <div className="capability-card">
+              <div className="capability-icon-box bg-blue-light">
+                <BookOpen size={24} className="text-blue" />
+              </div>
+              <h3 className="capability-card-title">{t('capabilities.cap3Title', 'Skill & Training Guidance')}</h3>
+              <p className="capability-card-desc">
+                {t('capabilities.cap3Desc', 'Identify competency gaps and enroll in certified training initiatives supported under PM-AJAY and allied schemes.')}
+              </p>
+            </div>
+
+            <div className="capability-card">
+              <div className="capability-icon-box bg-teal-light">
+                <Compass size={24} className="text-teal" />
+              </div>
+              <h3 className="capability-card-title">{t('capabilities.cap4Title', 'Personalized Roadmap')}</h3>
+              <p className="capability-card-desc">
+                {t('capabilities.cap4Desc', 'Transform current skills into an actionable, step-by-step career path with progress tracking and milestone guidance.')}
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* PUBLIC FOOTER */}
+      <footer className="start-footer">
+        <div className="start-footer-inner">
+          <div className="footer-brand">
+            <strong>{t('footer.brand', 'PM-AJAY Livelihood Assistant — Pradhan Mantri Anusuchit Jaati Abhyuday Yojana')}</strong>
+          </div>
+          <div className="footer-tagline">
+            {t('footer.tagline', 'Voice-First • Multilingual • Empathetic Civic AI')}
+          </div>
+        </div>
+      </footer>
+
+      {/* HELP MODAL */}
+      {showHelpModal && (
+        <div className="modal-backdrop" onClick={() => setShowHelpModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800, fontSize: '18px', color: 'var(--primary-900)' }}>
+                <HelpCircle size={20} className="text-blue" />
+                <span>{t('helpModal.title', 'About PM-AJAY Livelihood Assistant')}</span>
+              </div>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => setShowHelpModal(false)}
+                style={{ padding: '4px' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: '1.6', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <p>
+                {t('helpModal.desc', 'An AI-powered conversational guidance platform designed for beneficiaries under the Pradhan Mantri Anusuchit Jaati Abhyuday Yojana.')}
+              </p>
+              <p>
+                <strong>{t('helpModal.keyFeatures', 'Key Features:')}</strong>
+              </p>
+              <ul style={{ paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <li>{t('helpModal.feat1', 'Multilingual Voice Interaction (Telugu, Hindi, English)')}</li>
+                <li>{t('helpModal.feat2', 'Instant Livelihood & Skill Gap Assessment')}</li>
+                <li>{t('helpModal.feat3', 'Personalized Career Roadmaps & Micro-Enterprise Guides')}</li>
+                <li>{t('helpModal.feat4', 'Direct Access via Web, Touch Kiosks, or Voice Channels')}</li>
+              </ul>
+              <p style={{ marginTop: '8px' }}>
+                {t('helpModal.support', 'Need Support? Contact your local District Officer or Ministry helpline.')}
+              </p>
+            </div>
+
+            <div style={{ marginTop: '24px', textAlign: 'right' }}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => setShowHelpModal(false)}
+              >
+                {t('helpModal.gotIt', 'Got it')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

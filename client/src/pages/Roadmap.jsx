@@ -30,7 +30,7 @@ export const Roadmap = () => {
   const centers = data?.nearbyCenters || [];
 
   return (
-    <div className="container" style={{ maxWidth: '880px' }}>
+    <div className="page-container">
       <div style={{ marginBottom: '24px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: 800 }}>Livelihood and Skilling Roadmap</h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Step by step milestone plan ordered by prerequisite graph and local market linkages</p>

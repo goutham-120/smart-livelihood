@@ -148,10 +148,10 @@ export function Profile() {
     }
   };
 
-  if (loading) return <div className="profile-root"><SkeletonCard rows={6} /></div>;
+  if (loading) return <div className="page-container"><SkeletonCard rows={6} /></div>;
 
   return (
-    <div className="profile-root page-enter">
+    <div className="page-container" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold">{t ? t('profile.title', 'My Profile & Preferences') : 'My Profile & Preferences'}</h1>

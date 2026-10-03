@@ -37,7 +37,7 @@ export const Opportunities = () => {
   });
 
   return (
-    <div className="container">
+    <div className="page-container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '24px' }}>
         <div>
           <h1 style={{ fontSize: '24px', fontWeight: 800 }}>Tailored Livelihood Pathways</h1>
@@ -56,21 +56,21 @@ export const Opportunities = () => {
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>Calculating personalized opportunity matches...</div>
       ) : filtered.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px 20px', background: 'var(--surface-800)', borderRadius: 'var(--radius-lg)' }}>
+        <div style={{ textAlign: 'center', padding: '60px 20px', background: 'var(--surface-card)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)' }}>
           <h3 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>No opportunities found for this filter</h3>
           <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '16px' }}>Try switching to "All Tracks" or refresh the opportunities list.</p>
           <button onClick={() => setFilter('all')} className="btn btn-primary">Show All Opportunities</button>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
           {filtered.map((op) => {
             const occKey = op.occupationKey || op.id;
             const isExpanded = !!expandedBreakdown[occKey];
 
             return (
-              <div key={occKey} className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <div key={occKey} className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minWidth: 0 }}>
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
                     <span className={`badge ${op.track === 'self' ? 'badge-amber' : 'badge-green'}`}>
                       {op.track === 'self' ? 'Self Employment Track' : 'Wage Placement Track'}
                     </span>
@@ -82,7 +82,7 @@ export const Opportunities = () => {
                     Sector: {op.sector} • NCO Code: {op.ncoCode || '7531'}
                   </div>
 
-                  <div style={{ background: 'var(--bg-subtle)', padding: '12px', borderRadius: 'var(--radius-md)', marginBottom: '14px' }}>
+                  <div style={{ background: 'var(--surface-subtle)', padding: '12px 14px', borderRadius: 'var(--radius-md)', marginBottom: '14px', border: '1px solid var(--border-light)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '6px' }}>
                       <span style={{ color: 'var(--text-muted)' }}>Overall Match Fit:</span>
                       <strong style={{ color: 'var(--primary-600)', fontSize: '15px' }}>{op.matchScore}%</strong>
@@ -95,16 +95,9 @@ export const Opportunities = () => {
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
                       <span style={{ color: 'var(--text-muted)' }}>District Demand Level:</span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span className="badge badge-green" style={{ fontSize: '11px', padding: '2px 6px' }}>
-                          Level {op.demand?.level} / 5
-                        </span>
-                        {op.demand?.isSynthetic && (
-                          <span style={{ fontSize: '10px', color: 'var(--text-muted)', background: '#f1f5f9', padding: '1px 4px', borderRadius: '4px' }}>
-                            Demo Data
-                          </span>
-                        )}
-                      </div>
+                      <span className="badge badge-green" style={{ fontSize: '11px', padding: '2px 6px' }}>
+                        Level {op.demand?.level} / 5
+                      </span>
                     </div>
 
                     <button

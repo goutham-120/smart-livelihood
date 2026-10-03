@@ -24,7 +24,7 @@ export const SkillGaps = () => {
   const learnFirst = data.skillsSummary?.learnFirst || missing.slice(0, 3);
 
   return (
-    <div className="container" style={{ maxWidth: '960px' }}>
+    <div className="page-container">
       <div style={{ marginBottom: '20px' }}>
         <span className="badge badge-blue" style={{ marginBottom: '8px' }}>NSQF Level {data.occupation?.nsqfLevel}</span>
         <h1 style={{ fontSize: '24px', fontWeight: 800 }}>Competency Gap Analysis: {data.occupation?.title}</h1>
