@@ -34,7 +34,7 @@ export const Training = () => {
   });
 
   return (
-    <div className="container" style={{ maxWidth: '960px' }}>
+    <div className="page-container">
       <div style={{ marginBottom: '20px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: 800 }}>Certified Training Programs: {trainingData.occupation?.title}</h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Free government funded skilling with NSQF certification under PMKVY and PM-AJAY GIA</p>

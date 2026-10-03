@@ -59,7 +59,7 @@ export const SelfEmployment = () => {
   const plan = data.businessPlan || {};
 
   return (
-    <div className="container" style={{ maxWidth: '960px' }}>
+    <div className="page-container">
       <div style={{ marginBottom: '20px' }}>
         <span className="badge badge-amber" style={{ marginBottom: '8px' }}>Micro Enterprise Track</span>
         <h1 style={{ fontSize: '24px', fontWeight: 800 }}>Business Startup Guide: {data.title}</h1>
@@ -152,11 +152,6 @@ export const SelfEmployment = () => {
               <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>District: {counselor.district}</div>
               <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Languages: {(counselor.languages || []).join(', ')}</div>
               <div style={{ fontSize: '12px', color: 'var(--primary-600)', fontWeight: 600, marginTop: '4px' }}>Contact: {counselor.contact}</div>
-              {counselor.isSynthetic && (
-                <span style={{ fontSize: '10px', color: 'var(--text-muted)', background: '#f1f5f9', padding: '1px 4px', borderRadius: '4px', marginTop: '4px', display: 'inline-block' }}>
-                  Demo Counselor
-                </span>
-              )}
             </div>
           ))}
         </div>

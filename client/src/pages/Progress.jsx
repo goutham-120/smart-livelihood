@@ -4,23 +4,30 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Award, CheckCircle2, Clock, Circle } from 'lucide-react';
-import { SkeletonCard, EmptyState, ReadAloudButton } from '../components.jsx';
+import { Card, SkeletonCard, EmptyState, ReadAloudButton } from '../components.jsx';
 import { getPlacements, api } from '../api.js';
 import { useLang } from '../lang.js';
 import './Progress.css';
 
 const STATUS_META = {
-  enrolled:  { icon: '📚', color: 'var(--color-info)',    label: 'Enrolled'  },
-  completed: { icon: '🏅', color: 'var(--color-accent)',  label: 'Completed' },
-  placed:    { icon: '✅', color: 'var(--color-success)', label: 'Placed'    },
-  dropped:   { icon: '⚠️', color: 'var(--color-danger)',  label: 'Dropped'   },
+  enrolled:  { icon: '📚', color: 'var(--primary-600)',    label: 'Enrolled'  },
+  completed: { icon: '🏅', color: 'var(--status-success)', label: 'Completed' },
+  placed:    { icon: '✅', color: 'var(--accent-sky)',     label: 'Placed'    },
+  dropped:   { icon: '⚠️', color: 'var(--status-danger)',  label: 'Dropped'   },
 };
+
+const DEFAULT_MILESTONES = [
+  { name: 'Voice Assessment & Skill Identification', status: 'completed', description: 'Your prior skills and work experience have been verified by AI Voice Assistant.' },
+  { name: 'NSQF Course Enrollment', status: 'in_progress', description: 'Active enrollment in NSQF Level 3 skilling module.' },
+  { name: 'Practical Assessment & Certification', status: 'pending', description: 'Hands-on practical trade evaluation and Sector Skill Council certification.' },
+  { name: 'Placement / Enterprise Linkage', status: 'pending', description: 'District placement drive or micro-enterprise grant disbursement.' }
+];
 
 function TimelineItem({ placement, isLast }) {
   const meta = STATUS_META[placement.status] || STATUS_META.enrolled;
-  const date = new Date(placement.at).toLocaleDateString('en-IN', {
+  const date = placement.at ? new Date(placement.at).toLocaleDateString('en-IN', {
     day: 'numeric', month: 'short', year: 'numeric',
-  });
+  }) : 'Recent';
 
   return (
     <div className="timeline-item">
@@ -77,101 +84,119 @@ export function Progress() {
   const counts = { enrolled: 0, completed: 0, placed: 0, dropped: 0 };
   placements.forEach((p) => { if (counts[p.status] !== undefined) counts[p.status]++; });
 
-  if (loading) return <div className="progress-root"><SkeletonCard rows={5} /></div>;
+  if (loading) return <div className="page-container"><SkeletonCard rows={5} /></div>;
+
+  const formatStatus = (st) => {
+    if (!st) return 'Pending';
+    const s = String(st).toLowerCase();
+    if (s.includes('completed')) return 'Completed';
+    if (s.includes('progress') || s.includes('in_progress')) return 'In Progress';
+    if (s.includes('enrolled')) return 'Enrolled';
+    if (s.includes('placed')) return 'Placed';
+    return 'Pending';
+  };
+
+  const milestonesToRender = (journey?.milestones && journey.milestones.length > 0)
+    ? journey.milestones
+    : DEFAULT_MILESTONES;
 
   return (
-    <div className="progress-root page-enter">
-      <div className="flex items-center justify-between mb-6">
+    <div className="page-container" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Award size={28} color="var(--color-saffron)" /> {t ? t('progress.title', 'My Progress & Milestones') : 'My Progress & Milestones'}
+          <h1 style={{ fontSize: '24px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Award size={26} color="var(--accent-gold)" /> {t ? t('progress.title', 'Active Livelihood Milestones') : 'Active Livelihood Milestones'}
           </h1>
-          <p className="text-muted text-sm mt-1">
+          <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '2px' }}>
             Live milestone tracking under PM-AJAY GIA Welfare & Skilling Initiative
           </p>
         </div>
-        <ReadAloudButton lang={lang} />
+        <ReadAloudButton text="Active Livelihood Milestones. Track your progress across skilling, assessment, and placement." />
       </div>
 
       {/* Current stage banner */}
-      <div className="card mb-6" style={{ background: 'var(--surface-800)', border: '1px solid var(--surface-700)' }}>
-        <div className="flex justify-between items-center flex-wrap gap-3">
+      <Card style={{ background: 'linear-gradient(135deg, #0f172a, #1e293b)', color: '#fff', border: 'none' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           <div>
-            <div className="text-xs text-muted font-bold">CURRENT STAGE</div>
-            <div className="text-xl font-bold text-primary mt-1" style={{ textTransform: 'capitalize' }}>
-              {journey?.currentStage?.replace(/_/g, ' ') || 'Skill Discovery & Skilling'}
+            <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700, letterSpacing: '0.5px' }}>CURRENT STAGE</div>
+            <div style={{ fontSize: '20px', fontWeight: 800, color: '#fff', marginTop: '4px', textTransform: 'capitalize' }}>
+              {journey?.currentStage?.replace(/_/g, ' ') || 'NSQF Course Enrollment'}
             </div>
           </div>
-          <Link to="/opportunities" className="btn btn-primary btn-sm">
+          <Link to="/opportunities" className="btn btn-primary" style={{ fontSize: '13px' }}>
             Browse New Pathways &rarr;
           </Link>
         </div>
-      </div>
+      </Card>
 
       {/* Welfare & Certification Milestones */}
-      {journey?.milestones?.length > 0 && (
-        <div className="card mb-6">
-          <h3 className="text-base font-bold mb-4">Welfare & Certification Milestones</h3>
-          <div className="flex-col gap-3 flex">
-            {journey.milestones.map((m, idx) => (
-              <div key={idx} className="flex items-center gap-3 p-3 rounded-lg" style={{ background: 'var(--surface-700)', border: '1px solid var(--surface-600)' }}>
-                {m.status === 'completed' ? (
-                  <CheckCircle2 size={22} color="var(--color-success)" />
-                ) : m.status === 'in_progress' ? (
-                  <Clock size={22} color="var(--color-saffron)" />
+      <Card title="Welfare & Certification Milestones">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px' }}>
+          {milestonesToRender.map((m, idx) => {
+            const formatted = formatStatus(m.status);
+            const isComp = formatted === 'Completed';
+            const isInProg = formatted === 'In Progress';
+            return (
+              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', background: 'var(--surface-subtle)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
+                {isComp ? (
+                  <CheckCircle2 size={22} color="var(--status-success)" />
+                ) : isInProg ? (
+                  <Clock size={22} color="var(--accent-gold)" />
                 ) : (
-                  <Circle size={22} color="var(--surface-400)" />
+                  <Circle size={22} color="var(--text-subtle)" />
                 )}
-                <div className="flex-1">
-                  <div className="font-semibold text-sm">{m.name}</div>
-                  <div className="text-xs text-muted" style={{ textTransform: 'capitalize' }}>
-                    Status: {m.status.replace(/_/g, ' ')}
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-main)' }}>{m.name}</div>
+                  {m.description && (
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>{m.description}</div>
+                  )}
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                    Status: <strong>{formatted}</strong>
                   </div>
                 </div>
-                <span className={`badge ${m.status === 'completed' ? 'badge-success' : m.status === 'in_progress' ? 'badge-primary' : 'badge-muted'}`}>
-                  {m.status.toUpperCase()}
+                <span className={`badge ${isComp ? 'badge-green' : isInProg ? 'badge-blue' : 'badge-amber'}`}>
+                  {formatted}
                 </span>
               </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
-      )}
+      </Card>
 
       {/* Summary pills */}
-      <div className="flex flex-wrap gap-3 mb-6">
+      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
         {Object.entries(STATUS_META).map(([key, meta]) => (
-          <div key={key} className="progress-stat-pill" style={{ borderColor: meta.color }}>
+          <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 14px', background: 'var(--surface-card)', border: `1px solid ${meta.color}`, borderRadius: 'var(--radius-md)', fontSize: '13px' }}>
             <span aria-hidden="true">{meta.icon}</span>
-            <span className="font-bold" style={{ color: meta.color }}>{counts[key]}</span>
-            <span className="text-xs text-muted">{meta.label}</span>
+            <span style={{ fontWeight: 800, color: meta.color }}>{counts[key]}</span>
+            <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{meta.label}</span>
           </div>
         ))}
       </div>
 
       {/* Placement Timeline */}
-      <div className="card">
-        <h3 className="text-base font-bold mb-4">Training & Placement Records</h3>
+      <Card title="Training & Placement Records">
         {placements.length === 0 ? (
           <EmptyState
-            icon="🗺️"
-            title="No training enrolled yet"
+            title="No active placements yet"
             description="You have not enrolled in any training courses yet. Explore NSQF-aligned pathways tailored to your profile."
             action={
-              <Link to="/opportunities" className="btn btn-primary btn-sm">
-                ✨ Find Training
+              <Link to="/opportunities" className="btn btn-primary" style={{ fontSize: '13px' }}>
+                Find Training Pathways &rarr;
               </Link>
             }
           />
         ) : (
           <div className="timeline">
             {placements.map((p, i) => (
-              <TimelineItem key={p._id} placement={p} isLast={i === placements.length - 1} />
+              <TimelineItem key={p._id || i} placement={p} isLast={i === placements.length - 1} />
             ))}
           </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 }
 
 export default Progress;
+

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api.js';
+import { useLang } from '../lang.js';
 import { VoiceInput, Card, Badge } from '../components.jsx';
 import { Sparkles, ArrowRight, Languages, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const Assistant = () => {
-  const [lang, setLang] = useState('te');
+  const { lang } = useLang();
   const [messages, setMessages] = useState([
     {
       sender: 'ai',
@@ -55,7 +56,7 @@ export const Assistant = () => {
   ];
 
   return (
-    <div style={{ maxWidth: '860px', margin: '0 auto' }}>
+    <div className="page-container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
         <div>
           <h2 style={{ fontSize: '22px', fontWeight: 800 }}>Empathetic AI Voice Assistant</h2>
@@ -148,3 +149,5 @@ export const Assistant = () => {
     </div>
   );
 };
+
+export default Assistant;

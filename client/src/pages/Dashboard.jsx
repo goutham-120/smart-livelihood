@@ -43,7 +43,7 @@ export const Dashboard = ({ user }) => {
 
   if (isOfficer) {
     return (
-      <div>
+      <div className="page-container">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '24px' }}>
           <div>
             <h2 style={{ fontSize: '22px', fontWeight: 800 }}>District Officer Command Cockpit</h2>
@@ -138,28 +138,28 @@ export const Dashboard = ({ user }) => {
   const userSkills = profile?.skills || [];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div className="page-container" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Greeting Banner */}
-      <Card style={{ background: 'linear-gradient(135deg, #1e40af, #2563eb)', color: '#fff', border: 'none' }}>
+      <Card style={{ background: 'linear-gradient(135deg, #1e40af, #2563eb)', color: '#fff', border: 'none', overflow: 'hidden' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-          <div>
+          <div style={{ flex: '1 1 280px', minWidth: 0 }}>
             <div style={{ fontSize: '13px', color: '#93c5fd', fontWeight: 600, marginBottom: '4px' }}>
               Namaste, {user?.name || 'Friend'}!
             </div>
-            <h2 style={{ fontSize: '24px', fontWeight: 800 }}>Let's continue your livelihood journey</h2>
-            <p style={{ color: '#dbeafe', fontSize: '14px', marginTop: '4px' }}>
+            <h2 style={{ fontSize: '24px', fontWeight: 800, lineHeight: '1.25' }}>Let's continue your livelihood journey</h2>
+            <p style={{ color: '#dbeafe', fontSize: '14px', marginTop: '6px' }}>
               Location: <strong>{profile?.district || 'Warangal'}, Telangana</strong> | Education: <strong>{profile?.education || 'High School'}</strong>
             </p>
           </div>
-          <Link to="/assistant" className="btn" style={{ background: '#fff', color: 'var(--primary-700)', fontWeight: 700 }}>
+          <Link to="/assistant" className="btn" style={{ background: '#fff', color: 'var(--primary-700)', fontWeight: 700, flexShrink: 0, whiteSpace: 'nowrap' }}>
             Talk to AI Voice Assistant &rarr;
           </Link>
         </div>
       </Card>
 
       {/* Primary Action & Active Pathway */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
-        <Card title="Next Recommended Action">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+        <Card title="Next Recommended Action" style={{ minWidth: 0 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '6px' }}>
             <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
               {userSkills.length === 0
@@ -169,7 +169,7 @@ export const Dashboard = ({ user }) => {
 
             {topOpportunity ? (
               <div style={{ background: 'var(--surface-subtle)', padding: '12px 16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', flexWrap: 'wrap', gap: '6px' }}>
                   <span className="badge badge-green">{topOpportunity.matchScore || 85}% Match Fit</span>
                   <span className="badge badge-blue">NSQF Level {topOpportunity.nsqfLevel || 3}</span>
                 </div>
@@ -186,7 +186,7 @@ export const Dashboard = ({ user }) => {
           </div>
         </Card>
 
-        <Card title="Your Identified Profile Competencies">
+        <Card title="Your Identified Profile Competencies" style={{ minWidth: 0 }}>
           <div style={{ marginTop: '6px' }}>
             {userSkills.length > 0 ? (
               <div>
@@ -210,17 +210,17 @@ export const Dashboard = ({ user }) => {
 
       {/* Top Matched Pathways */}
       {(opportunities || []).length > 0 && (
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
             <h3 style={{ fontSize: '18px', fontWeight: 800 }}>Top Matched Livelihood Pathways</h3>
             <Link to="/opportunities" style={{ color: 'var(--primary-600)', fontWeight: 600, fontSize: '13px' }}>View All ({opportunities.length}) &rarr;</Link>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
             {opportunities.slice(0, 3).map((op, idx) => (
-              <Card key={op.occupationKey || op.id || idx} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <Card key={op.occupationKey || op.id || idx} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minWidth: 0 }}>
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
                     <Badge type={op.track === 'self' ? 'amber' : 'green'}>{op.track === 'self' ? 'Self-Employment' : 'Wage Placement'}</Badge>
                     <Badge type="blue">NSQF Level {op.nsqfLevel || 3}</Badge>
                   </div>
@@ -228,9 +228,9 @@ export const Dashboard = ({ user }) => {
                   <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '10px' }}>{op.sector || 'Skilling'}</div>
                   <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--primary-600)' }}>{op.matchScore || 85}% Match Fit Score</div>
                 </div>
-                <div style={{ display: 'flex', gap: '8px', marginTop: '14px' }}>
-                  <Link to={`/skill-gaps?occ=${op.occupationKey || ''}`} className="btn btn-secondary" style={{ fontSize: '12px', padding: '6px 10px', flex: 1 }}>Skill Gaps</Link>
-                  <Link to={`/roadmap?occ=${op.occupationKey || ''}`} className="btn btn-primary" style={{ fontSize: '12px', padding: '6px 10px', flex: 1 }}>Roadmap &rarr;</Link>
+                <div style={{ display: 'flex', gap: '8px', marginTop: '14px', flexWrap: 'wrap' }}>
+                  <Link to={`/skill-gaps?occ=${op.occupationKey || ''}`} className="btn btn-secondary" style={{ fontSize: '12px', padding: '6px 10px', flex: 1, minWidth: '100px', textAlign: 'center' }}>Skill Gaps</Link>
+                  <Link to={`/roadmap?occ=${op.occupationKey || ''}`} className="btn btn-primary" style={{ fontSize: '12px', padding: '6px 10px', flex: 1, minWidth: '100px', textAlign: 'center' }}>Roadmap &rarr;</Link>
                 </div>
               </Card>
             ))}
