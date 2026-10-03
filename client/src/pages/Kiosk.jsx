@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Mic,
   MicOff,
@@ -27,8 +28,9 @@ const INITIAL_PROMPTS = {
 };
 
 export const Kiosk = () => {
-  const [language, setLanguage] = useState('te');
-  const [currentPrompt, setCurrentPrompt] = useState(INITIAL_PROMPTS.te);
+  const { t, i18n } = useTranslation();
+  const [language, setLanguage] = useState(i18n.language || 'te');
+  const [currentPrompt, setCurrentPrompt] = useState(INITIAL_PROMPTS[i18n.language] || INITIAL_PROMPTS.te);
   const [isListening, setIsListening] = useState(false);
   const [interimText, setInterimText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -36,6 +38,21 @@ export const Kiosk = () => {
   const [dialogueHistory, setDialogueHistory] = useState([]);
   const [extractedSkills, setExtractedSkills] = useState([]);
   const [isComplete, setIsComplete] = useState(false);
+
+  // Sync language selection with i18n
+  const handleSelectLanguage = (code) => {
+    setLanguage(code);
+    if (i18n.language !== code) {
+      i18n.changeLanguage(code);
+    }
+  };
+
+  // Sync state if i18n changes externally
+  useEffect(() => {
+    if (i18n.language && i18n.language !== language) {
+      setLanguage(i18n.language);
+    }
+  }, [i18n.language]);
 
   // Phone number capture at conclusion
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -243,7 +260,7 @@ export const Kiosk = () => {
   return (
     <div className="kiosk-wrapper">
       <Link to="/assistant" className="kiosk-exit-link">
-        Exit Kiosk &rarr;
+        {t('kiosk.exit', 'Exit Kiosk')} &rarr;
       </Link>
 
       {/* Header */}
@@ -251,18 +268,18 @@ export const Kiosk = () => {
         <div className="kiosk-emblem">
           <div className="kiosk-badge">PM AJAY</div>
           <div>
-            <h1 className="kiosk-heading">Livelihood & Skilling Touch Kiosk</h1>
-            <div className="kiosk-subheading">Gram Panchayat Community Common Service Center</div>
+            <h1 className="kiosk-heading">{t('kiosk.heading', 'Livelihood & Skilling Touch Kiosk')}</h1>
+            <div className="kiosk-subheading">{t('kiosk.subheading', 'Gram Panchayat Community Common Service Center')}</div>
           </div>
         </div>
 
         <div className="inactivity-indicator">
           <Clock size={16} />
-          <span>Screen Reset in: {inactivitySeconds}s</span>
+          <span>{t('kiosk.resetIn', 'Screen Reset in:')} {inactivitySeconds}s</span>
           <button
             onClick={handleFullReset}
-            style={{ background: 'none', border: 'none', color: '#fbbf24', cursor: 'pointer', marginLeft: '6px' }}
-            title="Reset Kiosk Now"
+            style={{ background: 'none', border: 'none', color: '#4F3728', cursor: 'pointer', marginLeft: '6px' }}
+            title={t('common.reset', 'Reset Kiosk Now')}
           >
             <RotateCcw size={14} />
           </button>
@@ -275,7 +292,7 @@ export const Kiosk = () => {
           <div
             key={l.code}
             className={`lang-card ${language === l.code ? 'active' : ''}`}
-            onClick={() => setLanguage(l.code)}
+            onClick={() => handleSelectLanguage(l.code)}
           >
             <div className="lang-native">{l.native}</div>
             <div className="lang-sub">{l.name}</div>
@@ -291,7 +308,7 @@ export const Kiosk = () => {
 
         {interimText && (
           <div className="kiosk-interim">
-            Hearing: "{interimText}"
+            {t('kiosk.hearing', 'Hearing:')} "{interimText}"
           </div>
         )}
 
@@ -306,8 +323,8 @@ export const Kiosk = () => {
             >
               {isListening ? <MicOff size={60} /> : <Mic size={60} />}
             </button>
-            <div style={{ marginTop: '14px', fontSize: '15px', color: '#cbd5e1' }}>
-              {isListening ? 'Listening to your voice... Speak clearly' : 'TAP BIG MIC TO SPEAK'}
+            <div style={{ marginTop: '14px', fontSize: '15px', color: '#4F3728' }}>
+              {isListening ? t('kiosk.listening', 'Listening to your voice... Speak clearly') : t('kiosk.tapMic', 'TAP BIG MIC TO SPEAK')}
             </div>
           </div>
         )}
@@ -315,13 +332,13 @@ export const Kiosk = () => {
         {/* Identified Skills Badges */}
         {extractedSkills.length > 0 && (
           <div style={{ marginTop: '10px' }}>
-            <div style={{ fontSize: '13px', color: '#fbbf24', fontWeight: 700, marginBottom: '6px' }}>
+            <div style={{ fontSize: '13px', color: '#4F3728', fontWeight: 700, marginBottom: '6px' }}>
               <Sparkles size={14} style={{ display: 'inline', marginRight: '4px' }} />
-              Discovered Competencies:
+              {t('kiosk.competencies', 'Discovered Competencies:')}
             </div>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
               {extractedSkills.map((sk, idx) => (
-                <span key={idx} className="badge badge-blue" style={{ fontSize: '13px', padding: '6px 12px' }}>
+                <span key={idx} className="badge badge-blue" style={{ fontSize: '13px', padding: '6px 12px', background: '#EEE7D9', color: '#4F3728', border: '1px solid #D6C3B1' }}>
                   {sk.replace(/_/g, ' ')}
                 </span>
               ))}
@@ -333,14 +350,14 @@ export const Kiosk = () => {
         {isComplete && !phoneSubmitted && (
           <form className="phone-capture-box" onSubmit={handlePhoneSubmit}>
             <div style={{ fontSize: '15px', fontWeight: 600 }}>
-              Enter your mobile phone number to receive your NSQF training and grant summary:
+              {t('kiosk.enterPhone', 'Enter your mobile phone number to receive your NSQF training and grant summary:')}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Phone size={24} color="#818cf8" />
+              <Phone size={24} color="#CA6603" />
               <input
                 type="tel"
                 className="kiosk-input"
-                placeholder="10-digit Phone Number"
+                placeholder={t('login.phonePlaceholder', '10-digit Phone Number')}
                 value={phoneNumber}
                 maxLength={10}
                 onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
@@ -348,23 +365,23 @@ export const Kiosk = () => {
               />
             </div>
             <button type="submit" className="kiosk-btn-large">
-              Send My Livelihood Plan via SMS & WhatsApp
+              {t('kiosk.sendSmsBtn', 'Send My Livelihood Plan via SMS & WhatsApp')}
             </button>
           </form>
         )}
 
         {/* Success Confirmation Card */}
         {phoneSubmitted && (
-          <div style={{ background: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.3)', borderRadius: '12px', padding: '24px', maxWidth: '600px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', color: '#4ade80', fontSize: '20px', fontWeight: 800 }}>
-              <CheckCircle2 size={28} /> Verification Dispatched
+          <div style={{ background: '#EEE7D9', border: '1px solid #D6C3B1', borderRadius: '12px', padding: '24px', maxWidth: '600px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', color: '#4F3728', fontSize: '20px', fontWeight: 800 }}>
+              <CheckCircle2 size={28} color="#CA6603" /> {t('kiosk.dispatched', 'Verification Dispatched')}
             </div>
-            <p style={{ marginTop: '8px', fontSize: '14px', color: '#e2e8f0' }}>
-              Your matched NSQF training center and PM Vishwakarma toolkit schedule have been dispatched to {phoneNumber}.
+            <p style={{ marginTop: '8px', fontSize: '14px', color: '#6b5240' }}>
+              {t('kiosk.dispatchedMsg', 'Your matched NSQF training center and PM Vishwakarma toolkit schedule have been dispatched to {{phone}}.', { phone: phoneNumber })}
             </p>
             <div style={{ marginTop: '16px' }}>
-              <button onClick={handleFullReset} className="btn btn-secondary" style={{ background: '#ffffff', color: '#0f172a', fontWeight: 700 }}>
-                Start New Beneficiary Assessment
+              <button onClick={handleFullReset} className="btn btn-secondary" style={{ background: '#F5F1EB', color: '#4F3728', fontWeight: 700 }}>
+                {t('kiosk.startNew', 'Start New Beneficiary Assessment')}
               </button>
             </div>
           </div>

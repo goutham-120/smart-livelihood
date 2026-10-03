@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { api } from '../api';
 import { Compass, TrendingUp, Sparkles, ArrowRight, Lock, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const WhatIf = () => {
+  const { t } = useTranslation();
   const [selectedSkills, setSelectedSkills] = useState(['sewing_machine_operation']);
   const [district, setDistrict] = useState('Warangal');
   const [employmentPreference, setEmploymentPreference] = useState('either');
@@ -12,6 +14,7 @@ export const WhatIf = () => {
 
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const availableSkills = [
     { key: 'sewing_machine_operation', name: 'Sewing Machine Operation' },
@@ -36,6 +39,7 @@ export const WhatIf = () => {
 
   const handleSimulate = async () => {
     setLoading(true);
+    setError(null);
     try {
       const res = await api.runWhatIf({
         skills: selectedSkills,
@@ -45,6 +49,9 @@ export const WhatIf = () => {
         travelRequired
       });
       setResults(res);
+    } catch (err) {
+      console.error('What-If simulation failed:', err);
+      setError(err?.response?.data?.error || err?.message || 'Failed to run simulation. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -54,19 +61,19 @@ export const WhatIf = () => {
     <div className="page-container">
       <div style={{ marginBottom: '24px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Compass size={24} color="var(--primary-600)" /> What-If Career and Skilling Simulator
+          <Compass size={24} color="var(--primary-600)" /> {t('whatIf.title', 'What-If Career and Skilling Simulator')}
         </h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
-          Simulate acquiring new trade skills or adjusting employment preferences to unlock higher income livelihood pathways.
+          {t('whatIf.subtitle', 'Simulate acquiring new trade skills or adjusting employment preferences to unlock higher income livelihood pathways.')}
         </p>
       </div>
 
       <div className="card" style={{ marginBottom: '24px' }}>
-        <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '14px' }}>Adjust Simulation Levers</h3>
+        <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '14px' }}>{t('whatIf.adjustLevers', 'Adjust Simulation Levers')}</h3>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '16px', marginBottom: '16px' }}>
           <div>
-            <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Target District Location</label>
+            <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>{t('whatIf.targetDistrict', 'Target District Location')}</label>
             <select
               value={district}
               onChange={(e) => setDistrict(e.target.value)}
@@ -79,20 +86,20 @@ export const WhatIf = () => {
           </div>
 
           <div>
-            <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Employment Track Preference</label>
+            <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>{t('whatIf.employmentPref', 'Employment Track Preference')}</label>
             <select
               value={employmentPreference}
               onChange={(e) => setEmploymentPreference(e.target.value)}
               style={{ width: '100%', padding: '10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-medium)' }}
             >
-              <option value="either">Either Track (Wage or Micro Enterprise)</option>
-              <option value="self">Micro Enterprise (Self Employment)</option>
-              <option value="wage">Wage Placement</option>
+              <option value="either">{t('dashboard.eitherTrack', 'Either Track (Wage or Micro Enterprise)')}</option>
+              <option value="self">{t('dashboard.microEnterprise', 'Micro Enterprise (Self Employment)')}</option>
+              <option value="wage">{t('dashboard.wagePlacement', 'Wage Placement')}</option>
             </select>
           </div>
 
           <div>
-            <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Target Monthly Income: ₹{incomeGoal.toLocaleString()}</label>
+            <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>{t('whatIf.targetIncome', 'Target Monthly Income')}: ₹{incomeGoal.toLocaleString()}</label>
             <input
               type="range"
               min="8000"
@@ -105,7 +112,7 @@ export const WhatIf = () => {
           </div>
 
           <div>
-            <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>Travel & Geographic Mobility</label>
+            <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>{t('whatIf.travelMobility', 'Travel & Geographic Mobility')}</label>
             <select
               value={travelRequired ? 'yes' : 'no'}
               onChange={(e) => setTravelRequired(e.target.value === 'yes')}
@@ -118,7 +125,7 @@ export const WhatIf = () => {
         </div>
 
         <div style={{ marginBottom: '16px' }}>
-          <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '8px' }}>Select Hypothesized Trade Skills to Test</label>
+          <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '8px' }}>{t('whatIf.selectSkills', 'Select Hypothesized Trade Skills to Test')}</label>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {availableSkills.map((sk) => {
               const active = selectedSkills.includes(sk.key);
@@ -146,9 +153,15 @@ export const WhatIf = () => {
         </div>
 
         <button onClick={handleSimulate} className="btn btn-primary" disabled={loading}>
-          {loading ? 'Simulating Impact...' : 'Run What-If Simulation'}
+          {loading ? t('whatIf.simulating', 'Simulating Impact...') : t('whatIf.runSimulation', 'Run What-If Simulation')}
         </button>
       </div>
+
+      {error && (
+        <div style={{ padding: '12px 16px', background: '#fee2e2', color: '#b91c1c', borderRadius: 'var(--radius-sm)', marginBottom: '24px', fontSize: '14px' }}>
+          {error}
+        </div>
+      )}
 
       {results && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -178,8 +191,8 @@ export const WhatIf = () => {
                 </div>
               </div>
 
-              <div style={{ fontSize: '13px', color: 'var(--accent-green)', fontWeight: 600 }}>
-                Net Opportunity Fit Gain: +{results.comparison.impactGainPct}% across district trade pathways.
+              <div style={{ fontSize: '13px', color: results.comparison.impactGainPct >= 0 ? 'var(--accent-green)' : '#b91c1c', fontWeight: 600 }}>
+                Net Opportunity Fit Gain: {results.comparison.impactGainPct >= 0 ? '+' : ''}{results.comparison.impactGainPct}% across district trade pathways.
               </div>
             </div>
           )}

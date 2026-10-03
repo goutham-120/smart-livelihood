@@ -53,6 +53,12 @@ export const Assistant = ({ forUserId = null }) => {
     }).catch(() => {});
   }, [forUserId]);
 
+  useEffect(() => {
+    if (globalLang && globalLang !== lang) {
+      handleLanguageChange(globalLang);
+    }
+  }, [globalLang]);
+
   const handleLanguageChange = (newLang) => {
     setLang(newLang);
     localStorage.setItem('pmajay_lang', newLang);

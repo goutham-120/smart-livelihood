@@ -118,10 +118,10 @@ export function Progress() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h1 style={{ fontSize: '24px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Award size={26} color="var(--accent-gold)" /> {t ? t('progress.title', 'Active Livelihood Milestones') : 'Active Livelihood Milestones'}
+            <Award size={26} color="var(--accent-gold)" /> {t('progress.title', 'Active Livelihood Milestones')}
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '2px' }}>
-            Live milestone tracking under PM-AJAY GIA Welfare & Skilling Initiative
+            {t('progress.subtitle', 'Live milestone tracking under PM-AJAY GIA Welfare & Skilling Initiative')}
           </p>
         </div>
         <ReadAloudButton text="Active Livelihood Milestones. Track your progress across skilling, assessment, and placement." />
@@ -131,7 +131,7 @@ export function Progress() {
       <Card style={{ background: 'linear-gradient(135deg, #0f172a, #1e293b)', color: '#fff', border: 'none' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           <div>
-            <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700, letterSpacing: '0.5px' }}>CURRENT STAGE</div>
+            <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700, letterSpacing: '0.5px' }}>{t('roadmap.current', 'CURRENT STAGE')}</div>
             <div style={{ fontSize: '20px', fontWeight: 800, color: '#fff', marginTop: '4px', textTransform: 'capitalize' }}>
               {journey?.currentStage?.replace(/_/g, ' ') || 'NSQF Course Enrollment'}
             </div>
@@ -140,13 +140,13 @@ export function Progress() {
             </h2>
           </div>
           <Link to="/opportunities" className="btn btn-primary" style={{ fontSize: '13px' }}>
-            Browse New Pathways &rarr;
+            {t('dashboard.exploreOpportunities', 'Browse New Pathways')} &rarr;
           </Link>
         </div>
       </Card>
 
       {/* Welfare & Certification Milestones */}
-      <Card title="Welfare & Certification Milestones">
+      <Card title={t('progress.welfareMilestones', 'Welfare & Certification Milestones')}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px' }}>
           {milestonesToRender.map((m, idx) => {
             const formatted = formatStatus(m.status);
@@ -185,20 +185,20 @@ export function Progress() {
           <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 14px', background: 'var(--surface-card)', border: `1px solid ${meta.color}`, borderRadius: 'var(--radius-md)', fontSize: '13px' }}>
             <span aria-hidden="true">{meta.icon}</span>
             <span style={{ fontWeight: 800, color: meta.color }}>{counts[key]}</span>
-            <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{meta.label}</span>
+            <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{t(`progress.${key}`, meta.label)}</span>
           </div>
         ))}
       </div>
 
       {/* Placement Timeline */}
-      <Card title="Training & Placement Records">
+      <Card title={t('progress.timeline', 'Training & Placement Records')}>
         {placements.length === 0 ? (
           <EmptyState
-            title="No active placements yet"
-            description="You have not enrolled in any training courses yet. Explore NSQF-aligned pathways tailored to your profile."
+            title={t('progress.noPlacements', 'No active placements yet')}
+            description={t('progress.noProgress', 'You have not enrolled in any training courses yet. Explore NSQF-aligned pathways tailored to your profile.')}
             action={
               <Link to="/opportunities" className="btn btn-primary" style={{ fontSize: '13px' }}>
-                Find Training Pathways &rarr;
+                {t('dashboard.exploreOpportunities', 'Find Training Pathways')} &rarr;
               </Link>
             }
           />

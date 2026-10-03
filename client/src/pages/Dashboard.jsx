@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { api } from '../api.js';
 import { Card, Badge, Spinner } from '../components.jsx';
 import { TrendingUp, Award, AlertTriangle, ArrowRight, Sparkles, CheckCircle, Briefcase, MapPin } from 'lucide-react';
 
 export const Dashboard = ({ user }) => {
+  const { t } = useTranslation();
   const [district, setDistrict] = useState(user?.district || 'Warangal');
   const [analytics, setAnalytics] = useState(null);
   const [opportunities, setOpportunities] = useState([]);
@@ -46,8 +48,8 @@ export const Dashboard = ({ user }) => {
       <div className="page-container">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '24px' }}>
           <div>
-            <h2 style={{ fontSize: '22px', fontWeight: 800 }}>District Officer Command Cockpit</h2>
-            <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>PM-AJAY GIA Skilling, Placement, and Dropout Governance</p>
+            <h2 style={{ fontSize: '22px', fontWeight: 800 }}>{t('dashboard.cockpitTitle', 'District Officer Command Cockpit')}</h2>
+            <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{t('dashboard.cockpitSub', 'PM-AJAY GIA Skilling, Placement, and Dropout Governance')}</p>
           </div>
 
           {user?.role === 'admin' && (
@@ -140,53 +142,53 @@ export const Dashboard = ({ user }) => {
   return (
     <div className="page-container" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Greeting Banner */}
-      <Card style={{ background: 'linear-gradient(135deg, #1e40af, #2563eb)', color: '#fff', border: 'none', overflow: 'hidden' }}>
+      <Card style={{ background: '#EEE0CC', color: '#4F3728', border: 'none', overflow: 'hidden' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           <div style={{ flex: '1 1 280px', minWidth: 0 }}>
-            <div style={{ fontSize: '13px', color: '#93c5fd', fontWeight: 600, marginBottom: '4px' }}>
-              Namaste, {user?.name || 'Friend'}!
+            <div style={{ fontSize: '13px', color: '#CA6603', fontWeight: 600, marginBottom: '4px' }}>
+              {t('dashboard.namaste', 'Namaste')}, {user?.name || 'Friend'}!
             </div>
-            <h2 style={{ fontSize: '24px', fontWeight: 800, lineHeight: '1.25' }}>Let's continue your livelihood journey</h2>
-            <p style={{ color: '#dbeafe', fontSize: '14px', marginTop: '6px' }}>
-              Location: <strong>{profile?.district || 'Warangal'}, Telangana</strong> | Education: <strong>{profile?.education || 'High School'}</strong>
+            <h2 style={{ fontSize: '24px', fontWeight: 800, lineHeight: '1.25', color: '#4F3728' }}>{t('dashboard.continueJourney', "Let's continue your livelihood journey")}</h2>
+            <p style={{ color: '#4F3728', fontSize: '14px', marginTop: '6px' }}>
+              {t('dashboard.location', 'Location')}: <strong>{profile?.district || 'Warangal'}, Telangana</strong> | {t('dashboard.education', 'Education')}: <strong>{profile?.education || 'High School'}</strong>
             </p>
           </div>
-          <Link to="/assistant" className="btn" style={{ background: '#fff', color: 'var(--primary-700)', fontWeight: 700, flexShrink: 0, whiteSpace: 'nowrap' }}>
-            Talk to AI Voice Assistant &rarr;
+          <Link to="/assistant" className="btn" style={{ background: '#CA6603', color: '#FEFCF6', fontWeight: 700, flexShrink: 0, whiteSpace: 'nowrap' }}>
+            {t('dashboard.talkAssistant', 'Talk to AI Voice Assistant')} &rarr;
           </Link>
         </div>
       </Card>
 
       {/* Primary Action & Active Pathway */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-        <Card title="Next Recommended Action" style={{ minWidth: 0 }}>
+        <Card title={t('dashboard.nextAction', 'Next Recommended Action')} style={{ minWidth: 0 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '6px' }}>
             <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
               {userSkills.length === 0
-                ? 'Speak with our AI Voice Assistant to map your trade skills and past experience.'
-                : 'Bridge your missing competencies by enrolling in prerequisite skilling modules.'}
+                ? t('dashboard.speakAssistantPrompt', 'Speak with our AI Voice Assistant to map your trade skills and past experience.')
+                : t('dashboard.bridgeCompetenciesPrompt', 'Bridge your missing competencies by enrolling in prerequisite skilling modules.')}
             </div>
 
             {topOpportunity ? (
               <div style={{ background: 'var(--surface-subtle)', padding: '12px 16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', flexWrap: 'wrap', gap: '6px' }}>
-                  <span className="badge badge-green">{topOpportunity.matchScore || 85}% Match Fit</span>
-                  <span className="badge badge-blue">NSQF Level {topOpportunity.nsqfLevel || 3}</span>
+                  <span className="badge badge-green">{topOpportunity.matchScore || 85}% {t('dashboard.matchFit', 'Match Fit')}</span>
+                  <span className="badge badge-blue">{t('dashboard.nsqfLevel', 'NSQF Level')} {topOpportunity.nsqfLevel || 3}</span>
                 </div>
                 <h4 style={{ fontSize: '16px', fontWeight: 700 }}>{topOpportunity.title || 'Livelihood Pathway'}</h4>
                 <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                  Est. Income: ₹{topOpportunity?.incomeRange?.min != null ? topOpportunity.incomeRange.min.toLocaleString() : '10,000'} to ₹{topOpportunity?.incomeRange?.max != null ? topOpportunity.incomeRange.max.toLocaleString() : '18,000'}/mo
+                  {t('dashboard.estIncome', 'Est. Income')}: ₹{topOpportunity?.incomeRange?.min != null ? topOpportunity.incomeRange.min.toLocaleString() : '10,000'} to ₹{topOpportunity?.incomeRange?.max != null ? topOpportunity.incomeRange.max.toLocaleString() : '18,000'}/mo
                 </div>
               </div>
             ) : null}
 
             <Link to={userSkills.length === 0 ? '/assistant' : '/opportunities'} className="btn btn-primary" style={{ alignSelf: 'flex-start', marginTop: '4px' }}>
-              {userSkills.length === 0 ? 'Start Voice Assessment' : 'Explore Tailored Opportunities'} <ArrowRight size={16} />
+              {userSkills.length === 0 ? t('dashboard.startAssessment', 'Start Voice Assessment') : t('dashboard.exploreOpportunities', 'Explore Tailored Opportunities')} <ArrowRight size={16} />
             </Link>
           </div>
         </Card>
 
-        <Card title="Your Identified Profile Competencies" style={{ minWidth: 0 }}>
+        <Card title={t('dashboard.identifiedCompetencies', 'Your Identified Profile Competencies')} style={{ minWidth: 0 }}>
           <div style={{ marginTop: '6px' }}>
             {userSkills.length > 0 ? (
               <div>
@@ -196,12 +198,12 @@ export const Dashboard = ({ user }) => {
                   ))}
                 </div>
                 <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                  Employment Preference: <strong>{profile?.employmentPreference === 'self' ? 'Micro-Enterprise' : profile?.employmentPreference === 'wage' ? 'Wage Placement' : 'Either Track'}</strong>
+                  {t('dashboard.employmentPrefLabel', 'Employment Preference')}: <strong>{profile?.employmentPreference === 'self' ? t('dashboard.microEnterprise', 'Micro-Enterprise') : profile?.employmentPreference === 'wage' ? t('dashboard.wagePlacement', 'Wage Placement') : t('dashboard.eitherTrack', 'Either Track')}</strong>
                 </div>
               </div>
             ) : (
               <div style={{ color: 'var(--text-muted)', fontSize: '14px', padding: '12px 0' }}>
-                No prior skills recorded yet. Complete your 2-minute voice conversation to unlock personalized recommendations.
+                {t('dashboard.noSkills', 'No prior skills recorded yet. Complete your 2-minute voice conversation to unlock personalized recommendations.')}
               </div>
             )}
           </div>
@@ -212,8 +214,8 @@ export const Dashboard = ({ user }) => {
       {(opportunities || []).length > 0 && (
         <div style={{ minWidth: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 800 }}>Top Matched Livelihood Pathways</h3>
-            <Link to="/opportunities" style={{ color: 'var(--primary-600)', fontWeight: 600, fontSize: '13px' }}>View All ({opportunities.length}) &rarr;</Link>
+            <h3 style={{ fontSize: '18px', fontWeight: 800 }}>{t('dashboard.topMatchedPathways', 'Top Matched Livelihood Pathways')}</h3>
+            <Link to="/opportunities" style={{ color: 'var(--primary-600)', fontWeight: 600, fontSize: '13px' }}>{t('dashboard.viewAll', 'View All')} ({opportunities.length}) &rarr;</Link>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
@@ -221,16 +223,16 @@ export const Dashboard = ({ user }) => {
               <Card key={op.occupationKey || op.id || idx} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minWidth: 0 }}>
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
-                    <Badge type={op.track === 'self' ? 'amber' : 'green'}>{op.track === 'self' ? 'Self-Employment' : 'Wage Placement'}</Badge>
-                    <Badge type="blue">NSQF Level {op.nsqfLevel || 3}</Badge>
+                    <Badge type={op.track === 'self' ? 'amber' : 'green'}>{op.track === 'self' ? t('dashboard.microEnterprise', 'Self-Employment') : t('dashboard.wagePlacement', 'Wage Placement')}</Badge>
+                    <Badge type="blue">{t('dashboard.nsqfLevel', 'NSQF Level')} {op.nsqfLevel || 3}</Badge>
                   </div>
                   <h4 style={{ fontSize: '16px', fontWeight: 700, margin: '4px 0' }}>{op.title || 'Livelihood Pathway'}</h4>
                   <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '10px' }}>{op.sector || 'Skilling'}</div>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--primary-600)' }}>{op.matchScore || 85}% Match Fit Score</div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--primary-600)' }}>{op.matchScore || 85}% {t('dashboard.matchFit', 'Match Fit Score')}</div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', marginTop: '14px', flexWrap: 'wrap' }}>
-                  <Link to={`/skill-gaps?occ=${op.occupationKey || ''}`} className="btn btn-secondary" style={{ fontSize: '12px', padding: '6px 10px', flex: 1, minWidth: '100px', textAlign: 'center' }}>Skill Gaps</Link>
-                  <Link to={`/roadmap?occ=${op.occupationKey || ''}`} className="btn btn-primary" style={{ fontSize: '12px', padding: '6px 10px', flex: 1, minWidth: '100px', textAlign: 'center' }}>Roadmap &rarr;</Link>
+                  <Link to={`/skill-gaps?occ=${op.occupationKey || ''}`} className="btn btn-secondary" style={{ fontSize: '12px', padding: '6px 10px', flex: 1, minWidth: '100px', textAlign: 'center' }}>{t('dashboard.skillGapsBtn', 'Skill Gaps')}</Link>
+                  <Link to={`/roadmap?occ=${op.occupationKey || ''}`} className="btn btn-primary" style={{ fontSize: '12px', padding: '6px 10px', flex: 1, minWidth: '100px', textAlign: 'center' }}>{t('dashboard.roadmapBtn', 'Roadmap')} &rarr;</Link>
                 </div>
               </Card>
             ))}

@@ -1,0 +1,398 @@
+/* Roadmap.css - Visual Livelihood Journey & Timeline Styles */
+
+.roadmap-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-bottom: 40px;
+}
+
+.roadmap-header-title {
+  font-family: var(--font-heading), 'DM Serif Display', Georgia, serif;
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text-main, #4F3728);
+  margin: 0 0 4px 0;
+}
+
+.roadmap-header-sub {
+  color: var(--text-muted, #6b5240);
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Target Outcome & Readiness Banner */
+.roadmap-hero-card {
+  background-color: var(--surface-card, #F5F1EB);
+  border: 1px solid var(--border-light, #E1D7C8);
+  border-radius: var(--radius-lg, 14px);
+  padding: 24px;
+  box-shadow: var(--shadow-sm, 0 1px 2px 0 rgba(79, 55, 40, 0.05));
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.roadmap-hero-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.roadmap-target-tag {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary-600, #CA6603);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.roadmap-target-title {
+  font-family: var(--font-heading), 'DM Serif Display', Georgia, serif;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--primary-900, #4F3728);
+  margin: 0 0 6px 0;
+}
+
+.roadmap-target-meta {
+  font-size: 13px;
+  color: var(--text-muted, #6b5240);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.roadmap-readiness-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  min-width: 220px;
+}
+
+.roadmap-readiness-badge {
+  background: rgba(202, 102, 3, 0.12);
+  color: var(--primary-600, #CA6603);
+  border: 1px solid rgba(202, 102, 3, 0.25);
+  padding: 6px 14px;
+  border-radius: var(--radius-full, 9999px);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.roadmap-readiness-bar-track {
+  width: 100%;
+  height: 8px;
+  background: var(--surface-subtle, #EEE7D9);
+  border-radius: 9999px;
+  overflow: hidden;
+  border: 1px solid var(--border-warm, #E1D7C8);
+}
+
+.roadmap-readiness-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #CA6603 0%, #e07d16 100%);
+  border-radius: 9999px;
+  transition: width 0.6s ease-out;
+}
+
+/* Horizontal Visual Stepper (Desktop) */
+.roadmap-journey-card {
+  background: var(--surface-card, #F5F1EB);
+  border: 1px solid var(--border-light, #E1D7C8);
+  border-radius: var(--radius-lg, 14px);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.roadmap-journey-title {
+  font-family: var(--font-heading), 'DM Serif Display', Georgia, serif;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--primary-900, #4F3728);
+  text-align: center;
+  letter-spacing: 1px;
+  margin: 0 0 24px 0;
+  text-transform: uppercase;
+}
+
+.roadmap-stepper-track {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  position: relative;
+  padding: 0 10px;
+}
+
+.roadmap-stepper-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  text-align: center;
+}
+
+.roadmap-node-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 15px;
+  transition: all 0.25s ease;
+  margin-bottom: 10px;
+  background: var(--surface-card, #F5F1EB);
+  box-shadow: 0 2px 4px rgba(79, 55, 40, 0.08);
+}
+
+.roadmap-node-circle.completed {
+  background: #CA6603;
+  color: #FEFCF6;
+  border: 2px solid #CA6603;
+}
+
+.roadmap-node-circle.current {
+  background: #FEFCF6;
+  color: #CA6603;
+  border: 3px solid #CA6603;
+  transform: scale(1.15);
+  box-shadow: 0 0 0 4px rgba(202, 102, 3, 0.2);
+}
+
+.roadmap-node-circle.upcoming {
+  background: #F9F5EC;
+  color: #8c7360;
+  border: 2px dashed #E1D7C8;
+}
+
+.roadmap-node-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main, #4F3728);
+  line-height: 1.3;
+  max-width: 140px;
+  margin-bottom: 6px;
+}
+
+.roadmap-node-badge {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.roadmap-node-badge.completed {
+  background: rgba(22, 163, 74, 0.12);
+  color: #16a34a;
+}
+
+.roadmap-node-badge.current {
+  background: rgba(202, 102, 3, 0.16);
+  color: #CA6603;
+}
+
+.roadmap-node-badge.upcoming {
+  background: var(--surface-subtle, #EEE7D9);
+  color: #8c7360;
+}
+
+.roadmap-connector-line {
+  position: absolute;
+  top: 22px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--border-warm, #E1D7C8);
+  z-index: 1;
+}
+
+.roadmap-connector-progress {
+  height: 100%;
+  background: #CA6603;
+  transition: width 0.4s ease;
+}
+
+/* Current Milestone Panel (Spotlight Card) */
+.roadmap-current-panel {
+  background: linear-gradient(135deg, #FEFCF6 0%, #F5F1EB 100%);
+  border: 2px solid #CA6603;
+  border-radius: var(--radius-lg, 14px);
+  padding: 24px;
+  box-shadow: 0 6px 16px rgba(202, 102, 3, 0.12);
+  position: relative;
+  overflow: hidden;
+}
+
+.roadmap-current-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.roadmap-current-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #CA6603;
+  color: #FEFCF6;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full, 9999px);
+}
+
+.roadmap-current-title {
+  font-family: var(--font-heading), 'DM Serif Display', Georgia, serif;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--primary-900, #4F3728);
+  margin: 0 0 8px 0;
+}
+
+.roadmap-current-desc {
+  font-size: 14px;
+  color: var(--text-main, #4F3728);
+  line-height: 1.6;
+  margin: 0 0 16px 0;
+}
+
+.roadmap-grid-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  background: var(--surface-subtle, #EEE7D9);
+  padding: 14px 16px;
+  border-radius: var(--radius-md, 10px);
+  border: 1px solid var(--border-warm, #E1D7C8);
+  margin-bottom: 20px;
+}
+
+.roadmap-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.roadmap-detail-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted, #6b5240);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.roadmap-detail-value {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--primary-900, #4F3728);
+}
+
+/* Action Button: Mark as Completed */
+.roadmap-mark-completed-btn {
+  background: var(--primary-600, #CA6603);
+  color: #FEFCF6;
+  border: 1px solid var(--primary-600, #CA6603);
+  padding: 10px 20px;
+  border-radius: var(--radius-md, 10px);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(202, 102, 3, 0.25);
+  transition: all 0.2s ease;
+}
+
+.roadmap-mark-completed-btn:hover {
+  background: #b35a02;
+  border-color: #b35a02;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(202, 102, 3, 0.35);
+}
+
+/* Accredited Centers Section */
+.roadmap-centers-card {
+  background: var(--surface-card, #F5F1EB);
+  border: 1px solid var(--border-light, #E1D7C8);
+  border-radius: var(--radius-lg, 14px);
+  padding: 20px 24px;
+}
+
+.roadmap-centers-title {
+  font-family: var(--font-heading), 'DM Serif Display', Georgia, serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-main, #4F3728);
+  margin: 0 0 14px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.roadmap-centers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.roadmap-center-item {
+  padding: 12px 14px;
+  background: var(--surface-ground, #F9F5EC);
+  border-radius: var(--radius-md, 10px);
+  border: 1px solid var(--border-warm, #E1D7C8);
+  font-size: 12.5px;
+}
+
+/* RESPONSIVE BEHAVIOR */
+@media (max-width: 767px) {
+  .roadmap-hero-main {
+    flex-direction: column;
+  }
+  .roadmap-readiness-box {
+    align-items: flex-start;
+    width: 100%;
+  }
+  .roadmap-stepper-track {
+    flex-direction: column;
+    gap: 20px;
+    align-items: flex-start;
+    padding-left: 10px;
+  }
+  .roadmap-stepper-node {
+    flex-direction: row;
+    gap: 16px;
+    text-align: left;
+    width: 100%;
+  }
+  .roadmap-connector-line {
+    top: 0;
+    bottom: 0;
+    left: 31px;
+    width: 3px;
+    height: 100%;
+  }
+  .roadmap-node-circle {
+    margin-bottom: 0;
+  }
+  .roadmap-node-label {
+    max-width: none;
+  }
+}

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { api } from '../api';
 import { CheckCircle, AlertCircle, BookOpen, Building, ArrowRight, Star } from 'lucide-react';
 
 export const SkillGaps = () => {
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const occKey = searchParams.get('occ') || 'self_employed_tailor';
   const [data, setData] = useState(null);
@@ -16,8 +18,8 @@ export const SkillGaps = () => {
     });
   }, [occKey]);
 
-  if (loading) return <div className="container" style={{ textAlign: 'center', padding: '40px' }}>Analyzing competency gaps...</div>;
-  if (!data) return <div className="container" style={{ textAlign: 'center', padding: '40px' }}>Occupation data not found.</div>;
+  if (loading) return <div className="container" style={{ textAlign: 'center', padding: '40px' }}>{t('common.loading', 'Analyzing competency gaps...')}</div>;
+  if (!data) return <div className="container" style={{ textAlign: 'center', padding: '40px' }}>{t('common.error', 'Occupation data not found.')}</div>;
 
   const acquired = data.skillsSummary?.acquired || [];
   const missing = data.skillsSummary?.missing || [];
@@ -26,9 +28,9 @@ export const SkillGaps = () => {
   return (
     <div className="page-container">
       <div style={{ marginBottom: '20px' }}>
-        <span className="badge badge-blue" style={{ marginBottom: '8px' }}>NSQF Level {data.occupation?.nsqfLevel}</span>
-        <h1 style={{ fontSize: '24px', fontWeight: 800 }}>Competency Gap Analysis: {data.occupation?.title}</h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Comparison between your identified skills and certified industry standards</p>
+        <span className="badge badge-blue" style={{ marginBottom: '8px' }}>{t('dashboard.nsqfLevel', 'NSQF Level')} {data.occupation?.nsqfLevel}</span>
+        <h1 style={{ fontSize: '24px', fontWeight: 800 }}>{t('skillGaps.title', 'Competency Gap Analysis')}: {data.occupation?.title}</h1>
+        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{t('skillGaps.subtitle', 'Comparison between your identified skills and certified industry standards')}</p>
       </div>
 
       {learnFirst.length > 0 && (
