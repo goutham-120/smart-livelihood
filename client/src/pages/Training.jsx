@@ -31,7 +31,7 @@ const TRAINING_CONTENT = {
     months: 'Months',
     skillsGained: 'Required Trade Skills & Competencies Gained:',
     officialListing: 'Official Skill India Digital Listing →',
-    enrollBtn: 'Enroll in Career Roadmap',
+    enrollBtn: 'Apply via Career Roadmap',
     noCourses: 'No courses match the selected filter criteria.'
   },
   hi: {
@@ -60,7 +60,7 @@ const TRAINING_CONTENT = {
     months: 'माह',
     skillsGained: 'प्राप्त किए जाने वाले कौशल एवं क्षमताएं:',
     officialListing: 'आधिकारिक स्किल इंडिया डिजिटल लिस्टिंग →',
-    enrollBtn: 'करियर रोडमैप में नामांकन करें',
+    enrollBtn: 'करियर रोडमैप द्वारा आवेदन करें',
     noCourses: 'चयनित फ़िल्टर के अनुसार कोई पाठ्यक्रम नहीं मिला।'
   },
   te: {
@@ -89,7 +89,7 @@ const TRAINING_CONTENT = {
     months: 'నెలలు',
     skillsGained: 'పొందే నైపుణ్యాలు & సాధించే సామర్థ్యాలు:',
     officialListing: 'అధికారిక స్కిల్ ఇండియా డిజిటల్ లింక్ →',
-    enrollBtn: 'కెరీర్ రోడ్‌మ్యాప్‌లో నమోదు చేసుకోండి',
+    enrollBtn: 'కెరీర్ రోడ్‌మ్యాప్ ద్వారా దరఖాస్తు చేయండి',
     noCourses: 'ఎంచుకున్న ఫిల్టర్‌కు తగిన కోర్సులు కనుగొనబడలేదు.'
   }
 };
@@ -188,9 +188,16 @@ export const Training = () => {
   const { lang } = useLang();
   const tTr = TRAINING_CONTENT[lang] || TRAINING_CONTENT.en;
   const [searchParams] = useSearchParams();
-  const occKey = searchParams.get('occ') || 'self_employed_tailor';
+  const urlOcc = searchParams.get('occ');
+  const occKey = urlOcc || api.getSelectedOccupation() || 'tractor_operator';
   const [trainingData, setTrainingData] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (urlOcc) {
+      api.setSelectedOccupation(urlOcc);
+    }
+  }, [urlOcc]);
 
   const [costFilter, setCostFilter] = useState('all');
   const [modeFilter, setModeFilter] = useState('all');
@@ -200,9 +207,12 @@ export const Training = () => {
   useEffect(() => {
     api.getTraining(occKey).then((res) => {
       setTrainingData(res);
+      if (res?.resolvedKey && !urlOcc) {
+        api.setSelectedOccupation(res.resolvedKey);
+      }
       setLoading(false);
     });
-  }, [occKey]);
+  }, [occKey, urlOcc]);
 
   if (loading) return <div className="container" style={{ textAlign: 'center', padding: '40px' }}>{tTr.loading}</div>;
 

@@ -189,16 +189,26 @@ export const SkillGaps = () => {
   const { lang } = useLang();
   const tG = SKILLGAPS_CONTENT[lang] || SKILLGAPS_CONTENT.en;
   const [searchParams] = useSearchParams();
-  const occKey = searchParams.get('occ') || 'self_employed_tailor';
+  const urlOcc = searchParams.get('occ');
+  const occKey = urlOcc || api.getSelectedOccupation() || 'tractor_operator';
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (urlOcc) {
+      api.setSelectedOccupation(urlOcc);
+    }
+  }, [urlOcc]);
+
+  useEffect(() => {
     api.getSkillGaps(occKey).then((res) => {
       setData(res);
+      if (res?.resolvedKey && !urlOcc) {
+        api.setSelectedOccupation(res.resolvedKey);
+      }
       setLoading(false);
     });
-  }, [occKey]);
+  }, [occKey, urlOcc]);
 
   if (loading) return <div className="container" style={{ textAlign: 'center', padding: '40px' }}>{tG.analyzing}</div>;
   if (!data) return <div className="container" style={{ textAlign: 'center', padding: '40px' }}>{tG.notFound}</div>;

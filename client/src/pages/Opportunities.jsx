@@ -541,14 +541,29 @@ export const Opportunities = () => {
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: op.track === 'self' ? '1fr 1fr 1fr' : '1fr 1fr', gap: '6px', marginTop: '12px' }}>
-                  <Link to={`/skill-gaps?occ=${occKey}`} className="btn btn-secondary" style={{ fontSize: '11px', padding: '6px 8px' }}>
+                  <Link
+                    to={`/skill-gaps?occ=${occKey}`}
+                    onClick={() => api.setSelectedOccupation(occKey)}
+                    className="btn btn-secondary"
+                    style={{ fontSize: '11px', padding: '6px 8px' }}
+                  >
                     {tOpp.skillGaps}
                   </Link>
-                  <Link to={`/roadmap?occ=${occKey}`} className="btn btn-primary" style={{ fontSize: '11px', padding: '6px 8px' }}>
+                  <Link
+                    to={`/roadmap?occ=${occKey}`}
+                    onClick={() => api.setSelectedOccupation(occKey)}
+                    className="btn btn-primary"
+                    style={{ fontSize: '11px', padding: '6px 8px' }}
+                  >
                     {tOpp.roadmap} <ArrowRight size={12} />
                   </Link>
                   {op.track === 'self' && (
-                    <Link to={`/self-employment?occ=${occKey}`} className="btn btn-secondary" style={{ fontSize: '11px', padding: '6px 8px', borderColor: 'var(--accent-gold)', color: 'var(--accent-gold)' }}>
+                    <Link
+                      to={`/self-employment?occ=${occKey}`}
+                      onClick={() => api.setSelectedOccupation(occKey)}
+                      className="btn btn-secondary"
+                      style={{ fontSize: '11px', padding: '6px 8px', borderColor: 'var(--accent-gold)', color: 'var(--accent-gold)' }}
+                    >
                       {tOpp.selfEmployment}
                     </Link>
                   )}

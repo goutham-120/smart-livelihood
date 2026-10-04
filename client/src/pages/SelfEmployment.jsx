@@ -126,7 +126,14 @@ export const SelfEmployment = () => {
   const t = SELFEMP_CONTENT[lang] || SELFEMP_CONTENT.en;
 
   const [searchParams] = useSearchParams();
-  const occKey = searchParams.get('occ') || 'self_employed_tailor';
+  const urlOcc = searchParams.get('occ');
+  const occKey = urlOcc || api.getSelectedOccupation() || 'tractor_operator';
+
+  useEffect(() => {
+    if (urlOcc) {
+      api.setSelectedOccupation(urlOcc);
+    }
+  }, [urlOcc]);
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -139,13 +146,16 @@ export const SelfEmployment = () => {
         const res = await api.getSelfEmployment(occKey);
         const payload = res?.data || res;
         setData(payload);
+        if (payload?.occupationKey && !urlOcc) {
+          api.setSelectedOccupation(payload.occupationKey);
+        }
       } catch (err) {
         console.error('Failed to load self employment guide:', err);
       } finally {
         setLoading(false);
       }
     })();
-  }, [occKey]);
+  }, [occKey, urlOcc]);
 
   const handleTalkToCounselor = async () => {
     setRequesting(true);

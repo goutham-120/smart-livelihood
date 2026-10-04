@@ -222,9 +222,30 @@ export function Progress() {
   useEffect(() => {
     Promise.all([
       getPlacements().catch(() => ({ data: { placements: [] } })),
-      api.getProgress().catch(() => ({ journey: null }))
-    ]).then(([plRes, progRes]) => {
-      setPlacements(plRes?.data?.placements || []);
+      api.getProgress().catch(() => ({ journey: null })),
+      api.getMyEnrollments().catch(() => ({ applications: [], activeApplication: null }))
+    ]).then(([plRes, progRes, enrollRes]) => {
+      let rawPlacements = plRes?.data?.placements || [];
+      const apps = enrollRes?.applications || [];
+      if (apps.length > 0) {
+        const appPlacements = apps.map((app) => ({
+          _id: app._id,
+          courseTitle: app.courseTitle,
+          status: ['TRAINING_COMPLETED', 'CERTIFIED'].includes(app.status)
+            ? 'completed'
+            : 'enrolled',
+          employer: app.trainingCenter?.name,
+          notes: `Application ID: ${app.applicationId} • Status: ${app.status.replace(/_/g, ' ')} • Next: ${app.nextAction}`,
+          startDate: app.submittedAt
+        }));
+        const existingTitles = new Set(rawPlacements.map((p) => p.courseTitle || p.title));
+        appPlacements.forEach((ap) => {
+          if (!existingTitles.has(ap.courseTitle)) {
+            rawPlacements = [ap, ...rawPlacements];
+          }
+        });
+      }
+      setPlacements(rawPlacements);
       setJourney(progRes?.journey || null);
     }).finally(() => setLoading(false));
   }, []);

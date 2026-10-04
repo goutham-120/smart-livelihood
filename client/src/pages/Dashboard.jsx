@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api.js';
 import { useLang } from '../lang.js';
-import { Card, Badge, Spinner } from '../components.jsx';
-import { TrendingUp, Award, AlertTriangle, ArrowRight, Sparkles, CheckCircle, Briefcase, MapPin, Lock } from 'lucide-react';
+import { Card, Badge, Spinner, EnrollmentModal } from '../components.jsx';
+import { TrendingUp, Award, AlertTriangle, ArrowRight, Sparkles, CheckCircle, Briefcase, MapPin, Lock, FileText } from 'lucide-react';
 
 const DASHBOARD_CONTENT = {
   en: {
@@ -38,7 +38,13 @@ const DASHBOARD_CONTENT = {
     prefSelf: 'Micro-Enterprise / Self-Employment',
     prefWage: 'Wage Placement',
     prefEither: 'Either Track',
-    unlockedVoicePrompt: 'Complete the 2-minute conversation with our AI Assistant to generate personalized match scores tailored to your trade skills.'
+    unlockedVoicePrompt: 'Complete the 2-minute conversation with our AI Assistant to generate personalized match scores tailored to your trade skills.',
+    currentAppTitle: 'CURRENT APPLICATION',
+    appId: 'Application',
+    viewApp: 'View Application',
+    noAppTitle: 'No Active Training Applications',
+    noAppDesc: 'Apply for a training program to start your livelihood journey.',
+    exploreTraining: 'Explore Training'
   },
   hi: {
     greeting: (name) => `नमस्ते, ${name || 'मित्र'}!`,
@@ -72,7 +78,13 @@ const DASHBOARD_CONTENT = {
     prefSelf: 'सूक्ष्म उद्यम / स्वरोज़गार',
     prefWage: 'वेतन रोज़गार',
     prefEither: 'दोनों में से कोई भी',
-    unlockedVoicePrompt: 'अपने व्यापार कौशल के अनुरूप व्यक्तिगत मैच स्कोर प्राप्त करने के लिए हमारे एआई सहायक के साथ 2 मिनट की बातचीत पूरी करें।'
+    unlockedVoicePrompt: 'अपने व्यापार कौशल के अनुरूप व्यक्तिगत मैच स्कोर प्राप्त करने के लिए हमारे एआई सहायक के साथ 2 मिनट की बातचीत पूरी करें।',
+    currentAppTitle: 'वर्तमान प्रशिक्षण आवेदन',
+    appId: 'आवेदन संख्या',
+    viewApp: 'आवेदन देखें',
+    noAppTitle: 'कोई सक्रिय प्रशिक्षण आवेदन नहीं',
+    noAppDesc: 'अपनी आजीविका यात्रा शुरू करने के लिए किसी प्रशिक्षण कार्यक्रम में आवेदन करें।',
+    exploreTraining: 'प्रशिक्षण खोजें'
   },
   te: {
     greeting: (name) => `నమస్కారం, ${name || 'మిత్రమా'}!`,
@@ -106,7 +118,13 @@ const DASHBOARD_CONTENT = {
     prefSelf: 'సూక్ష్మ పరిశ్రమ / స్వయం ఉపాధి',
     prefWage: 'వేతన ఉపాధి (ఉద్యోగం)',
     prefEither: 'ఏదైనా',
-    unlockedVoicePrompt: 'మీ వృత్తి నైపుణ్యాలకు అనుగుణంగా మ్యాచ్ స్కోర్‌లను రూపొందించడానికి మా AI అసిస్టెంట్‌తో 2 నిమిషాల సంభాషణను పూర్తి చేయండి.'
+    unlockedVoicePrompt: 'మీ వృత్తి నైపుణ్యాలకు అనుగుణంగా మ్యాచ్ స్కోర్‌లను రూపొందించడానికి మా AI అసిస్టెంట్‌తో 2 నిమిషాల సంభాషణను పూర్తి చేయండి.',
+    currentAppTitle: 'ప్రస్తుత శిక్షణా దరఖాస్తు',
+    appId: 'దరఖాస్తు సంఖ్య',
+    viewApp: 'దరఖాస్తు చూడండి',
+    noAppTitle: 'సక్రియ శిక్షణా దరఖాస్తులు లేవు',
+    noAppDesc: 'మీ జీవనోపాధి ప్రయాణాన్ని ప్రారంభించడానికి శిక్షణా కార్యక్రమంలో దరఖాస్తు చేసుకోండి.',
+    exploreTraining: 'శిక్షణను అన్వేషించండి'
   }
 };
 
@@ -349,6 +367,8 @@ export const Dashboard = ({ user }) => {
   const [analytics, setAnalytics] = useState(null);
   const [opportunities, setOpportunities] = useState([]);
   const [profile, setProfile] = useState(null);
+  const [activeApplication, setActiveApplication] = useState(null);
+  const [showAppModal, setShowAppModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const isOfficer = user?.role === 'officer' || user?.role === 'admin';
@@ -366,10 +386,12 @@ export const Dashboard = ({ user }) => {
     } else {
       Promise.all([
         api.getProfile().catch(() => ({ profile: null })),
-        api.getOpportunities().catch(() => ({ opportunities: [] }))
-      ]).then(([profRes, oppRes]) => {
+        api.getOpportunities().catch(() => ({ opportunities: [] })),
+        api.getMyEnrollments().catch(() => ({ applications: [], activeApplication: null }))
+      ]).then(([profRes, oppRes, enrollRes]) => {
         const p = profRes?.profile || null;
         setProfile(p);
+        setActiveApplication(enrollRes?.activeApplication || null);
         if (p?.voiceCompleted || (p?.skills && p.skills.length > 0 && localStorage.getItem('pmajay_voice_unlocked') === 'true')) {
           localStorage.setItem('pmajay_voice_unlocked', 'true');
           window.dispatchEvent(new Event('pmajay_voice_unlocked'));
@@ -377,6 +399,10 @@ export const Dashboard = ({ user }) => {
         const oppList = Array.isArray(oppRes?.opportunities) ? oppRes.opportunities : [];
         oppList.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
         setOpportunities(oppList);
+        if (oppList.length > 0 && !api.getSelectedOccupation()) {
+          const topKey = oppList[0]?.occupationKey || oppList[0]?.id;
+          if (topKey) api.setSelectedOccupation(topKey);
+        }
         setLoading(false);
       }).catch((err) => {
         console.error('Beneficiary load error:', err);
@@ -516,6 +542,55 @@ export const Dashboard = ({ user }) => {
             {tDash.talkAi}
           </Link>
         </div>
+      </Card>
+
+      {/* Current Application Card (Phase 16) */}
+      <Card style={{ marginBottom: '20px', background: 'var(--surface-card)', borderColor: 'var(--border-warm)' }}>
+        {activeApplication ? (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
+            <div style={{ flex: 1, minWidth: '240px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--primary-700)', letterSpacing: '0.5px' }}>
+                  {tDash.currentAppTitle}
+                </span>
+                <span className="badge badge-amber" style={{ fontSize: '11px', fontWeight: 800 }}>
+                  {activeApplication.applicationId}
+                </span>
+                <span className={activeApplication.status === 'ACCEPTED' ? 'badge badge-green' : activeApplication.status === 'ACTION_REQUIRED' ? 'badge badge-amber' : 'badge badge-blue'} style={{ fontSize: '11px', fontWeight: 800 }}>
+                  {activeApplication.status === 'ACCEPTED' ? '🎉 Accepted' : activeApplication.status === 'ACTION_REQUIRED' ? '⚠ Action Required' : '🟠 Pending Review'}
+                </span>
+              </div>
+              <h3 style={{ fontSize: '17px', fontWeight: 800, margin: '2px 0 4px 0', color: 'var(--text-main)' }}>
+                {activeApplication.courseTitle}
+              </h3>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                <strong>Next Action:</strong> {activeApplication.nextAction}
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowAppModal(true)}
+              className="btn btn-primary"
+              style={{ fontSize: '13px', padding: '8px 18px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+            >
+              <FileText size={15} /> {tDash.viewApp}
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+            <div>
+              <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.5px', marginBottom: '2px' }}>
+                {tDash.currentAppTitle}
+              </div>
+              <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                {tDash.noAppDesc}
+              </div>
+            </div>
+            <Link to="/training" className="btn btn-secondary btn-sm" style={{ fontSize: '12px', padding: '6px 14px' }}>
+              {tDash.exploreTraining} →
+            </Link>
+          </div>
+        )}
       </Card>
 
       {/* Primary Action & Active Pathway */}
@@ -806,14 +881,38 @@ export const Dashboard = ({ user }) => {
                     <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--primary-600)' }}>{op.matchScore || 85}% {tDash.matchFitScore}</div>
                   </div>
                   <div style={{ display: 'flex', gap: '8px', marginTop: '14px', flexWrap: 'wrap' }}>
-                    <Link to={`/skill-gaps?occ=${op.occupationKey || ''}`} className="btn btn-secondary" style={{ fontSize: '12px', padding: '6px 10px', flex: 1, minWidth: '100px', textAlign: 'center' }}>{tDash.skillGaps}</Link>
-                    <Link to={`/roadmap?occ=${op.occupationKey || ''}`} className="btn btn-primary" style={{ fontSize: '12px', padding: '6px 10px', flex: 1, minWidth: '100px', textAlign: 'center' }}>{tDash.roadmap}</Link>
+                    <Link
+                      to={`/skill-gaps?occ=${op.occupationKey || ''}`}
+                      onClick={() => op.occupationKey && api.setSelectedOccupation(op.occupationKey)}
+                      className="btn btn-secondary"
+                      style={{ fontSize: '12px', padding: '6px 10px', flex: 1, minWidth: '100px', textAlign: 'center' }}
+                    >
+                      {tDash.skillGaps}
+                    </Link>
+                    <Link
+                      to={`/roadmap?occ=${op.occupationKey || ''}`}
+                      onClick={() => op.occupationKey && api.setSelectedOccupation(op.occupationKey)}
+                      className="btn btn-primary"
+                      style={{ fontSize: '12px', padding: '6px 10px', flex: 1, minWidth: '100px', textAlign: 'center' }}
+                    >
+                      {tDash.roadmap}
+                    </Link>
                   </div>
                 </Card>
               ))}
             </div>
           )}
         </div>
+      )}
+
+      {showAppModal && activeApplication && (
+        <EnrollmentModal
+          isOpen={showAppModal}
+          onClose={() => setShowAppModal(false)}
+          initialMode="view"
+          existingApplication={activeApplication}
+          onApplicationUpdated={(upApp) => setActiveApplication(upApp)}
+        />
       )}
     </div>
   );

@@ -8,30 +8,73 @@ import { sanitizeString, sanitizeNumber } from '../middleware/security.js';
 import { computeSkillGapsAndRoadmap, calculateOpportunityMatchV2 } from '../services/matching.js';
 import { getRegionalDataForDistrict } from '../services/regional.js';
 
+import { JobOpening } from '../models/JobOpening.js';
+
 const router = express.Router();
+
+const resolveEffectiveOccupationKey = async (rawKey, profile, user, district = 'Warangal') => {
+  if (rawKey && rawKey !== 'default' && rawKey !== 'undefined' && rawKey !== 'null' && rawKey !== ':occupationKey') {
+    const existing = await Occupation.findOne({ key: rawKey.toLowerCase() });
+    if (existing) return existing.key;
+  }
+  // 1. Check user Journey targetOccupation
+  if (user) {
+    const journey = await Journey.findOne({ user: user._id });
+    if (journey?.targetOccupation) {
+      const existing = await Occupation.findOne({ key: journey.targetOccupation.toLowerCase() });
+      if (existing) return existing.key;
+    }
+  }
+  // 2. Check Profile targetOccupation
+  if (profile?.targetOccupation) {
+    const existing = await Occupation.findOne({ key: profile.targetOccupation.toLowerCase() });
+    if (existing) return existing.key;
+  }
+  // 3. Score against user's skills to pick top matching pathway
+  if (profile?.skills && profile.skills.length > 0) {
+    const regData = await getRegionalDataForDistrict(district);
+    const occupations = await Occupation.find();
+    let bestKey = null;
+    let bestScore = -1;
+    for (const occ of occupations) {
+      const match = await calculateOpportunityMatchV2(occ, profile, district, regData);
+      if (match.matchScore > bestScore) {
+        bestScore = match.matchScore;
+        bestKey = occ.key;
+      }
+    }
+    if (bestKey) return bestKey;
+  }
+  return 'tractor_operator';
+};
 
 // GET /api/pathway/skill-gaps/:occupationKey
 router.get('/skill-gaps/:occupationKey', optionalAuth, async (req, res) => {
   try {
     const profile = req.user ? await Profile.findOne({ user: req.user._id }) : null;
-    const userSkills = profile ? profile.skills : [];
     const district = profile ? profile.district : (req.user?.district || req.query.district || 'Warangal');
+    const occKey = await resolveEffectiveOccupationKey(req.params.occupationKey, profile, req.user, district);
+    const userSkills = profile ? profile.skills : [];
 
-    const result = await computeSkillGapsAndRoadmap(req.params.occupationKey, userSkills, district);
+    const result = await computeSkillGapsAndRoadmap(occKey, userSkills, district);
     if (!result) {
       return res.status(404).json({ error: 'Occupation not found' });
     }
 
-    return res.json(result);
+    return res.json({ ...result, resolvedKey: occKey });
   } catch (err) {
     return res.status(500).json({ error: 'Failed to analyze skill gaps' });
   }
 });
 
 // GET /api/pathway/training/:occupationKey
-router.get('/training/:occupationKey', async (req, res) => {
+router.get('/training/:occupationKey', optionalAuth, async (req, res) => {
   try {
-    const occ = await Occupation.findOne({ key: req.params.occupationKey });
+    const profile = req.user ? await Profile.findOne({ user: req.user._id }) : null;
+    const district = profile ? profile.district : (req.user?.district || req.query.district || 'Warangal');
+    const occKey = await resolveEffectiveOccupationKey(req.params.occupationKey, profile, req.user, district);
+
+    const occ = await Occupation.findOne({ key: occKey });
     if (!occ) {
       return res.status(404).json({ error: 'Occupation not found' });
     }
@@ -43,7 +86,7 @@ router.get('/training/:occupationKey', async (req, res) => {
       ]
     });
 
-    return res.json({ occupation: occ, courses });
+    return res.json({ occupation: occ, courses, resolvedKey: occKey });
   } catch (err) {
     return res.status(500).json({ error: 'Failed to retrieve training courses' });
   }
@@ -53,23 +96,32 @@ router.get('/training/:occupationKey', async (req, res) => {
 router.get('/roadmap/:occupationKey', optionalAuth, async (req, res) => {
   try {
     const profile = req.user ? await Profile.findOne({ user: req.user._id }) : null;
-    const userSkills = profile ? profile.skills : [];
     const district = profile ? profile.district : (req.user?.district || req.query.district || 'Warangal');
+    const occKey = await resolveEffectiveOccupationKey(req.params.occupationKey, profile, req.user, district);
+    const userSkills = profile ? profile.skills : [];
 
-    const result = await computeSkillGapsAndRoadmap(req.params.occupationKey, userSkills, district);
+    const result = await computeSkillGapsAndRoadmap(occKey, userSkills, district);
     if (!result) {
       return res.status(404).json({ error: 'Occupation roadmap unavailable' });
     }
 
+    // Retrieve active jobs in the district for this occupation
+    const jobs = await JobOpening.find({
+      occupationKey: occKey,
+      status: 'open'
+    }).limit(6);
+
     return res.json({
-      occupationKey: req.params.occupationKey,
+      occupationKey: occKey,
+      resolvedKey: occKey,
       occupation: result.occupation,
       roadmap: result.roadmap,
       readinessScore: result.readinessScore,
       skillsSummary: result.skillsSummary,
       applicableSchemes: result.applicableSchemes,
       nearbyCenters: result.nearbyCenters,
-      localDemand: result.localDemand
+      localDemand: result.localDemand,
+      jobs: jobs || []
     });
   } catch (err) {
     return res.status(500).json({ error: 'Failed to build career roadmap' });

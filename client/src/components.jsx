@@ -733,3 +733,5 @@ export class ErrorBoundary extends React.Component {
   }
 }
 
+export { EnrollmentModal } from './components/EnrollmentModal.jsx';
+
