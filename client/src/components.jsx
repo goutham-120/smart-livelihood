@@ -5,7 +5,7 @@ import { api } from './api.js';
 import {
   Mic, MicOff, Volume2, Briefcase, User, ShieldCheck, Sparkles, TrendingUp,
   Award, Compass, LogOut, Menu, X, Home, BookOpen, Layers, PhoneCall,
-  CheckCircle, AlertCircle, FileText, FolderKanban, Building2, Users, Lock, Languages
+  CheckCircle, AlertCircle, FileText, FolderKanban, Building2, Users, Lock, Languages, Network
 } from 'lucide-react';
 
 export const QuickDemoBar = () => null;
@@ -214,7 +214,6 @@ export const AppSidebar = ({ user, sidebarOpen, setSidebarOpen }) => {
     '/opportunities',
     '/skill-gaps',
     '/training',
-    '/community-learning',
     '/roadmap',
     '/what-if',
     '/self-employment',
@@ -227,7 +226,7 @@ export const AppSidebar = ({ user, sidebarOpen, setSidebarOpen }) => {
     { to: '/opportunities', label: navText.opportunities, icon: Briefcase },
     { to: '/skill-gaps', label: navText.skillGaps, icon: Layers },
     { to: '/training', label: navText.training, icon: BookOpen },
-    { to: '/community-learning', label: navText.communityLearning, icon: Users },
+    { to: '/community-learning', label: navText.communityLearning, icon: Network },
     { to: '/roadmap', label: navText.roadmap, icon: TrendingUp },
     { to: '/what-if', label: navText.whatIf, icon: Compass },
     { to: '/self-employment', label: navText.selfEmployment, icon: Award },

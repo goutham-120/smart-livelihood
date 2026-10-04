@@ -228,7 +228,7 @@ export default function App() {
           <Route path="/opportunities" element={<ProtectedRoute user={activeUser} onLogout={handleLogout} requireUnlocked><Opportunities /></ProtectedRoute>} />
           <Route path="/skill-gaps" element={<ProtectedRoute user={activeUser} onLogout={handleLogout} requireUnlocked><SkillGaps /></ProtectedRoute>} />
           <Route path="/training" element={<ProtectedRoute user={activeUser} onLogout={handleLogout} requireUnlocked><Training /></ProtectedRoute>} />
-          <Route path="/community-learning" element={<ProtectedRoute user={activeUser} onLogout={handleLogout} requireUnlocked><CommunityLearning /></ProtectedRoute>} />
+          <Route path="/community-learning" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><CommunityLearning /></ProtectedRoute>} />
           <Route path="/roadmap" element={<ProtectedRoute user={activeUser} onLogout={handleLogout} requireUnlocked><Roadmap /></ProtectedRoute>} />
           <Route path="/what-if" element={<ProtectedRoute user={activeUser} onLogout={handleLogout} requireUnlocked><WhatIf /></ProtectedRoute>} />
           <Route path="/progress" element={<ProtectedRoute user={activeUser} onLogout={handleLogout} requireUnlocked><Progress /></ProtectedRoute>} />
