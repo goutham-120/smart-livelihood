@@ -191,7 +191,43 @@ router.post('/simulate', async (req, res) => {
       }
     }
 
-    // 2. WhatsApp and Kiosk Simulation Flow
+    // 2. WhatsApp Conversational Livelihood Assistant Flow
+    if (channel === 'whatsapp') {
+      const { handleWhatsAppMessage } = await import('../services/whatsappAssistant.js');
+      const waResult = await handleWhatsAppMessage({
+        phone,
+        message,
+        rawLanguage: rawLang
+      });
+
+      return res.json({
+        channel: 'whatsapp',
+        phone,
+        simulatedResponse: waResult.replyText,
+        replyText: waResult.replyText,
+        response: waResult.replyText,
+        displayUserMessage: waResult.displayUserMessage,
+        stage: 'conversational_dialogue',
+        inputLanguage: waResult.inputLanguage,
+        responseLanguage: waResult.responseLanguage,
+        language: waResult.language,
+        languageName: waResult.languageName,
+        nativeName: waResult.nativeName,
+        speechCode: waResult.speechCode,
+        intent: waResult.intent,
+        isComplete: false,
+        extractedSkills: waResult.extractedSkills || [],
+        matchedOpportunities: waResult.matchedOpportunities || [],
+        matchedCourses: waResult.matchedCourses || [],
+        matchedSchemes: waResult.matchedSchemes || [],
+        updatedProfile: {
+          skills: waResult.extractedSkills || [],
+          district: 'Warangal'
+        }
+      });
+    }
+
+    // 3. Other Channel Simulation Flow (Kiosk / Fallback)
     let user = await User.findOne({ phone });
     if (!user) {
       user = await User.create({
@@ -247,9 +283,6 @@ router.post('/simulate', async (req, res) => {
 
     const langConfig = getLanguageConfig(lang);
 
-    console.log('Final assistant language:', langConfig.speechCode);
-    console.log('TTS language:', langConfig.speechCode);
-
     return res.json({
       channel,
       phone,
@@ -276,7 +309,8 @@ router.post('/simulate', async (req, res) => {
       }
     });
   } catch (err) {
-    return res.status(500).json({ error: 'Simulation processing failed' });
+    console.error('SIMULATION ERROR:', err);
+    return res.status(500).json({ error: 'Simulation processing failed', message: err.message, stack: err.stack });
   }
 });
 

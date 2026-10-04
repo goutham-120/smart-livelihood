@@ -176,7 +176,25 @@ export const SUPPORTED_LANGUAGES = {
     code: 'or',
     name: 'Odia',
     nativeName: 'ଓଡ଼ିଆ',
-    speechCode: 'or-IN',
+    speechCode: 'od-IN',
+    script: 'Odia',
+    unicodeRange: /[\u0B00-\u0B7F]/,
+    providerSupport: {
+      sarvamStt: true,
+      sarvamTts: true,
+      bhashiniStt: true,
+      bhashiniTts: true,
+      webSpeech: true,
+      gemini: true
+    },
+    dialects: [{ id: 'standard', name: 'Standard Odia', hint: 'Everyday colloquial Odia' }],
+    defaultDialect: 'standard'
+  },
+  od: {
+    code: 'od',
+    name: 'Odia',
+    nativeName: 'ଓଡ଼ିଆ',
+    speechCode: 'od-IN',
     script: 'Odia',
     unicodeRange: /[\u0B00-\u0B7F]/,
     providerSupport: {
@@ -479,21 +497,24 @@ export const getLanguageConfig = (code) => {
  * Lexical markers for disambiguating languages using shared scripts (Devanagari, Bengali-Assamese, Perso-Arabic)
  */
 const LEXICAL_PATTERNS = {
-  mr: /(?:^|[^\p{L}\p{M}])(आहे|आहेत|आहात|कसे|कसा|कशी|नाही|नाहीत|करा|करावे|करतो|करते|मला|तुला|आणि|येते|शिकायचे|पाहिजे|होय|नमस्कार|काय|झाले|करायचे)(?:$|[^\p{L}\p{M}])|\u0933/iu, // ळ is unique to Marathi in Devanagari
-  ne: /\b(छ|छैन|छन्|गर्छु|गर्न|हुन्छ|भयो|मलाई|हामी|काम|सिक्न|चाहन्छु)\b/i,
-  sa: /\b(अस्ति|भवति|अस्मि|भवन्ति|कार्यम्|करोमि|नमो|कुशलम्|कथम्|इच्छामि)\b/i,
-  mai: /\b(अछि|छैन|हम|हमर|कऽ|करब|छी|अहाँ|कोनो)\b/i,
-  kok: /\b(आसा|ना|म्हणून|म्हाका|तुका|करपाक|काम|जाय)\b/i,
-  doi: /\b(ऐ|न|कम्म|करना|आखी|गल्ल)\b/i,
-  brx: /\b(आं|खालाम|माव|नों|गनांगौ)\b/i,
+  mr: /(?:^|[^\p{L}\p{M}])(आहे|आहेत|आहात|कसे|कसा|कशी|नाही|नाहीत|करा|करावे|करतो|करते|मला|तुला|आणि|येते|शिकायचे|पाहिजे|होय|नमस्कार|काय|झाले|करायचे|हवे|हवा|शिका|व्यवसाय|कर्ज)(?:$|[^\p{L}\p{M}])|\u0933/iu, // ळ is unique to Marathi in Devanagari
+  ne: /(?:^|[^\p{L}\p{M}])(छ|छैन|छन्|गर्छु|गर्न|हुन्छ|भयो|मलाई|हामी|काम|सिक्न|चाहन्छु|चाहिन्छ|तालिम)(?:$|[^\p{L}\p{M}])/iu,
+  sa: /(?:^|[^\p{L}\p{M}])(अस्ति|भवति|अस्मि|भवन्ति|कार्यम्|करोमि|नमो|कुशलम्|कथम्|इच्छामि|अहं|सूचीकर्म|प्रशिक्षणम्|वाञ्छामि)(?:$|[^\p{L}\p{M}])/iu,
+  mai: /(?:^|[^\p{L}\p{M}])(अछि|छैन|हम|हमर|हमरा|कऽ|करब|छी|अहाँ|कोनो|चाही|प्रशिक्षण)(?:$|[^\p{L}\p{M}])/iu,
+  kok: /(?:^|[^\p{L}\p{M}])(आसा|म्हणून|म्हाका|तुका|करपाक|जाय)(?:$|[^\p{L}\p{M}])/iu,
+  doi: /(?:^|[^\p{L}\p{M}])(ऐ|न|कम्म|करना|आखी|गल्ल|चाहिदी|दी)(?:$|[^\p{L}\p{M}])/iu,
+  brx: /(?:^|[^\p{L}\p{M}])(आं|आंनो|खालाम|माव|नों|गनांगौ|नांगौ|फोरोंथाय)(?:$|[^\p{L}\p{M}])/iu,
   hi: /\b(है|हैं|का|की|के|में|से|को|मुझे|काम|सीखना|करना|नमस्ते|बताइए|सकता|सकती|चाहता|चाहती|दुकान|ट्रेनिंग)\b/i,
 
   // Assamese vs Bengali
-  as: /[\u09F0\u09F1]|\b(মই|আছে|কৰিব|কওক|শিকিব|কাম|খুজিছো|নমস্কাৰ)\b/i,
-  bn: /\b(আমি|আছে|করতে|বলুন|শিখতে|কাজ|চাই|নমস্কার|ধন্যবাদ|ভালো)\b/i,
+  mni: /(?:^|[^\p{L}\p{M}])(ঐহাক|ঐহাক্না|লৌনিংই|ত্রেনিং|মৈতৈলোন্|থবক)(?:$|[^\p{L}\p{M}])/iu,
+  as: /[\u09F0\u09F1]|(?:^|[^\p{L}\p{M}])(মই|আছে|কৰিব|কওক|শিকিব|কাম|খুজিছো|নমস্কাৰ|দৰ্জীৰ|দৰ্জী|প্ৰশিক্ষণ|বিচাৰো|আঁচনি)(?:$|[^\p{L}\p{M}])/iu,
+  bn: /(?:^|[^\p{L}\p{M}])(আমি|আছে|করতে|বলুন|শিখতে|কাজ|চাই|নমস্কার|ধন্যবাদ|ভালো|দর্জির|দর্জি|প্রশিক্ষণ|প্রকল্প)(?:$|[^\p{L}\p{M}])/iu,
 
   // Urdu vs Sindhi/Kashmiri
-  ur: /\b(ہے|ہیں|مجھے|کام|کرنا|سیکھنا|سلام|آپ|چاہتا|چاہتی|شکریہ)\b/i
+  ks: /(?:^|[^\p{L}\p{M}])(چھُ|میٚے|پَہیجے|ہیکہٕ|تُہندِ|کۄرسَن)(?:$|[^\p{L}\p{M}])/iu,
+  sd: /(?:^|[^\p{L}\p{M}])(آهيان|آهي|گهرجي|ڪورس|اوھان|ٿو|ٿي)(?:$|[^\p{L}\p{M}])/iu,
+  ur: /(?:^|[^\p{L}\p{M}])(ہے|ہیں|مجھے|کام|کرنا|سیکھنا|سلام|آپ|چاہتا|چاہتی|شکریہ|درزی|تربیت|اسکیم)(?:$|[^\p{L}\p{M}])/iu
 };
 
 /**
@@ -563,7 +584,7 @@ export const detectLanguageFromText = (text) => {
     const lowerTrimmed = trimmed.toLowerCase();
 
     // 1. Romanized Telugu
-    const isRomanizedTelugu = /(?:^|[^\p{L}])(ela\s+unnavu|ela\s+unnav|yela\s+unnavu|yela\s+unnav|ela\s+unnaru|yela\s+unnaru|yela\s+unnar|meeru\s+ela|naaku|naku|kavali|kavale|chustunnanu|chustunna|chusthunanu|chusthuna|nenu|chesanu|cheyali|cheyyali|cheppandi|cheppu|unnanu|unnara|bagunnanu|bavunnanu|bagunna|bavunna|bagundi|bavundi|bagunnara|bavunnara|bagunnava|bavunnava|namaskaram|namaskaramu|kuttupani|pashuposhana|chenetha|sontamga|sontanga|nerchukovali|pettukovali|udhyogam|udyogam|jeetham|shikshana|manchi|pani|enti|emiti|ekkada|epudu|meeru|maku|manaki)(?:$|[^\p{L}])/iu.test(lowerTrimmed);
+    const isRomanizedTelugu = /(?:^|[^\p{L}])(ela\s+unnavu|ela\s+unnav|yela\s+unnavu|yela\s+unnav|ela\s+unnaru|yela\s+unnaru|yela\s+unnar|meeru\s+ela|naaku|naku|kavali|kavale|kaavali|kaavale|chustunnanu|chustunna|chusthunanu|chusthuna|nenu|chesanu|cheyali|cheyyali|cheppandi|cheppu|cheyandi|cheyyandi|unnanu|unnara|bagunnanu|bavunnanu|bagunna|bavunna|bagundi|bavundi|bagunnara|bavunnara|bagunnava|bavunnava|namaskaram|namaskaramu|kuttupani|pashuposhana|chenetha|sontamga|sontanga|nerchukovali|pettukovali|udhyogam|udyogam|jeetham|shikshana|manchi|pani|enti|emiti|ekkada|epudu|meeru|maku|manaki|dhanyavadalu|dhanyavadamulu|danyavadalu|danyavadamulu|daggaralo|daggara|chesukovali|telusukovali|nerpandi|sahayam|sahayamu|pathakam|pathakalu|vyaparam)(?:$|[^\p{L}])/iu.test(lowerTrimmed);
     if (isRomanizedTelugu) {
       return {
         language: 'te',
@@ -571,6 +592,24 @@ export const detectLanguageFromText = (text) => {
         nativeName: 'తెలుగు',
         speechCode: 'te-IN',
         confidence: 0.95,
+        script: 'Latin'
+      };
+    }
+
+    // 1b. Romanized Kannada (checked before Hindi/Tamil so Kannada morphology like
+    // "nanage ... bekagide" is not misclassified when the browser STT returns Latin text).
+    // Includes common browser-STT spellings (nanagi, bekagi de, udyoga, shikshakara).
+    const kannadaJoined = lowerTrimmed.replace(/\s+/g, '');
+    const isRomanizedKannadaEarly =
+      /(?:^|[^\p{L}])(nanage|nanagi|nange|naanu|nanu|nimage|nimma|namma|beku|bekagide|bekagi|bekaagide|bekittu|beda|kelasa|kelsa|udyoga|udyogavannu|shikshaka|shikshakara|shikshakaru|tarabeti|yojane|yojanegalu|hegiddira|hegiddiri|hegide|namaskara|chennagiddini|maadi|kodi|heli|helu|ide|ideya|alli|yelli|yenu|swalpa|dhanyavadagalu)(?:$|[^\p{L}])/iu.test(lowerTrimmed) ||
+      /(bekagide|bekaagide|nanagebeku|kelasabeku|udyogabeku)/.test(kannadaJoined);
+    if (isRomanizedKannadaEarly) {
+      return {
+        language: 'kn',
+        languageName: 'Kannada',
+        nativeName: 'ಕನ್ನಡ',
+        speechCode: 'kn-IN',
+        confidence: 0.9,
         script: 'Latin'
       };
     }
@@ -589,7 +628,7 @@ export const detectLanguageFromText = (text) => {
     }
 
     // 3. Romanized Hindi
-    const isRomanizedHindi = /(?:^|[^\p{L}])(aap\s+kaise\s+ho|kaise\s+ho|kese\s+ho|kaisa\s+ho|kaisa\s+hai|kya\s+haal|kya\s+hal|kaise\s+hain|mujhe|chahiye|karna\s+hai|karna\s+chahta|karna\s+chahti|chahta\s+hoon|chahti\s+hoon|seekhna|naukri|namaste|dhanyawad|dhanyavad|batao|bataiye|theek\s+hai|theek\s+hoon|thik\s+hu|achha|accha|rozgar|kripya)(?:$|[^\p{L}])/iu.test(lowerTrimmed);
+    const isRomanizedHindi = /(?:^|[^\p{L}])(aap\s+kaise\s+ho|kaise\s+ho|kese\s+ho|kaisa\s+ho|kaisa\s+hai|kya\s+haal|kya\s+hal|kaise\s+hain|mujhe|chahiye|karna\s+hai|karna\s+chahta|karna\s+chahti|chahta\s+hoon|chahti\s+hoon|seekhna|sikhna|naukri|namaste|dhanyawad|dhanyavad|batao|bataiye|bataye|theek\s+hai|theek\s+hoon|thik\s+hu|achha|accha|rozgar|kripya|yojana|yojna|jankari|jaankari|nazdeek|paas\s+mein|kholna|shuru|vyapar|madad)(?:$|[^\p{L}])/iu.test(lowerTrimmed);
     if (isRomanizedHindi) {
       return {
         language: 'hi',
@@ -602,7 +641,7 @@ export const detectLanguageFromText = (text) => {
     }
 
     // 4. Romanized Tamil
-    const isRomanizedTamil = /(?:^|[^\p{L}])(eppadi\s+irukkeenga|eppadi\s+irukinga|epdi\s+irukinga|epadi\s+irukinga|eppadi\s+irukireergal|eppadi\s+irukeenga|eppadi\s+iruka|enakku|velai|vendum|payirchi|nalla\s+irukken|nalla\s+iruken|solleenga|sollunga|vanakkam|theriyum|puriyala|solla\s+mudiyuma)(?:$|[^\p{L}])/iu.test(lowerTrimmed);
+    const isRomanizedTamil = /(?:^|[^\p{L}])(eppadi\s+irukkeenga|eppadi\s+irukinga|epdi\s+irukinga|epadi\s+irukinga|eppadi\s+irukireergal|eppadi\s+irukeenga|eppadi\s+iruka|enakku|velai|vendum|venum|payirchi|nalla\s+irukken|nalla\s+iruken|solleenga|sollunga|vanakkam|theriyum|puriyala|solla\s+mudiyuma)(?:$|[^\p{L}])/iu.test(lowerTrimmed);
     if (isRomanizedTamil) {
       return {
         language: 'ta',
@@ -654,7 +693,7 @@ export const detectLanguageFromText = (text) => {
     }
 
     // 7. Romanized Bengali
-    const isRomanizedBengali = /(?:^|[^\p{L}])(kemon\s+acho|kemon\s+achen|kemon\s+achish|amar\s+training|amar\s+chakri|kaj\s+chai|shikhbo|shikhte\s+chai|nomoshkar|dhonnobad)(?:$|[^\p{L}])/iu.test(lowerTrimmed);
+    const isRomanizedBengali = /(?:^|[^\p{L}])(kemon\s+acho|kemon\s+achen|kemon\s+achish|amar|ekta|chakri|kaj\s+chai|dorkar|shikhbo|shikhte\s+chai|nomoshkar|dhonnobad)(?:$|[^\p{L}])/iu.test(lowerTrimmed);
     if (isRomanizedBengali) {
       return {
         language: 'bn',
@@ -699,7 +738,7 @@ export const detectLanguageFromText = (text) => {
         language: 'or',
         languageName: 'Odia',
         nativeName: 'ଓଡ଼ିଆ',
-        speechCode: 'or-IN',
+        speechCode: 'od-IN',
         confidence: 0.95,
         script: 'Latin'
       };
@@ -785,7 +824,7 @@ export const detectLanguageFromText = (text) => {
       language: 'or',
       languageName: 'Odia',
       nativeName: 'ଓଡ଼ିଆ',
-      speechCode: 'or-IN',
+      speechCode: 'od-IN',
       confidence: scriptConfidence,
       script: 'Odia'
     };
@@ -801,8 +840,18 @@ export const detectLanguageFromText = (text) => {
     };
   }
 
-  // 2. Bengali vs Assamese
+  // 2. Bengali vs Assamese vs Manipuri
   if (dominantScript === 'BengaliAssamese') {
+    if (LEXICAL_PATTERNS.mni && LEXICAL_PATTERNS.mni.test(trimmed)) {
+      return {
+        language: 'mni',
+        languageName: 'Manipuri',
+        nativeName: 'মৈতৈলোন্',
+        speechCode: 'mni-IN',
+        confidence: scriptConfidence,
+        script: 'Bengali'
+      };
+    }
     if (LEXICAL_PATTERNS.as.test(trimmed)) {
       return {
         language: 'as',
@@ -825,6 +874,26 @@ export const detectLanguageFromText = (text) => {
 
   // 3. Perso-Arabic (Urdu, Kashmiri, Sindhi)
   if (dominantScript === 'PersoArabic') {
+    if (LEXICAL_PATTERNS.ks && LEXICAL_PATTERNS.ks.test(trimmed)) {
+      return {
+        language: 'ks',
+        languageName: 'Kashmiri',
+        nativeName: 'कॉशुर',
+        speechCode: 'ks-IN',
+        confidence: scriptConfidence,
+        script: 'Perso-Arabic'
+      };
+    }
+    if (LEXICAL_PATTERNS.sd && LEXICAL_PATTERNS.sd.test(trimmed)) {
+      return {
+        language: 'sd',
+        languageName: 'Sindhi',
+        nativeName: 'سنڌي',
+        speechCode: 'sd-IN',
+        confidence: scriptConfidence,
+        script: 'Perso-Arabic'
+      };
+    }
     return {
       language: 'ur',
       languageName: 'Urdu',
@@ -837,6 +906,16 @@ export const detectLanguageFromText = (text) => {
 
   // 4. Devanagari (Hindi, Marathi, Nepali, Sanskrit, Maithili, Konkani, Bodo, Dogri)
   if (dominantScript === 'Devanagari') {
+    if (LEXICAL_PATTERNS.kok.test(trimmed)) {
+      return {
+        language: 'kok',
+        languageName: 'Konkani',
+        nativeName: 'कोंकणी',
+        speechCode: 'kok-IN',
+        confidence: 0.95,
+        script: 'Devanagari'
+      };
+    }
     if (LEXICAL_PATTERNS.mr.test(trimmed)) {
       return {
         language: 'mr',
@@ -873,16 +952,6 @@ export const detectLanguageFromText = (text) => {
         languageName: 'Maithili',
         nativeName: 'मैथिली',
         speechCode: 'mai-IN',
-        confidence: 0.90,
-        script: 'Devanagari'
-      };
-    }
-    if (LEXICAL_PATTERNS.kok.test(trimmed)) {
-      return {
-        language: 'kok',
-        languageName: 'Konkani',
-        nativeName: 'कोंकणी',
-        speechCode: 'kok-IN',
         confidence: 0.90,
         script: 'Devanagari'
       };

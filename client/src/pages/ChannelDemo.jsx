@@ -47,7 +47,7 @@ export const ChannelDemo = () => {
   const [waMessages, setWaMessages] = useState([
     {
       sender: 'bot',
-      text: 'నమస్కారం! PM AJAY జీవనోపాధి సహాయకుడికి స్వాగతం. మీ నైపుణ్యాల ఆధారంగా ఉచిత శిక్షణ మరియు రుణ పథకాలను సిఫార్సు చేయడానికి మేము మీ వివరాలు నమోదు చేయవచ్చా? ప్రారంభించడానికి YES అని పంపండి.',
+      text: 'Namaste! Welcome to PM AJAY Sahayak. I can help you with free skill training, jobs, and government loan schemes. How can I assist you today?',
       time: '10:00 AM'
     }
   ]);
@@ -73,7 +73,7 @@ export const ChannelDemo = () => {
   // IVR & Voice Assistant State
   const [callActive, setCallActive] = useState(false);
   const [callStatus, setCallStatus] = useState('IDLE');
-  const [ivrMode, setIvrMode] = useState('voice'); // 'voice' | 'dtmf'
+  const ivrMode = 'dtmf'; // IVR helpline is keypad (DTMF) only
   const [voiceState, setVoiceState] = useState('IDLE'); // IDLE, LISTENING, PROCESSING, LANGUAGE DETECTED, THINKING, SPEAKING, ERROR
   const [detectedLanguage, setDetectedLanguage] = useState(null);
   const [userTranscript, setUserTranscript] = useState('');
@@ -119,13 +119,61 @@ export const ChannelDemo = () => {
   }, [callActive]);
 
   // WhatsApp Actions
-  const handleSendWa = async (msgText) => {
+  const handleStopWaAudio = () => {
+    stopIndicSpeech();
+    setWaVoiceState('STOPPED');
+    setWaSpeakingId(null);
+    setWaStatusBanner('Audio playback stopped');
+    setTimeout(() => {
+      setWaStatusBanner((curr) => (curr === 'Audio playback stopped' ? null : curr));
+      setWaVoiceState((curr) => (curr === 'STOPPED' ? 'IDLE' : curr));
+    }, 2500);
+  };
+
+  const handlePlayMessageAudio = (m) => {
+    if (waSpeakingId === m.id) {
+      handleStopWaAudio();
+      return;
+    }
+    stopIndicSpeech();
+    setWaVoiceState('SPEAKING');
+    setWaSpeakingId(m.id);
+    const langObj = getLanguageByCode(m.language || 'hi');
+    const speechCode = m.speechCode || langObj.speechCode;
+    setWaStatusBanner(`Playing audio in ${m.languageName || langObj.name}...`);
+
+    playIndicSpeech({
+      text: m.text,
+      language: m.language || 'hi',
+      speechCode,
+      onStart: () => {
+        setWaVoiceState('SPEAKING');
+        setWaSpeakingId(m.id);
+      },
+      onEnd: () => {
+        setWaVoiceState('IDLE');
+        setWaSpeakingId(null);
+        setWaStatusBanner(null);
+      }
+    });
+  };
+
+  const handleSendWa = async (msgText, targetPhone) => {
+    // Silence any active assistant audio immediately before sending
+    stopIndicSpeech();
+    setWaSpeakingId(null);
+    if (waVoiceState === 'SPEAKING' || waVoiceState === 'STOPPED') {
+      setWaVoiceState('IDLE');
+    }
+
     const text = String(msgText || waInput).trim();
     if (!text) return;
+    const phoneToUse = targetPhone || waPhone;
 
     setWaInput('');
     setWaErrorMessage(null);
     const userMsg = {
+      id: Date.now(),
       sender: 'user',
       text,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -141,7 +189,7 @@ export const ChannelDemo = () => {
         body: JSON.stringify({
           channel: 'whatsapp',
           message: text,
-          phone: waPhone,
+          phone: phoneToUse,
           language: 'auto'
         })
       });
@@ -149,15 +197,30 @@ export const ChannelDemo = () => {
       if (data.simulatedResponse || data.replyText) {
         const replyText = data.simulatedResponse || data.replyText;
         const replyLang = data.language || 'en';
-        setWaMessages((prev) => [
-          ...prev,
-          {
-            sender: 'bot',
-            text: replyText,
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            language: replyLang
+
+        setWaMessages((prev) => {
+          const next = [...prev];
+          if (data.displayUserMessage && data.displayUserMessage !== text) {
+            const lastUserIdx = next.findLastIndex ? next.findLastIndex((m) => m.sender === 'user') : -1;
+            if (lastUserIdx !== -1) {
+              next[lastUserIdx] = {
+                ...next[lastUserIdx],
+                text: data.displayUserMessage
+              };
+            }
           }
-        ]);
+          return [
+            ...next,
+            {
+              sender: 'bot',
+              text: replyText,
+              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              language: replyLang,
+              languageName: data.languageName,
+              speechCode: data.speechCode
+            }
+          ];
+        });
       }
     } catch (err) {
       setWaMessages((prev) => [
@@ -285,6 +348,10 @@ export const ChannelDemo = () => {
   };
 
   const handleToggleWaMic = () => {
+    if (waVoiceState === 'SPEAKING') {
+      handleStopWaAudio();
+      return;
+    }
     if (waVoiceState === 'LISTENING') {
       stopWaListening();
     } else {
@@ -295,7 +362,7 @@ export const ChannelDemo = () => {
   // Process Spoken Microphone Audio with STT Auto-Detection & Multilingual Reply
   const processWaAudio = async (audioBlob, candidateTranscript, mimeType) => {
     setWaVoiceState('PROCESSING');
-    setWaStatusBanner('Processing...');
+    setWaStatusBanner('Processing voice audio...');
     setWaErrorMessage(null);
 
     try {
@@ -323,20 +390,33 @@ export const ChannelDemo = () => {
         return;
       }
 
-      const finalTranscript = (sttResult.transcript || candidateTranscript || '').trim();
-      if (!finalTranscript) {
+      const displayTranscript = (sttResult.displayTranscript || sttResult.transcript || candidateTranscript || '').trim();
+      const rawTranscript = (sttResult.rawTranscript || candidateTranscript || displayTranscript).trim();
+
+      if (!displayTranscript) {
         setWaVoiceState('ERROR');
         setWaStatusBanner(null);
-        setWaErrorMessage('No clear speech detected. Please speak into your microphone and try again.');
+        const lastLang = waMessages.findLast ? waMessages.findLast((m) => m.language)?.language : 'hi';
+        const inaudiblePrompt = lastLang === 'te'
+          ? 'మీ మాట స్పష్టంగా వినిపించలేదు. దయచేసి మైక్రోఫోన్ దగ్గరగా వచ్చి మళ్ళీ మాట్లాడండి.'
+          : lastLang === 'ta'
+            ? 'உங்கள் குரல் தெளிவாக கேட்கவில்லை. தயவுசெய்து மீண்டும் பேசவும்.'
+            : lastLang === 'bn'
+              ? 'আপনার কথা স্পষ্ট শোনা যায়নি। অনুগ্রহ করে আবার বলুন।'
+              : 'मुझे आपकी आवाज़ साफ़ सुनाई नहीं दी। कृपया दोबारा बोलें।';
+        setWaErrorMessage(inaudiblePrompt);
         return;
       }
 
-      const detectedLang = sttResult.language || 'te';
-      const detectedSpeechCode = sttResult.speechCode || `${detectedLang}-IN`;
-      const detectedLangName = sttResult.languageName || (detectedLang === 'en' ? 'English' : detectedLang === 'te' ? 'Telugu' : detectedLang === 'hi' ? 'Hindi' : detectedLang === 'ta' ? 'Tamil' : detectedLang);
+      const detectedLang = sttResult.language || 'auto';
+      const detectedSpeechCode = sttResult.speechCode || (detectedLang !== 'auto' ? `${detectedLang}-IN` : null);
+      const detectedLangName = sttResult.languageName || '';
+      const detectedScript = sttResult.script || 'Deva';
 
-      console.log('STT transcript:', finalTranscript);
-      console.log('STT detected language:', detectedSpeechCode);
+      console.log('[VOICE STT] raw transcript:', rawTranscript);
+      console.log('[NATIVE TRANSCRIPT] display transcript:', displayTranscript);
+      console.log('[VOICE STT] detected language:', detectedSpeechCode);
+      console.log('[VOICE STT] detected script:', detectedScript);
       console.log('Language confidence:', sttResult.confidence || 0.95);
 
       // 2. Display detected language state inside Left Phone
@@ -344,29 +424,34 @@ export const ChannelDemo = () => {
       const langBannerText = `Detected language: ${detectedLangName}`;
       setWaStatusBanner(langBannerText);
 
-      // 3. Display user's actual spoken transcript as normal user message in Left Phone
+      // 3. Display user's spoken transcript in NATIVE SCRIPT directly in chat bubble
       const userMsg = {
+        id: Date.now(),
         sender: 'user',
-        text: finalTranscript,
+        text: displayTranscript,
+        rawText: rawTranscript,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         isVoice: true,
         language: detectedLang,
         languageName: detectedLangName,
-        speechCode: detectedSpeechCode
+        speechCode: detectedSpeechCode,
+        script: detectedScript
       };
       setWaMessages((prev) => [...prev, userMsg]);
       setWaLoading(true);
 
-      // 4. Send transcript + detected language explicitly to assistant
+      // 4. Send native script transcript + detected language explicitly to assistant
       const res = await fetch('/api/channels/simulate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           channel: 'whatsapp',
-          message: finalTranscript,
+          message: displayTranscript,
+          rawMessage: rawTranscript,
           phone: waPhone,
           language: detectedSpeechCode,
-          lang: detectedLang
+          lang: detectedLang,
+          isVoice: true
         })
       });
       const data = await res.json();
@@ -379,10 +464,6 @@ export const ChannelDemo = () => {
       console.log('TTS language:', replySpeechCode);
 
       // 5. Display assistant response inside Left Phone in the SAME language
-      if (data.languageName) {
-        setWaStatusBanner(`Detected language: ${data.languageName}`);
-      }
-
       const botMsgId = Date.now();
       const botMsg = {
         id: botMsgId,
@@ -409,9 +490,10 @@ export const ChannelDemo = () => {
       });
       setWaLoading(false);
 
-      // 6. Speak response via TTS in the detected language
+      // 6. Speak response via TTS in the detected language with STOP capability
       setWaVoiceState('SPEAKING');
       setWaSpeakingId(botMsgId);
+      setWaStatusBanner(`Speaking in ${replyLangName || 'native voice'}...`);
 
       playIndicSpeech({
         text: replyText,
@@ -420,10 +502,12 @@ export const ChannelDemo = () => {
         onStart: () => {
           setWaVoiceState('SPEAKING');
           setWaSpeakingId(botMsgId);
+          setWaStatusBanner(`Speaking in ${replyLangName || 'native voice'}...`);
         },
         onEnd: () => {
           setWaVoiceState('IDLE');
           setWaSpeakingId(null);
+          setWaStatusBanner(null);
         }
       });
 
@@ -452,7 +536,7 @@ export const ChannelDemo = () => {
     setDetectedLanguage(null);
     setErrorMessage(null);
 
-    const greeting = 'నమస్కారం! PM-AJAY ఉపాధి హెల్ప్‌లైన్‌కు స్వాగతం. మీ నైపుణ్యాలు మరియు పని అనుభవం గురించి ఏ భాషలోనైనా మాట్లాడండి. మేము వింటున్నాము.';
+    const greeting = 'నమస్కారం! PM-AJAY ఉపాధి హెల్ప్‌లైన్‌కు స్వాగతం. తెలుగు కోసం 1 నొక్కండి. हिन्दी के लिए 2 दबाएं. For English, press 3.';
     setIvrPrompt(greeting);
     setAssistantReply(greeting);
 
@@ -758,26 +842,11 @@ export const ChannelDemo = () => {
     setWaMessages([
       {
         sender: 'bot',
-        text: 'నమస్కారం! PM AJAY జీవనోపాధి సహాయకుడికి స్వాగతం. మీ నైపుణ్యాల ఆధారంగా ఉచిత శిక్షణ మరియు రుణ పథకాలను సిఫార్సు చేయడానికి మేము మీ వివరాలు నమోదు చేయవచ్చా? ప్రారంభించడానికి YES అని పంపండి.',
+        text: 'Namaste! Welcome to PM AJAY Sahayak. I can help you with free skill training, jobs, and government loan schemes. How can I assist you today?',
         time: '10:00 AM'
-      },
-      {
-        sender: 'user',
-        text: 'YES',
-        time: '10:01 AM'
-      },
-      {
-        sender: 'bot',
-        text: 'ధన్యవాదాలు! మీ సమ్మతి నమోదైంది. మీ అనుభవం లేదా పని నైపుణ్యాల గురించి చెప్పండి.',
-        time: '10:01 AM'
-      },
-      {
-        sender: 'user',
-        text: sc.firstMsg,
-        time: '10:02 AM'
       }
     ]);
-    handleSendWa(sc.firstMsg);
+    handleSendWa(sc.firstMsg, sc.phone);
   };
 
   const formatTimer = (sec) => {
@@ -844,8 +913,36 @@ export const ChannelDemo = () => {
                 </div>
               </div>
 
+              {/* WhatsApp Audio Playing & Stop Banner */}
+              {waVoiceState === 'SPEAKING' && (
+                <div className="wa-audio-player-banner" id="wa-speaking-banner">
+                  <div className="wa-audio-player-info">
+                    <span className="wa-audio-pulse" />
+                    <Volume2 size={16} />
+                    <span>Assistant is speaking...</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="wa-stop-audio-btn"
+                    onClick={handleStopWaAudio}
+                    id="wa-stop-audio-btn"
+                    title="Stop audio playback immediately"
+                  >
+                    <VolumeX size={15} />
+                    <span>Stop Audio</span>
+                  </button>
+                </div>
+              )}
+
+              {waVoiceState === 'STOPPED' && (
+                <div className="wa-audio-player-banner stopped">
+                  <VolumeX size={15} />
+                  <span>Audio Stopped</span>
+                </div>
+              )}
+
               {/* WhatsApp Voice Status Banner */}
-              {waStatusBanner && (
+              {waStatusBanner && waVoiceState !== 'SPEAKING' && waVoiceState !== 'STOPPED' && (
                 <div className="wa-voice-status-banner">
                   {waVoiceState === 'LISTENING' && <span className="wa-recording-pulse" />}
                   <span>{waStatusBanner}</span>
@@ -861,18 +958,25 @@ export const ChannelDemo = () => {
               {/* WhatsApp Message Body */}
               <div className="wa-messages-body">
                 {waMessages.map((m, idx) => (
-                  <div key={idx} className={`wa-bubble ${m.sender === 'user' ? 'outgoing' : 'incoming'}`}>
+                  <div key={m.id || idx} className={`wa-bubble ${m.sender === 'user' ? 'outgoing' : 'incoming'}`}>
                     <div>
                       {m.isVoice && <Mic size={13} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'text-bottom', color: '#128c7e' }} />}
                       {m.text}
                       {m.sender === 'bot' && (
                         <button
                           type="button"
-                          onClick={() => playIndicSpeech({ text: m.text, language: m.language || 'en' })}
-                          className="wa-play-audio-btn"
-                          title="Listen to reply via TTS"
+                          onClick={() => handlePlayMessageAudio(m)}
+                          className={`wa-play-audio-btn ${waSpeakingId === m.id ? 'playing' : ''}`}
+                          title={waSpeakingId === m.id ? 'Stop audio' : 'Listen to reply via TTS'}
                         >
-                          <Volume2 size={13} />
+                          {waSpeakingId === m.id ? (
+                            <>
+                              <VolumeX size={13} color="#dc2626" />
+                              <span style={{ fontSize: '10px', color: '#dc2626', fontWeight: 700 }}>Stop</span>
+                            </>
+                          ) : (
+                            <Volume2 size={13} />
+                          )}
                         </button>
                       )}
                     </div>
@@ -899,22 +1003,52 @@ export const ChannelDemo = () => {
                 <button
                   type="button"
                   onClick={handleToggleWaMic}
-                  className={`wa-mic-btn ${waVoiceState === 'LISTENING' ? 'recording' : ''}`}
-                  title={waVoiceState === 'LISTENING' ? 'Click to stop recording' : 'Click to speak using your microphone (auto-detects language)'}
+                  className={`wa-mic-btn ${waVoiceState === 'LISTENING' ? 'recording' : waVoiceState === 'SPEAKING' ? 'speaking' : ''}`}
+                  title={
+                    waVoiceState === 'LISTENING'
+                      ? 'Click to stop recording'
+                      : waVoiceState === 'SPEAKING'
+                        ? 'Click to stop assistant audio'
+                        : 'Click to speak using your microphone (auto-detects language)'
+                  }
                 >
-                  {waVoiceState === 'LISTENING' ? <MicOff size={20} /> : <Mic size={20} />}
+                  {waVoiceState === 'LISTENING' ? (
+                    <MicOff size={20} />
+                  ) : waVoiceState === 'SPEAKING' ? (
+                    <VolumeX size={20} color="#dc2626" />
+                  ) : (
+                    <Mic size={20} />
+                  )}
                 </button>
                 <input
                   type="text"
                   className="wa-input"
-                  placeholder={waVoiceState === 'LISTENING' ? 'Listening to microphone...' : 'Type message or click mic to speak...'}
+                  placeholder={
+                    waVoiceState === 'LISTENING'
+                      ? 'Listening to microphone...'
+                      : waVoiceState === 'SPEAKING'
+                        ? 'Assistant is speaking (Click Stop Audio to silence)...'
+                        : 'Type message or click mic to speak...'
+                  }
                   value={waInput}
                   onChange={(e) => setWaInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSendWa()}
                 />
-                <button type="button" className="wa-send-btn" onClick={() => handleSendWa()}>
-                  <Send size={16} />
-                </button>
+                {waVoiceState === 'SPEAKING' ? (
+                  <button
+                    type="button"
+                    className="wa-stop-audio-btn"
+                    onClick={handleStopWaAudio}
+                    title="Stop audio playback"
+                    style={{ padding: '6px 10px' }}
+                  >
+                    <VolumeX size={15} />
+                  </button>
+                ) : (
+                  <button type="button" className="wa-send-btn" onClick={() => handleSendWa()}>
+                    <Send size={16} />
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -926,28 +1060,10 @@ export const ChannelDemo = () => {
         {/* Column 2: Upgraded IVR & Real Multilingual Voice Assistant Mockup */}
         <div>
           <div style={{ textAlign: 'center', marginBottom: '8px', fontWeight: 700, color: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-            <PhoneCall size={18} /> Multilingual Voice Assistant & IVR Helpline
+            <PhoneCall size={18} /> IVR Helpline Simulator (Keypad DTMF)
           </div>
 
           <div className="ivr-frame">
-            {/* Mode Switcher Tabs */}
-            <div className="ivr-mode-tabs">
-              <button
-                type="button"
-                className={`ivr-mode-tab ${ivrMode === 'voice' ? 'active' : ''}`}
-                onClick={() => setIvrMode('voice')}
-              >
-                <Mic size={13} /> Voice Assistant Mode
-              </button>
-              <button
-                type="button"
-                className={`ivr-mode-tab ${ivrMode === 'dtmf' ? 'active' : ''}`}
-                onClick={() => setIvrMode('dtmf')}
-              >
-                <Radio size={13} /> Keypad DTMF Mode
-              </button>
-            </div>
-
             {/* LCD Screen Display */}
             <div className="ivr-lcd">
               {/* Header Status Bar */}
@@ -1000,116 +1116,39 @@ export const ChannelDemo = () => {
                 </div>
               )}
 
-              {/* Bottom Display: DTMF or State */}
+              {/* Bottom Display: DTMF */}
               <div className="ivr-digits-display">
-                {ivrMode === 'dtmf' ? `DTMF: ${dtmfBuffer || '--'}` : `State: ${voiceState}`}
+                DTMF: {dtmfBuffer || '--'}
               </div>
             </div>
 
-            {/* Voice Assistant Interaction Mode */}
-            {ivrMode === 'voice' && (
-              <div className="ivr-mic-action-box">
-                {callActive ? (
-                  <>
-                    <button
-                      type="button"
-                      className={`btn-ivr-mic ${voiceState === 'LISTENING' ? 'listening' : voiceState === 'SPEAKING' ? 'speaking' : ''}`}
-                      onClick={voiceState === 'LISTENING' ? stopListening : startListening}
-                      title={voiceState === 'LISTENING' ? 'Click to finish speaking' : 'Click to speak in any of 22 Indian languages'}
-                    >
-                      {voiceState === 'LISTENING' ? <MicOff size={32} /> : <Mic size={32} />}
-                    </button>
-
-                    <div style={{ fontSize: '12px', fontWeight: 600, color: voiceState === 'LISTENING' ? '#f87171' : '#94a3b8', textAlign: 'center' }}>
-                      {voiceState === 'LISTENING'
-                        ? 'Listening to microphone... Speak in Telugu, Hindi, Tamil, English, etc.'
-                        : voiceState === 'PROCESSING'
-                          ? 'Transcribing & detecting spoken language...'
-                          : voiceState === 'THINKING'
-                            ? 'Formulating response in detected language...'
-                            : voiceState === 'SPEAKING'
-                              ? 'Speaking voice response...'
-                              : 'Tap microphone to speak'}
-                    </div>
-
-                    {/* Quick Voice Simulation Buttons (for instant testing without mic) */}
-                    <div style={{ width: '100%', marginTop: '6px' }}>
-                      <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '4px', textAlign: 'center' }}>
-                        Or test with sample multilingual speech:
-                      </div>
-                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                        <button
-                          type="button"
-                          className="scenario-chip"
-                          style={{ padding: '3px 8px', fontSize: '11px' }}
-                          onClick={() => handleSimulateVoiceSpeech('నాకు కుట్టుపని మరియు చేనేత అనుభవం ఉంది. షాప్ పెట్టాలనుకుంటున్నాను.', 'te')}
-                        >
-                          Telugu: కుట్టుపని
-                        </button>
-                        <button
-                          type="button"
-                          className="scenario-chip"
-                          style={{ padding: '3px 8px', fontSize: '11px' }}
-                          onClick={() => handleSimulateVoiceSpeech('मुझे सोलर पैनल इंस्टॉलेशन और बिजली का काम सीखना है.', 'hi')}
-                        >
-                          Hindi: सोलर पैनल
-                        </button>
-                        <button
-                          type="button"
-                          className="scenario-chip"
-                          style={{ padding: '3px 8px', fontSize: '11px' }}
-                          onClick={() => handleSimulateVoiceSpeech('எனக்கு ஆடை தைக்கும் தொழில் மற்றும் மின்சார வேலை தெரியும்.', 'ta')}
-                        >
-                          Tamil: தையல் தொழில்
-                        </button>
-                        <button
-                          type="button"
-                          className="scenario-chip"
-                          style={{ padding: '3px 8px', fontSize: '11px' }}
-                          onClick={() => handleSimulateVoiceSpeech('I have 3 years experience in dairy farming and animal care in my village.', 'en')}
-                        >
-                          English: Dairy Farming
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div style={{ fontSize: '12px', color: '#94a3b8', textAlign: 'center', padding: '12px' }}>
-                    Press <strong>Dial PM AJAY Helpline</strong> below to start spoken voice interview.
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* DTMF Keypad Mode */}
-            {ivrMode === 'dtmf' && (
-              <div className="ivr-keypad">
-                {[
-                  { d: '1', sub: 'TELUGU' },
-                  { d: '2', sub: 'HINDI' },
-                  { d: '3', sub: 'ENG' },
-                  { d: '4', sub: 'GHI' },
-                  { d: '5', sub: 'JKL' },
-                  { d: '6', sub: 'MNO' },
-                  { d: '7', sub: 'PQRS' },
-                  { d: '8', sub: 'TUV' },
-                  { d: '9', sub: 'WXYZ' },
-                  { d: '*', sub: 'REPEAT' },
-                  { d: '0', sub: 'OPERATOR' },
-                  { d: '#', sub: 'CONFIRM' }
-                ].map((k) => (
-                  <button
-                    key={k.d}
-                    type="button"
-                    className="keypad-btn"
-                    onClick={() => handleKeypadPress(k.d)}
-                  >
-                    <span>{k.d}</span>
-                    <span className="keypad-sub">{k.sub}</span>
-                  </button>
-                ))}
-              </div>
-            )}
+            {/* DTMF Keypad */}
+            <div className="ivr-keypad">
+              {[
+                { d: '1', sub: 'TELUGU' },
+                { d: '2', sub: 'HINDI' },
+                { d: '3', sub: 'ENG' },
+                { d: '4', sub: 'GHI' },
+                { d: '5', sub: 'JKL' },
+                { d: '6', sub: 'MNO' },
+                { d: '7', sub: 'PQRS' },
+                { d: '8', sub: 'TUV' },
+                { d: '9', sub: 'WXYZ' },
+                { d: '*', sub: 'REPEAT' },
+                { d: '0', sub: 'OPERATOR' },
+                { d: '#', sub: 'CONFIRM' }
+              ].map((k) => (
+                <button
+                  key={k.d}
+                  type="button"
+                  className="keypad-btn"
+                  onClick={() => handleKeypadPress(k.d)}
+                >
+                  <span>{k.d}</span>
+                  <span className="keypad-sub">{k.sub}</span>
+                </button>
+              ))}
+            </div>
 
             {/* Call Action Buttons */}
             <div className="ivr-call-actions">

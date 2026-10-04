@@ -60,6 +60,8 @@ router.post('/speech-to-text', optionalAuth, async (req, res) => {
       audioBuffer = Buffer.from(cleanBase64, 'base64');
     }
 
+    console.log(`\n[VOICE]\nAudio received`);
+
     const sttResult = await unifiedSpeechEngine.transcribeAudio({
       audioBuffer,
       mimeType,
@@ -68,15 +70,27 @@ router.post('/speech-to-text', optionalAuth, async (req, res) => {
     });
 
     if (sttResult.error) {
+      console.log(`\n[STT]\nerror: ${sttResult.error}`);
       return res.status(400).json({ error: sttResult.error });
     }
 
+    const rawTranscript = sttResult.rawTranscript || sttResult.transcript || '';
+    const displayTranscript = sttResult.displayTranscript || sttResult.transcript || '';
+    const detectedSpeechCode = sttResult.speechCode || (sttResult.language ? `${sttResult.language}-IN` : 'en-IN');
+    const detectedScript = sttResult.script || 'Deva';
+    const langConfidence = sttResult.confidence || 0.98;
+
+    console.log(`\n[STT]\nTranscript: ${rawTranscript}\n\n[STT]\nDetected language: ${detectedSpeechCode}\n\n[STT]\nLanguage confidence: ${langConfidence}\n\n[STT]\nDetected script: ${detectedScript}\n\n[NORMALIZATION]\nOriginal transcript: ${rawTranscript}\n\n[DISPLAY TRANSCRIPT]\n${displayTranscript}`);
+
     return res.json({
-      transcript: sttResult.transcript,
+      rawTranscript,
+      displayTranscript,
+      transcript: displayTranscript,
       language: sttResult.language,
       languageName: sttResult.languageName,
       nativeName: sttResult.nativeName,
-      speechCode: sttResult.speechCode,
+      speechCode: detectedSpeechCode,
+      script: detectedScript,
       confidence: sttResult.confidence,
       provider: sttResult.provider
     });
@@ -491,11 +505,16 @@ router.post('/text-to-speech', optionalAuth, async (req, res) => {
     }
 
     const normLang = normalizeLanguageCode(rawLang);
+    const langConfig = getLanguageConfig(normLang);
+    console.log(`\n[TTS]\nlanguage: ${langConfig.speechCode} (${langConfig.name})\ntext: "${text.slice(0, 70).replace(/\n/g, ' ')}..."`);
+
     const result = await unifiedSpeechEngine.synthesizeAudio({
       text,
       language: normLang,
       speaker
     });
+
+    console.log(`\n[PLAYBACK]\naudio generated: provider=${result.provider}, audioSize=${result.audioBase64 ? result.audioBase64.length : 0}`);
 
     return res.json(result);
   } catch (err) {

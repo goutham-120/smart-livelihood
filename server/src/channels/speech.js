@@ -14,6 +14,7 @@ import {
   normalizeLanguageCode,
   getLanguageConfig
 } from './languages.js';
+import { normalizeVoiceTranscript } from './transliteration.js';
 
 let geminiClient = null;
 
@@ -47,39 +48,92 @@ export class SarvamSpeechProvider {
     return Boolean(lang?.providerSupport?.sarvamStt);
   }
 
-  async transcribe(audioBuffer, language = 'auto') {
+  async transcribe(audioBuffer, language = 'auto', mimeType = 'audio/webm') {
     if (!this.apiKey) {
       throw new Error('Sarvam API key not configured');
     }
 
     // Per REST STT specification: Use language_code = 'unknown' for automatic language detection
     // Do NOT force 'en-IN' or 'te-IN'
-    const formData = new FormData();
-    const blob = new Blob([audioBuffer], { type: 'audio/wav' });
-    formData.append('file', blob, 'recording.wav');
-    formData.append('model', 'saaras:v1');
-    formData.append('language_code', 'unknown');
+    const ext = mimeType.includes('webm') ? 'webm' : mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'wav';
+    const blob = new Blob([audioBuffer], { type: mimeType });
 
-    const res = await fetch('https://api.sarvam.ai/speech-to-text', {
-      method: 'POST',
-      headers: {
-        'api-subscription-key': this.apiKey
-      },
-      body: formData
-    });
+    let res = null;
+    let data = null;
 
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`Sarvam STT failed: ${errText}`);
+    // Prefer saaras:v4 model with mode='transcribe' for native script output
+    try {
+      const formDataV4 = new FormData();
+      formDataV4.append('file', blob, `recording.${ext}`);
+      formDataV4.append('model', 'saaras:v4');
+      formDataV4.append('mode', 'transcribe');
+      formDataV4.append('language_code', 'unknown');
+
+      res = await fetch('https://api.sarvam.ai/speech-to-text', {
+        method: 'POST',
+        headers: { 'api-subscription-key': this.apiKey },
+        body: formDataV4
+      });
+
+      if (res.ok) {
+        data = await res.json();
+      }
+    } catch (v4Err) {
+      // Fallback to saaras:v3 or saaras:v1 below
     }
 
-    const data = await res.json();
+    if (!data) {
+      try {
+        const formDataV3 = new FormData();
+        formDataV3.append('file', blob, `recording.${ext}`);
+        formDataV3.append('model', 'saaras:v3');
+        formDataV3.append('mode', 'transcribe');
+        formDataV3.append('language_code', 'unknown');
+
+        res = await fetch('https://api.sarvam.ai/speech-to-text', {
+          method: 'POST',
+          headers: { 'api-subscription-key': this.apiKey },
+          body: formDataV3
+        });
+
+        if (res.ok) {
+          data = await res.json();
+        }
+      } catch (v3Err) {}
+    }
+
+    if (!data) {
+      const formData = new FormData();
+      formData.append('file', blob, `recording.${ext}`);
+      formData.append('model', 'saaras:v1');
+      formData.append('language_code', 'unknown');
+
+      res = await fetch('https://api.sarvam.ai/speech-to-text', {
+        method: 'POST',
+        headers: {
+          'api-subscription-key': this.apiKey
+        },
+        body: formData
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Sarvam STT failed: ${errText}`);
+      }
+
+      data = await res.json();
+    }
+
     const transcript = (data.transcript || '').trim();
     const reportedCode = data.language_code || data.detected_language_code || data.language;
 
     // The detected language returned by STT must become the source of truth.
     // Do not infer language from the transcript text.
     let detected;
+    const languageProb = (typeof data.language_probability === 'number')
+      ? data.language_probability
+      : (typeof data.confidence === 'number' ? data.confidence : 0.98);
+
     if (reportedCode && reportedCode !== 'unknown') {
       const codeFromSarvam = normalizeLanguageCode(reportedCode);
       const conf = getLanguageConfig(codeFromSarvam);
@@ -88,7 +142,8 @@ export class SarvamSpeechProvider {
         name: conf.name,
         nativeName: conf.nativeName,
         speechCode: conf.speechCode,
-        confidence: data.confidence || 0.98
+        confidence: languageProb,
+        languageProbability: languageProb
       };
     } else {
       // Secondary fallback only if STT did not report a language
@@ -98,20 +153,28 @@ export class SarvamSpeechProvider {
         name: textLid.languageName,
         nativeName: textLid.nativeName,
         speechCode: textLid.speechCode,
-        confidence: textLid.confidence || 0.85
+        confidence: textLid.confidence || 0.85,
+        languageProbability: textLid.confidence || 0.85
       };
     }
 
-    console.log('STT transcript:', transcript);
-    console.log('STT detected language:', detected.speechCode);
-    console.log('Language confidence:', detected.confidence);
+    // Convert Romanized transcript into Native Script if needed (Section 5 & 14)
+    const normalized = await normalizeVoiceTranscript({
+      rawTranscript: transcript,
+      detectedLanguage: detected.code,
+      confidence: detected.confidence,
+      apiKey: this.apiKey
+    });
 
     return {
-      transcript,
+      rawTranscript: normalized.rawTranscript,
+      displayTranscript: normalized.displayTranscript,
+      transcript: normalized.displayTranscript,
       language: detected.code,
       languageName: detected.name,
       nativeName: detected.nativeName,
       speechCode: detected.speechCode,
+      script: normalized.script,
       confidence: detected.confidence,
       provider: 'sarvam'
     };
@@ -244,12 +307,21 @@ Return strictly a valid JSON object matching this schema:
     const normLang = normalizeLanguageCode(parsed.language);
     const langConfig = getLanguageConfig(normLang);
 
+    const normalized = await normalizeVoiceTranscript({
+      rawTranscript: parsed.transcript.trim(),
+      detectedLanguage: langConfig.code,
+      confidence: parsed.confidence || 0.95
+    });
+
     return {
-      transcript: parsed.transcript.trim(),
+      rawTranscript: normalized.rawTranscript,
+      displayTranscript: normalized.displayTranscript,
+      transcript: normalized.displayTranscript,
       language: langConfig.code,
       languageName: langConfig.name,
       nativeName: langConfig.nativeName,
       speechCode: langConfig.speechCode,
+      script: normalized.script,
       confidence: parsed.confidence || 0.95,
       provider: 'gemini'
     };
@@ -275,7 +347,7 @@ export class UnifiedSpeechEngine {
     // 1. Try Sarvam AI STT First (supports Indic STT + auto-detection with language_code='unknown')
     if (this.sarvamProvider && audioBuffer) {
       try {
-        const sarvamResult = await this.sarvamProvider.transcribe(audioBuffer, language);
+        const sarvamResult = await this.sarvamProvider.transcribe(audioBuffer, language, mimeType);
         if (sarvamResult && sarvamResult.transcript) {
           return sarvamResult;
         }
@@ -302,15 +374,22 @@ export class UnifiedSpeechEngine {
     // 3. Fallback: If client-side speech recognition provided candidate text
     if (candidateTranscript && typeof candidateTranscript === 'string' && candidateTranscript.trim()) {
       const detected = detectLanguageFromText(candidateTranscript);
-      console.log('STT transcript:', candidateTranscript.trim());
-      console.log('STT detected language:', detected.speechCode);
-      console.log('Language confidence:', detected.confidence);
+      const normalized = await normalizeVoiceTranscript({
+        rawTranscript: candidateTranscript.trim(),
+        detectedLanguage: detected.language,
+        confidence: detected.confidence,
+        apiKey: this.sarvamKey
+      });
+
       return {
-        transcript: candidateTranscript.trim(),
+        rawTranscript: normalized.rawTranscript,
+        displayTranscript: normalized.displayTranscript,
+        transcript: normalized.displayTranscript,
         language: detected.language,
         languageName: detected.languageName,
         nativeName: detected.nativeName,
         speechCode: detected.speechCode,
+        script: normalized.script,
         confidence: detected.confidence,
         provider: 'webspeech'
       };

@@ -36,19 +36,66 @@ export const getLanguageByCode = (code) => {
 };
 
 /**
- * Global audio player reference for stopping overlapping audio
+ * Global audio player references and request sequence tracking for zero overlapping audio
  */
 let currentAudioElement = null;
+let currentPlaybackRequestId = 0;
+let currentAbortController = null;
+let activeEndCallback = null;
+
+export const isIndicSpeechPlaying = () => {
+  const isAudioElementPlaying = Boolean(currentAudioElement && !currentAudioElement.paused);
+  const isSpeechSynthesisSpeaking = typeof window !== 'undefined' && Boolean(window.speechSynthesis?.speaking);
+  return isAudioElementPlaying || isSpeechSynthesisSpeaking;
+};
+
+/**
+ * Stops all currently active speech playback immediately.
+ * Cancels HTMLAudioElement, browser SpeechSynthesis, and any in-flight TTS server requests.
+ */
+export const stopIndicSpeech = () => {
+  currentPlaybackRequestId++;
+
+  if (currentAbortController) {
+    try {
+      currentAbortController.abort();
+    } catch (e) {}
+    currentAbortController = null;
+  }
+
+  if (currentAudioElement) {
+    try {
+      currentAudioElement.pause();
+      currentAudioElement.currentTime = 0;
+      currentAudioElement.src = '';
+    } catch (e) {}
+    currentAudioElement = null;
+  }
+
+  if (typeof window !== 'undefined' && window.speechSynthesis) {
+    try {
+      window.speechSynthesis.cancel();
+    } catch (e) {}
+  }
+
+  if (activeEndCallback) {
+    const cb = activeEndCallback;
+    activeEndCallback = null;
+    cb();
+  }
+};
 
 /**
  * Plays speech audio using server Indic TTS (Sarvam/Bhashini) with graceful Web Speech fallback.
+ * Strictly prevents race conditions and overlapping audio.
  *
  * @param {object} params
  * @param {string} params.text - Text to speak
  * @param {string} params.language - Language code (e.g. 'te', 'hi', 'en')
+ * @param {string} [params.speechCode] - Specific speech code (e.g. 'te-IN', 'hi-IN')
  * @param {string} [params.audioBase64] - Pre-synthesized base64 audio if available
  * @param {function} [params.onStart] - Callback when speech starts
- * @param {function} [params.onEnd] - Callback when speech ends
+ * @param {function} [params.onEnd] - Callback when speech ends or is stopped
  */
 export const playIndicSpeech = async ({
   text,
@@ -58,59 +105,93 @@ export const playIndicSpeech = async ({
   onStart,
   onEnd
 }) => {
+  // 1. Immediately silence any prior playback and cancel in-flight TTS
   stopIndicSpeech();
+
+  const thisRequestId = ++currentPlaybackRequestId;
+  activeEndCallback = onEnd || null;
 
   const langInfo = getLanguageByCode(language);
   const effectiveSpeechCode = speechCode || langInfo.speechCode;
 
-  // 1. If base64 audio is provided directly from server
+  // 2. If pre-synthesized base64 audio was provided
   if (audioBase64) {
     try {
+      if (thisRequestId !== currentPlaybackRequestId) return;
+
       const audioUrl = audioBase64.startsWith('data:')
         ? audioBase64
         : `data:audio/wav;base64,${audioBase64}`;
       const audio = new Audio(audioUrl);
       currentAudioElement = audio;
 
-      audio.onplay = () => onStart && onStart();
+      audio.onplay = () => {
+        if (thisRequestId === currentPlaybackRequestId) {
+          onStart && onStart();
+        }
+      };
       audio.onended = () => {
-        currentAudioElement = null;
-        onEnd && onEnd();
+        if (thisRequestId === currentPlaybackRequestId) {
+          currentAudioElement = null;
+          activeEndCallback = null;
+          onEnd && onEnd();
+        }
       };
       audio.onerror = () => {
-        currentAudioElement = null;
-        fallbackBrowserSpeech(text, effectiveSpeechCode, onStart, onEnd);
+        if (thisRequestId === currentPlaybackRequestId) {
+          currentAudioElement = null;
+          fallbackBrowserSpeech(text, effectiveSpeechCode, onStart, onEnd, thisRequestId);
+        }
       };
 
       await audio.play();
       return;
     } catch (e) {
-      // Fall through to browser synthesis
+      if (thisRequestId !== currentPlaybackRequestId) return;
+      // Fall through to server TTS or browser fallback
     }
   }
 
-  // 2. Fetch server synthesis if text is available
+  // 3. In-flight cancellable server TTS request
+  const abortController = new AbortController();
+  currentAbortController = abortController;
+
   try {
     const res = await fetch('/api/assistant/text-to-speech', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, language: langInfo.code, speechCode: effectiveSpeechCode })
+      body: JSON.stringify({ text, language: langInfo.code, speechCode: effectiveSpeechCode }),
+      signal: abortController.signal
     });
+
+    if (thisRequestId !== currentPlaybackRequestId) return;
+
     if (res.ok) {
       const data = await res.json();
+      if (thisRequestId !== currentPlaybackRequestId) return;
+
       if (data.audioBase64) {
         const audioUrl = `data:${data.contentType || 'audio/wav'};base64,${data.audioBase64}`;
         const audio = new Audio(audioUrl);
         currentAudioElement = audio;
 
-        audio.onplay = () => onStart && onStart();
+        audio.onplay = () => {
+          if (thisRequestId === currentPlaybackRequestId) {
+            onStart && onStart();
+          }
+        };
         audio.onended = () => {
-          currentAudioElement = null;
-          onEnd && onEnd();
+          if (thisRequestId === currentPlaybackRequestId) {
+            currentAudioElement = null;
+            activeEndCallback = null;
+            onEnd && onEnd();
+          }
         };
         audio.onerror = () => {
-          currentAudioElement = null;
-          fallbackBrowserSpeech(text, effectiveSpeechCode, onStart, onEnd);
+          if (thisRequestId === currentPlaybackRequestId) {
+            currentAudioElement = null;
+            fallbackBrowserSpeech(text, effectiveSpeechCode, onStart, onEnd, thisRequestId);
+          }
         };
 
         await audio.play();
@@ -118,31 +199,28 @@ export const playIndicSpeech = async ({
       }
     }
   } catch (err) {
-    // Fallback to browser synthesis
+    if (thisRequestId !== currentPlaybackRequestId || err.name === 'AbortError') {
+      return;
+    }
+  } finally {
+    if (currentAbortController === abortController) {
+      currentAbortController = null;
+    }
   }
 
-  // 3. Fallback to client browser SpeechSynthesis
-  fallbackBrowserSpeech(text, effectiveSpeechCode, onStart, onEnd);
-};
-
-export const stopIndicSpeech = () => {
-  if (currentAudioElement) {
-    try {
-      currentAudioElement.pause();
-      currentAudioElement.currentTime = 0;
-    } catch (e) {}
-    currentAudioElement = null;
-  }
-  if (window.speechSynthesis) {
-    try {
-      window.speechSynthesis.cancel();
-    } catch (e) {}
+  // 4. Fallback to client browser SpeechSynthesis
+  if (thisRequestId === currentPlaybackRequestId) {
+    fallbackBrowserSpeech(text, effectiveSpeechCode, onStart, onEnd, thisRequestId);
   }
 };
 
-const fallbackBrowserSpeech = (text, speechCode, onStart, onEnd) => {
-  if (!window.speechSynthesis) {
+const fallbackBrowserSpeech = (text, speechCode, onStart, onEnd, requestId) => {
+  if (typeof window === 'undefined' || !window.speechSynthesis) {
     onEnd && onEnd();
+    return;
+  }
+
+  if (requestId && requestId !== currentPlaybackRequestId) {
     return;
   }
 
@@ -151,16 +229,32 @@ const fallbackBrowserSpeech = (text, speechCode, onStart, onEnd) => {
   utt.lang = speechCode || 'hi-IN';
   utt.rate = 0.95;
 
-  // Try to find native voice
-  const voices = window.speechSynthesis.getVoices();
-  const matchingVoice = voices.find((v) => v.lang === speechCode || v.lang.startsWith(speechCode.slice(0, 2)));
-  if (matchingVoice) {
-    utt.voice = matchingVoice;
-  }
+  // Try to find matching native voice
+  try {
+    const voices = window.speechSynthesis.getVoices();
+    const matchingVoice = voices.find((v) => v.lang === speechCode || v.lang.startsWith(speechCode.slice(0, 2)));
+    if (matchingVoice) {
+      utt.voice = matchingVoice;
+    }
+  } catch (e) {}
 
-  utt.onstart = () => onStart && onStart();
-  utt.onend = () => onEnd && onEnd();
-  utt.onerror = () => onEnd && onEnd();
+  utt.onstart = () => {
+    if (!requestId || requestId === currentPlaybackRequestId) {
+      onStart && onStart();
+    }
+  };
+  utt.onend = () => {
+    if (!requestId || requestId === currentPlaybackRequestId) {
+      activeEndCallback = null;
+      onEnd && onEnd();
+    }
+  };
+  utt.onerror = () => {
+    if (!requestId || requestId === currentPlaybackRequestId) {
+      activeEndCallback = null;
+      onEnd && onEnd();
+    }
+  };
 
   window.speechSynthesis.speak(utt);
 };

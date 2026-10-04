@@ -124,6 +124,7 @@ export const handleWhatsAppWebhook = async (req, res) => {
 
   // 2. Handle Audio Voice Notes
   let processedText = rawBody;
+  let detectedVoiceLang = null;
 
   if (numMedia > 0 && mediaUrl0) {
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -141,7 +142,6 @@ export const handleWhatsAppWebhook = async (req, res) => {
       await execAsync(`ffmpeg -y -i "${tempInputFile}" -ar 16000 -ac 1 "${tempOutputFile}"`);
       const wavBuffer = fs.readFileSync(tempOutputFile);
 
-      let detectedVoiceLang = null;
       if (process.env.SARVAM_API_KEY) {
         const sttResult = await provider.transcribe(wavBuffer, 'auto');
         processedText = sttResult.transcript || '';
@@ -172,27 +172,16 @@ export const handleWhatsAppWebhook = async (req, res) => {
     return res.send(twiml.toString());
   }
 
-  // 3. Process turn with state machine in detected language
-  const activeTurnLang = detectedVoiceLang || detectLanguageFromText(processedText).language || userLang;
-  const sessionKey = `whatsapp_${from}`;
-  const dialogueResult = await processConversationTurn({
-    text: processedText,
-    lang: activeTurnLang,
-    channel: 'whatsapp',
-    userId: user._id,
-    sessionKey
+  // 3. Process turn with multilingual WhatsApp livelihood assistant
+  const { handleWhatsAppMessage } = await import('../services/whatsappAssistant.js');
+  const waResult = await handleWhatsAppMessage({
+    phone: from,
+    message: processedText,
+    rawLanguage: detectedVoiceLang,
+    userId: user._id
   });
 
-  let replyText = dialogueResult.replyText;
-
-  // If conversation is complete, append top opportunity highlights
-  if (dialogueResult.isComplete && dialogueResult.matchedOpportunities?.length > 0) {
-    const topOp = dialogueResult.matchedOpportunities[0];
-    const opSummary = `\n\n🎯 Recommended Pathway: ${topOp.title} (NSQF Level ${topOp.nsqfLevel})\nMatch Score: ${topOp.matchScore}%\nDistrict Openings: ${topOp.demand?.openings || 10}`;
-    replyText += opSummary;
-  }
-
-  twiml.message(replyText);
+  twiml.message(waResult.replyText);
   res.type('text/xml');
   return res.send(twiml.toString());
 };
