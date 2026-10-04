@@ -22,6 +22,7 @@ import Placements from './pages/admin/Placements.jsx';
 import Coordination from './pages/admin/Coordination.jsx';
 import PerspectivePlan from './pages/admin/PerspectivePlan.jsx';
 import Directory from './pages/admin/Directory.jsx';
+import Consent from './pages/Consent.jsx';
 
 // Authenticated Shell Component (Only renders Sidebar & Header for logged-in users)
 function AppShell({ user, onLogout, children }) {
@@ -87,10 +88,17 @@ function AppShell({ user, onLogout, children }) {
   );
 }
 
-const ProtectedRoute = ({ user, onLogout, children }) => {
+const ProtectedRoute = ({ user, onLogout, children, requireUnlocked = false }) => {
   if (!user) {
     return <Navigate to="/login" replace />;
   }
+  const isOfficer = user?.role === 'officer' || user?.role === 'admin';
+  const isUnlocked = isOfficer || (typeof localStorage !== 'undefined' && localStorage.getItem('pmajay_voice_unlocked') === 'true');
+
+  if (requireUnlocked && !isUnlocked) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return (
     <AppShell user={user} onLogout={onLogout}>
       {children}
@@ -152,7 +160,7 @@ export default function App() {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#f8fafc', color: '#64748b' }}>
         <Spinner size={36} />
-        <div style={{ marginTop: '16px', fontWeight: 600, fontSize: '14px' }}>Loading PM-AJAY Livelihood Assistant...</div>
+        <div style={{ marginTop: '16px', fontWeight: 600, fontSize: '14px' }}>Loading JeevanPath AI...</div>
       </div>
     );
   }
@@ -166,7 +174,7 @@ export default function App() {
             path="/"
             element={
               activeUser ? (
-                <Navigate to={activeUser.role === 'officer' || activeUser.role === 'admin' ? '/dashboard' : '/assistant'} replace />
+                <Navigate to="/dashboard" replace />
               ) : (
                 <Login onLoginSuccess={handleLoginSuccess} />
               )
@@ -176,7 +184,7 @@ export default function App() {
             path="/login"
             element={
               activeUser ? (
-                <Navigate to={activeUser.role === 'officer' || activeUser.role === 'admin' ? '/dashboard' : '/assistant'} replace />
+                <Navigate to="/dashboard" replace />
               ) : (
                 <Login onLoginSuccess={handleLoginSuccess} initialTab="email" />
               )
@@ -216,14 +224,14 @@ export default function App() {
           {/* PROTECTED ROUTES (Wrapped in ProtectedRoute -> AppShell -> Sidebar + Header) */}
           <Route path="/dashboard" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Dashboard user={activeUser} /></ProtectedRoute>} />
           <Route path="/assistant" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Assistant /></ProtectedRoute>} />
-          <Route path="/opportunities" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Opportunities /></ProtectedRoute>} />
-          <Route path="/skill-gaps" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><SkillGaps /></ProtectedRoute>} />
-          <Route path="/training" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Training /></ProtectedRoute>} />
-          <Route path="/roadmap" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Roadmap /></ProtectedRoute>} />
-          <Route path="/what-if" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><WhatIf /></ProtectedRoute>} />
-          <Route path="/progress" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Progress /></ProtectedRoute>} />
+          <Route path="/opportunities" element={<ProtectedRoute user={activeUser} onLogout={handleLogout} requireUnlocked><Opportunities /></ProtectedRoute>} />
+          <Route path="/skill-gaps" element={<ProtectedRoute user={activeUser} onLogout={handleLogout} requireUnlocked><SkillGaps /></ProtectedRoute>} />
+          <Route path="/training" element={<ProtectedRoute user={activeUser} onLogout={handleLogout} requireUnlocked><Training /></ProtectedRoute>} />
+          <Route path="/roadmap" element={<ProtectedRoute user={activeUser} onLogout={handleLogout} requireUnlocked><Roadmap /></ProtectedRoute>} />
+          <Route path="/what-if" element={<ProtectedRoute user={activeUser} onLogout={handleLogout} requireUnlocked><WhatIf /></ProtectedRoute>} />
+          <Route path="/progress" element={<ProtectedRoute user={activeUser} onLogout={handleLogout} requireUnlocked><Progress /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Profile /></ProtectedRoute>} />
-          <Route path="/self-employment" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><SelfEmployment /></ProtectedRoute>} />
+          <Route path="/self-employment" element={<ProtectedRoute user={activeUser} onLogout={handleLogout} requireUnlocked><SelfEmployment /></ProtectedRoute>} />
           <Route path="/kiosk" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Kiosk /></ProtectedRoute>} />
           <Route path="/channel-demo" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><ChannelDemo /></ProtectedRoute>} />
 
@@ -234,6 +242,8 @@ export default function App() {
           <Route path="/admin/coordination" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Coordination /></ProtectedRoute>} />
           <Route path="/admin/plan" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><PerspectivePlan /></ProtectedRoute>} />
           <Route path="/admin/directory" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Directory /></ProtectedRoute>} />
+
+          <Route path="/consent" element={<Consent />} />
 
           {/* Catch-all fallback */}
           <Route path="*" element={<Navigate to={activeUser ? '/dashboard' : '/login'} replace />} />

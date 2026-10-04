@@ -1,69 +1,279 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { useLang } from './lang.js';
 import { api } from './api.js';
 import {
   Mic, MicOff, Volume2, Briefcase, User, ShieldCheck, Sparkles, TrendingUp,
   Award, Compass, LogOut, Menu, X, Home, BookOpen, Layers, PhoneCall,
-  CheckCircle, AlertCircle, FileText, FolderKanban, Building2, Users
+  CheckCircle, AlertCircle, FileText, FolderKanban, Building2, Users, Lock, Languages
 } from 'lucide-react';
 
 export const QuickDemoBar = () => null;
 
+const PAGE_TITLES = {
+  en: {
+    assistant: 'Empathetic AI Voice Assistant',
+    opportunities: 'Tailored Livelihood Opportunities',
+    'skill-gaps': 'Skill Gap & Competency Analysis',
+    training: 'Certified Skilling Programs',
+    roadmap: 'Career Livelihood Roadmap',
+    'what-if': 'What-If Career Simulator',
+    'self-employment': 'Micro-Enterprise Business Guide',
+    progress: 'Active Livelihood Milestones',
+    profile: 'Livelihood Profile',
+    kiosk: 'Touch & Voice Kiosk',
+    'channel-demo': 'Channel Integration Simulator',
+    'admin/overview': 'District Officer Overview',
+    'admin/beneficiaries': 'Assisted Beneficiary Registration',
+    'admin/placements': 'Placements & Enrolment',
+    'admin/coordination': 'Inter-Agency Task Coordination',
+    'admin/plan': 'District Perspective Action Plan',
+    'admin/directory': 'Resource Directory Catalog',
+    default: 'JeevanPath AI'
+  },
+  hi: {
+    assistant: 'सहानुभूतिपूर्ण एआई वॉयस असिस्टेंट',
+    opportunities: 'अनुकूलित आजीविका के अवसर',
+    'skill-gaps': 'कौशल अंतर और क्षमता विश्लेषण',
+    training: 'प्रमाणित कौशल विकास कार्यक्रम',
+    roadmap: 'करियर आजीविका रोडमैप',
+    'what-if': 'करियर परिदृश्य सिम्युलेटर',
+    'self-employment': 'सूक्ष्म उद्यम व्यवसाय मार्गदर्शिका',
+    progress: 'सक्रिय आजीविका मील के पत्थर',
+    profile: 'आजीविका प्रोफ़ाइल',
+    kiosk: 'टच एवं वॉयस कियोस्क',
+    'channel-demo': 'चैनल एकीकरण सिम्युलेटर',
+    'admin/overview': 'जिला अधिकारी अवलोकन',
+    'admin/beneficiaries': 'सहायता प्राप्त लाभार्थी पंजीकरण',
+    'admin/placements': 'प्लेसमेंट एवं नामांकन',
+    'admin/coordination': 'अंतर-एजेंसी कार्य समन्वय',
+    'admin/plan': 'जिला परिप्रेक्ष्य कार्य योजना',
+    'admin/directory': 'संसाधन निर्देशिका सूची',
+    default: 'JeevanPath AI'
+  },
+  te: {
+    assistant: 'సానుభూతిపూర్వక AI వాయిస్ అసిస్టెంట్',
+    opportunities: 'వ్యక్తిగతీకరించిన ఉపాధి అవకాశాలు',
+    'skill-gaps': 'నైపుణ్య లోపాలు & విశ్లేషణ',
+    training: 'ప్రమాణిత శిక్షణా కార్యక్రమాలు',
+    roadmap: 'కెరీర్ జీవనోపాధి రోడ్‌మ్యాప్',
+    'what-if': 'కెరీర్ వాట్-ఇఫ్ సిమ్యులేటర్',
+    'self-employment': 'సూక్ష్మ వ్యాపార మార్గదర్శి',
+    progress: 'క్రియాశీల ఉపాధి మైలురాళ్ళు',
+    profile: 'జీవనోపాధి ప్రొఫైల్',
+    kiosk: 'టచ్ & వాయిస్ కియోస్క్',
+    'channel-demo': 'ఛానల్ ఇంటిగ్రేషన్ సిమ్యులేటర్',
+    'admin/overview': 'జిల్లా అధికారి సమీక్ష',
+    'admin/beneficiaries': 'లబ్ధిదారుల నమోదు',
+    'admin/placements': 'ఉద్యోగ నియామకాలు & నమోదు',
+    'admin/coordination': 'అంతర్-శాఖల సమన్వయం',
+    'admin/plan': 'జిల్లా దృక్పథ కార్యాచరణ ప్రణాళిక',
+    'admin/directory': 'వనరుల డైరెక్టరీ కేటలాగ్',
+    default: 'JeevanPath AI'
+  }
+};
+
+const NAV_TRANSLATIONS = {
+  en: {
+    dashboard: 'Dashboard',
+    assistant: 'AI Voice Assistant',
+    opportunities: 'Opportunities',
+    skillGaps: 'Skill Gaps',
+    training: 'Certified Training',
+    roadmap: 'Career Roadmap',
+    whatIf: 'What-If Simulator',
+    selfEmployment: 'Self-Employment',
+    progress: 'Active Milestones',
+    profile: 'Livelihood Profile',
+    kiosk: 'Kiosk Touch Mode',
+    channelDemo: 'Channel Simulator',
+    districtOverview: 'District Overview',
+    beneficiaries: 'Beneficiaries',
+    placements: 'Placements',
+    coordination: 'Task Coordination',
+    plan: 'Perspective Plan',
+    directory: 'Resource Directory',
+    beneficiaryGroup: 'Beneficiary',
+    accountGroup: 'Account',
+    channelsGroup: 'Channels',
+    districtCommandGroup: 'District Command'
+  },
+  hi: {
+    dashboard: 'डैशबोर्ड',
+    assistant: 'एआई वॉयस असिस्टेंट',
+    opportunities: 'अवसर',
+    skillGaps: 'कौशल अंतर',
+    training: 'प्रमाणित प्रशिक्षण',
+    roadmap: 'करियर रोडमैप',
+    whatIf: 'व्हॉट-इफ़ सिम्युलेटर',
+    selfEmployment: 'स्व-रोजगार',
+    progress: 'सक्रिय मील के पत्थर',
+    profile: 'आजीविका प्रोफ़ाइल',
+    kiosk: 'कियोस्क टच मोड',
+    channelDemo: 'चैनल सिम्युलेटर',
+    districtOverview: 'जिला अवलोकन',
+    beneficiaries: 'लाभार्थी',
+    placements: 'प्लेसमेंट',
+    coordination: 'कार्य समन्वय',
+    plan: 'परिप्रेक्ष्य योजना',
+    directory: 'संसाधन निर्देशिका',
+    beneficiaryGroup: 'लाभार्थी',
+    accountGroup: 'खाता',
+    channelsGroup: 'चैनल',
+    districtCommandGroup: 'जिला कमान'
+  },
+  te: {
+    dashboard: 'డాష్‌బోర్డ్',
+    assistant: 'AI వాయిస్ అసిస్టెంట్',
+    opportunities: 'అవకాశాలు',
+    skillGaps: 'నైపుణ్య అంతరాలు',
+    training: 'ప్రమాణిత శిక్షణ',
+    roadmap: 'కెరీర్ రోడ్‌మ్యాప్',
+    whatIf: 'వాట్-ఇఫ్ సిమ్యులేటర్',
+    selfEmployment: 'స్వయం ఉపాధి',
+    progress: 'క్రియాశీల మైలురాళ్ళు',
+    profile: 'జీవనోపాధి ప్రొఫైల్',
+    kiosk: 'కియోస్క్ టచ్ మోడ్',
+    channelDemo: 'ఛానల్ సిమ్యులేటర్',
+    districtOverview: 'జిల్లా సమీక్ష',
+    beneficiaries: 'లబ్ధిదారులు',
+    placements: 'నియామకాలు',
+    coordination: 'టాస్క్ సమన్వయం',
+    plan: 'దృక్పథ ప్రణాళిక',
+    directory: 'వనరుల డైరెక్టరీ',
+    beneficiaryGroup: 'లబ్ధిదారుడు',
+    accountGroup: 'ఖాతా',
+    channelsGroup: 'ఛానల్స్',
+    districtCommandGroup: 'జిల్లా కమాండ్'
+  }
+};
+
 
 export const AppSidebar = ({ user, sidebarOpen, setSidebarOpen }) => {
   const location = useLocation();
-  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { lang } = useLang();
   const isOfficer = user?.role === 'officer' || user?.role === 'admin';
+  const navText = NAV_TRANSLATIONS[lang] || NAV_TRANSLATIONS.en;
+
+  const [isUnlocked, setIsUnlocked] = useState(() => {
+    if (isOfficer) return true;
+    try {
+      return localStorage.getItem('pmajay_voice_unlocked') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const [popupMessage, setPopupMessage] = useState(null);
+  const popupTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    if (isOfficer) return;
+    const checkStatus = () => {
+      try {
+        const val = localStorage.getItem('pmajay_voice_unlocked') === 'true';
+        if (val) setIsUnlocked(true);
+      } catch {}
+    };
+    checkStatus();
+
+    // Check with server profile
+    api.getProfile().then((res) => {
+      const p = res?.profile || res?.data?.profile;
+      if (p?.voiceCompleted || (p?.skills && p.skills.length > 0 && localStorage.getItem('pmajay_voice_unlocked') === 'true')) {
+        setIsUnlocked(true);
+        localStorage.setItem('pmajay_voice_unlocked', 'true');
+      }
+    }).catch(() => {});
+
+    window.addEventListener('pmajay_voice_unlocked', checkStatus);
+    window.addEventListener('storage', checkStatus);
+    return () => {
+      window.removeEventListener('pmajay_voice_unlocked', checkStatus);
+      window.removeEventListener('storage', checkStatus);
+      if (popupTimeoutRef.current) clearTimeout(popupTimeoutRef.current);
+    };
+  }, [isOfficer]);
+
+  const triggerLockedPopup = () => {
+    if (popupTimeoutRef.current) clearTimeout(popupTimeoutRef.current);
+    setPopupMessage("Complete the 2-min conversation with AI Assistant to unlock these.");
+    popupTimeoutRef.current = setTimeout(() => {
+      setPopupMessage(null);
+    }, 4000); // 4 seconds (within 3-5 seconds requirement)
+  };
+
+  const lockedPaths = new Set([
+    '/opportunities',
+    '/skill-gaps',
+    '/training',
+    '/roadmap',
+    '/what-if',
+    '/self-employment',
+    '/progress'
+  ]);
 
   const beneficiaryNav = [
-    { to: '/dashboard', label: t('nav.dashboard', 'Dashboard'), icon: Home },
-    { to: '/assistant', label: t('nav.assistant', 'AI Voice Assistant'), icon: Mic },
-    { to: '/opportunities', label: t('nav.opportunities', 'Opportunities'), icon: Briefcase },
-    { to: '/skill-gaps', label: t('nav.skillGaps', 'Skill Gaps'), icon: Layers },
-    { to: '/training', label: t('nav.training', 'Certified Training'), icon: BookOpen },
-    { to: '/roadmap', label: t('nav.roadmap', 'Career Roadmap'), icon: TrendingUp },
-    { to: '/what-if', label: t('nav.whatIf', 'What-If Simulator'), icon: Compass },
-    { to: '/self-employment', label: t('nav.selfEmployment', 'Self-Employment'), icon: Award },
-    { to: '/progress', label: t('nav.progress', 'Active Milestones'), icon: CheckCircle }
+    { to: '/dashboard', label: navText.dashboard, icon: Home },
+    { to: '/assistant', label: navText.assistant, icon: Mic },
+    { to: '/opportunities', label: navText.opportunities, icon: Briefcase },
+    { to: '/skill-gaps', label: navText.skillGaps, icon: Layers },
+    { to: '/training', label: navText.training, icon: BookOpen },
+    { to: '/roadmap', label: navText.roadmap, icon: TrendingUp },
+    { to: '/what-if', label: navText.whatIf, icon: Compass },
+    { to: '/self-employment', label: navText.selfEmployment, icon: Award },
+    { to: '/progress', label: navText.progress, icon: CheckCircle }
   ];
 
   const accountNav = [
-    { to: '/profile', label: t('nav.profile', 'Livelihood Profile'), icon: User }
+    { to: '/profile', label: navText.profile, icon: User }
   ];
 
   const channelNav = [
-    { to: '/kiosk', label: t('nav.kiosk', 'Kiosk Touch Mode'), icon: Building2 },
-    { to: '/channel-demo', label: t('nav.channelDemo', 'Channel Simulator'), icon: PhoneCall }
+    { to: '/kiosk', label: navText.kiosk, icon: Building2 },
+    { to: '/channel-demo', label: navText.channelDemo, icon: PhoneCall }
   ];
 
   const adminNav = [
-    { to: '/admin/overview', label: t('nav.adminOverview', 'District Overview'), icon: TrendingUp },
-    { to: '/admin/beneficiaries', label: t('nav.adminBeneficiaries', 'Beneficiaries'), icon: Users },
-    { to: '/admin/placements', label: t('nav.adminPlacements', 'Placements'), icon: Award },
-    { to: '/admin/coordination', label: t('nav.adminCoordination', 'Task Coordination'), icon: FolderKanban },
-    { to: '/admin/plan', label: t('nav.adminPlan', 'Perspective Plan'), icon: FileText },
-    { to: '/admin/directory', label: t('nav.adminDirectory', 'Resource Directory'), icon: Building2 }
+    { to: '/admin/overview', label: navText.districtOverview, icon: TrendingUp },
+    { to: '/admin/beneficiaries', label: navText.beneficiaries, icon: Users },
+    { to: '/admin/placements', label: navText.placements, icon: Award },
+    { to: '/admin/coordination', label: navText.coordination, icon: FolderKanban },
+    { to: '/admin/plan', label: navText.plan, icon: FileText },
+    { to: '/admin/directory', label: navText.directory, icon: Building2 }
   ];
 
-  const renderNavGroup = (titleKey, defaultTitle, items) => (
+  const renderNavGroup = (title, items) => (
     <div>
-      <div className="nav-group-title">{t(`nav.${titleKey}`, defaultTitle)}</div>
+      <div className="nav-group-title">{title}</div>
       {items.map((item) => {
         const Icon = item.icon;
         const active = location.pathname === item.to;
+        const isLocked = !isUnlocked && lockedPaths.has(item.to);
+
         return (
           <Link
             key={item.to}
-            to={item.to}
-            className={`nav-item ${active ? 'active' : ''}`}
-            onClick={() => {
+            to={isLocked ? '#' : item.to}
+            className={`nav-item ${active ? 'active' : ''} ${isLocked ? 'locked' : ''}`}
+            onClick={(e) => {
+              if (isLocked) {
+                e.preventDefault();
+                triggerLockedPopup();
+                return;
+              }
               if (window.innerWidth < 1024) setSidebarOpen(false);
             }}
+            title={isLocked ? "Complete the 2-minute conversation with AI Assistant to unlock these" : item.label}
           >
             <Icon size={18} />
-            <span>{item.label}</span>
+            <span style={{ flex: 1 }}>{item.label}</span>
+            {isLocked && (
+              <span className="nav-lock-badge" title="Locked">
+                <Lock size={13} />
+              </span>
+            )}
           </Link>
         );
       })}
@@ -71,50 +281,109 @@ export const AppSidebar = ({ user, sidebarOpen, setSidebarOpen }) => {
   );
 
   return (
-    <aside className={`app-sidebar ${sidebarOpen ? 'sidebar-open open' : 'sidebar-closed'}`}>
-      <div className="app-sidebar-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-          <img src="/assets/pm-ajay-logo.png" alt="PM-AJAY Logo" className="app-sidebar-brand-logo" />
-          <div>
-            <div className="app-sidebar-brand-title">{t('appName', 'Livelihood Assistant')}</div>
-            <div className="app-sidebar-brand-sub">{t('tagline', 'AI Skilling & Livelihood')}</div>
+    <>
+      {popupMessage && (
+        <div
+          className="locked-popup-toast"
+          role="alert"
+        >
+          <div style={{
+            background: 'rgba(217, 119, 6, 0.25)',
+            border: '1px solid rgba(217, 119, 6, 0.45)',
+            width: '36px',
+            height: '36px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#fbbf24',
+            flexShrink: 0
+          }}>
+            <Lock size={18} />
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontWeight: 800, fontSize: '13px', color: '#fbbf24', letterSpacing: '0.2px' }}>
+              FEATURE LOCKED
+            </div>
+            <div style={{ fontSize: '13px', color: '#f1f5f9', marginTop: '2px', fontWeight: 500 }}>
+              {popupMessage}
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              setPopupMessage(null);
+              navigate('/assistant');
+              if (window.innerWidth < 1024) setSidebarOpen(false);
+            }}
+            className="btn btn-primary"
+            style={{ fontSize: '12px', padding: '6px 14px', whiteSpace: 'nowrap', marginLeft: '6px' }}
+          >
+            Talk to AI Assistant &rarr;
+          </button>
+          <button
+            onClick={() => setPopupMessage(null)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#94a3b8',
+              cursor: 'pointer',
+              fontSize: '18px',
+              padding: '0 4px',
+              lineHeight: 1
+            }}
+            aria-label="Close"
+          >
+            &times;
+          </button>
+        </div>
+      )}
+
+      <aside className={`app-sidebar ${sidebarOpen ? 'sidebar-open open' : 'sidebar-closed'}`}>
+        <div className="app-sidebar-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+            <img src="/assets/pm-ajay-logo.png" alt="PM-AJAY Logo" className="app-sidebar-brand-logo" />
+            <div>
+              <div className="app-sidebar-brand-title">JeevanPath AI</div>
+              <div className="app-sidebar-brand-sub">AI Skilling & Livelihood</div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <nav className="app-sidebar-nav">
-        {renderNavGroup('beneficiary', 'Beneficiary', beneficiaryNav)}
-        {renderNavGroup('account', 'Account', accountNav)}
-        {renderNavGroup('channels', 'Channels', channelNav)}
-        {isOfficer && renderNavGroup('districtCommand', 'District Command', adminNav)}
-      </nav>
-    </aside>
+        <nav className="app-sidebar-nav">
+          {renderNavGroup(navText.beneficiaryGroup, beneficiaryNav)}
+          {renderNavGroup(navText.accountGroup, accountNav)}
+          {renderNavGroup(navText.channelsGroup, channelNav)}
+          {isOfficer && renderNavGroup(navText.districtCommandGroup, adminNav)}
+        </nav>
+      </aside>
+    </>
   );
 };
 
 export const AppHeader = ({ user, onLogout, toggleSidebar, sidebarOpen }) => {
   const location = useLocation();
-  const { t } = useTranslation();
+  const { lang } = useLang();
 
   const getPageTitle = (path) => {
-    if (path.includes('assistant')) return t('pages.assistant', 'Empathetic AI Voice Assistant');
-    if (path.includes('opportunities')) return t('pages.opportunities', 'Tailored Livelihood Opportunities');
-    if (path.includes('skill-gaps')) return t('pages.skillGaps', 'Skill Gap & Competency Analysis');
-    if (path.includes('training')) return t('pages.training', 'Certified Skilling Programs');
-    if (path.includes('roadmap')) return t('pages.roadmap', 'Career Livelihood Roadmap');
-    if (path.includes('what-if')) return t('pages.whatIf', 'What-If Career Simulator');
-    if (path.includes('self-employment')) return t('pages.selfEmployment', 'Micro-Enterprise Business Guide');
-    if (path.includes('progress')) return t('pages.progress', 'Active Livelihood Milestones');
-    if (path.includes('profile')) return t('pages.profile', 'Livelihood Profile');
-    if (path.includes('kiosk')) return t('pages.kiosk', 'Touch & Voice Kiosk');
-    if (path.includes('channel-demo')) return t('pages.channelDemo', 'Channel Integration Simulator');
-    if (path.includes('admin/overview')) return t('pages.adminOverview', 'District Officer Overview');
-    if (path.includes('admin/beneficiaries')) return t('pages.adminBeneficiaries', 'Assisted Beneficiary Registration');
-    if (path.includes('admin/placements')) return t('pages.adminPlacements', 'Placements & Enrolment');
-    if (path.includes('admin/coordination')) return t('pages.adminCoordination', 'Inter-Agency Task Coordination');
-    if (path.includes('admin/plan')) return t('pages.adminPlan', 'District Perspective Action Plan');
-    if (path.includes('admin/directory')) return t('pages.adminDirectory', 'Resource Directory Catalog');
-    return t('pages.defaultTitle', 'Livelihood Assistant');
+    const titles = PAGE_TITLES[lang] || PAGE_TITLES.en;
+    if (path.includes('assistant')) return titles.assistant;
+    if (path.includes('opportunities')) return titles.opportunities;
+    if (path.includes('skill-gaps')) return titles['skill-gaps'];
+    if (path.includes('training')) return titles.training;
+    if (path.includes('roadmap')) return titles.roadmap;
+    if (path.includes('what-if')) return titles['what-if'];
+    if (path.includes('self-employment')) return titles['self-employment'];
+    if (path.includes('progress')) return titles.progress;
+    if (path.includes('profile')) return titles.profile;
+    if (path.includes('kiosk')) return titles.kiosk;
+    if (path.includes('channel-demo')) return titles['channel-demo'];
+    if (path.includes('admin/overview')) return titles['admin/overview'];
+    if (path.includes('admin/beneficiaries')) return titles['admin/beneficiaries'];
+    if (path.includes('admin/placements')) return titles['admin/placements'];
+    if (path.includes('admin/coordination')) return titles['admin/coordination'];
+    if (path.includes('admin/plan')) return titles['admin/plan'];
+    if (path.includes('admin/directory')) return titles['admin/directory'];
+    return titles.default;
   };
 
   return (
@@ -133,8 +402,9 @@ export const AppHeader = ({ user, onLogout, toggleSidebar, sidebarOpen }) => {
         <h1 className="app-header-title">{getPageTitle(location.pathname)}</h1>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0 }}>
         <LanguageSwitcher />
+
         {user ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <span className="badge badge-blue">{user.district || 'Warangal'}</span>
@@ -154,212 +424,74 @@ export const AppHeader = ({ user, onLogout, toggleSidebar, sidebarOpen }) => {
   );
 };
 
-export const VoiceInput = ({ onSend, isProcessing, voiceState = 'IDLE', errorMessage = null }) => {
-  const { lang, setLang } = useLang();
+export const VoiceInput = ({ onSend, isProcessing, voiceState = 'IDLE', errorMessage = null, lang: propLang }) => {
+  const { lang: contextLang } = useLang();
+  const lang = propLang || contextLang || 'te';
   const [text, setText] = useState('');
   const [currentState, setCurrentState] = useState(voiceState);
-  const [detectedLang, setDetectedLang] = useState(null);
-  const [localError, setLocalError] = useState(errorMessage);
-
-  const mediaRecorderRef = useRef(null);
-  const audioChunksRef = useRef([]);
-  const recognitionRef = useRef(null);
-  const silenceTimerRef = useRef(null);
-  const isListeningRef = useRef(false);
 
   useEffect(() => {
-    if (!isProcessing) {
-      setCurrentState(voiceState || 'IDLE');
-    }
-  }, [isProcessing, voiceState]);
+    setCurrentState(voiceState);
+  }, [voiceState]);
 
-  useEffect(() => {
-    setLocalError(errorMessage);
-  }, [errorMessage]);
-
-  const startListening = async () => {
-    setLocalError(null);
-    audioChunksRef.current = [];
-    isListeningRef.current = true;
-    setCurrentState('LISTENING');
-
-    let candidateTranscript = '';
-
-    // 1. Browser Speech Recognition candidate listener (for zero-latency interim tokens)
-    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SpeechRec) {
-      try {
-        const rec = new SpeechRec();
-        rec.continuous = true;
-        rec.interimResults = true;
-        rec.lang = 'te-IN';
-        rec.onresult = (e) => {
-          const trans = Array.from(e.results).map((r) => r[0].transcript).join(' ');
-          candidateTranscript = trans;
-          setText(trans);
-
-          if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-          silenceTimerRef.current = setTimeout(() => {
-            if (isListeningRef.current) {
-              stopListening();
-            }
-          }, 2000);
-        };
-        rec.onerror = () => {};
-        rec.start();
-        recognitionRef.current = rec;
-      } catch (e) {}
+  const startListening = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('Browser speech recognition is unavailable. Please type your message in text.');
+      return;
     }
 
-    // 2. Real Microphone MediaRecorder
-    try {
-      if (!navigator.mediaDevices?.getUserMedia) {
-        throw new Error('Microphone audio recording is not supported in this browser.');
-      }
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true }
-      });
-
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-        ? 'audio/webm;codecs=opus'
-        : MediaRecorder.isTypeSupported('audio/webm')
-          ? 'audio/webm'
-          : 'audio/mp4';
-
-      const mediaRecorder = new MediaRecorder(stream, { mimeType });
-      mediaRecorderRef.current = mediaRecorder;
-
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data && e.data.size > 0) {
-          audioChunksRef.current.push(e.data);
-        }
-      };
-
-      mediaRecorder.onstop = async () => {
-        stream.getTracks().forEach((t) => t.stop());
-        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
-        await handleAudioCaptured(audioBlob, candidateTranscript, mimeType);
-      };
-
-      mediaRecorder.start(250);
-    } catch (err) {
-      setCurrentState('ERROR');
-      setLocalError(
-        err.name === 'NotAllowedError'
-          ? 'Microphone permission denied. Please allow microphone access in browser settings.'
-          : 'Could not access microphone: ' + (err.message || 'Unknown error')
-      );
-      isListeningRef.current = false;
-    }
-  };
-
-  const stopListening = () => {
-    isListeningRef.current = false;
-    if (silenceTimerRef.current) {
-      clearTimeout(silenceTimerRef.current);
-      silenceTimerRef.current = null;
-    }
-
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch (e) {}
-      recognitionRef.current = null;
-    }
-
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      try {
-        mediaRecorderRef.current.stop();
-      } catch (e) {}
-    }
-  };
-
-  const handleAudioCaptured = async (audioBlob, candidateTranscript, mimeType) => {
-    setCurrentState('PROCESSING');
-
-    try {
-      let audioBase64 = null;
-      if (audioBlob && audioBlob.size > 500) {
-        audioBase64 = await new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.readAsDataURL(audioBlob);
-        });
-      }
-
-      const sttResult = await api.speechToText({
-        audioBase64,
-        mimeType,
-        transcript: candidateTranscript,
-        language: 'auto'
-      });
-
-      const finalTranscript = sttResult.transcript || candidateTranscript;
-      if (!finalTranscript || !finalTranscript.trim()) {
-        setCurrentState('ERROR');
-        setLocalError('No clear speech detected. Please speak clearly into your microphone.');
-        return;
-      }
-
-      const detected = {
-        code: sttResult.language || 'en',
-        name: sttResult.languageName || 'English',
-        nativeName: sttResult.nativeName || 'English',
-        confidence: Math.round((sttResult.confidence || 0.9) * 100)
-      };
-
-      setDetectedLang(detected);
-      setText(finalTranscript);
-      setCurrentState('LANGUAGE DETECTED');
-
-      // Update global language context if available
-      if (detected.code && (detected.code === 'te' || detected.code === 'hi' || detected.code === 'en')) {
-        setLang && setLang(detected.code);
-      }
-
-      // Hand off to parent assistant component
-      setTimeout(() => {
-        setCurrentState('THINKING');
-        onSend(finalTranscript, detected.code, detected);
-      }, 400);
-    } catch (err) {
-      setCurrentState('ERROR');
-      setLocalError(err.response?.data?.error || err.message || 'Speech recognition failed.');
-    }
+    const rec = new SpeechRecognition();
+    const langMap = { te: 'te-IN', hi: 'hi-IN', en: 'en-IN' };
+    rec.lang = langMap[lang] || 'te-IN';
+    rec.onstart = () => setCurrentState('LISTENING');
+    rec.onend = () => {
+      if (currentState === 'LISTENING') setCurrentState('IDLE');
+    };
+    rec.onerror = () => setCurrentState('ERROR');
+    rec.onresult = (e) => {
+      const transcript = e.results[0][0].transcript;
+      setText(transcript);
+      setCurrentState('PROCESSING');
+      onSend(transcript);
+    };
+    rec.start();
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (text.trim()) {
-      const msgText = text.trim();
+      setCurrentState('PROCESSING');
+      onSend(text);
       setText('');
-      setCurrentState('THINKING');
-      onSend(msgText, detectedLang?.code || lang, detectedLang);
     }
   };
 
   const getStateText = () => {
-    if (isProcessing || currentState === 'PROCESSING') return 'Processing audio with Indic ASR...';
-    if (currentState === 'LISTENING') return 'Listening... Speak in Telugu, Hindi, Tamil, English, or any Indian language';
-    if (currentState === 'LANGUAGE DETECTED') return `Language detected: ${detectedLang?.name} (${detectedLang?.nativeName}) • ${detectedLang?.confidence}%`;
-    if (currentState === 'THINKING') return 'Formulating response in your language...';
+    if (isProcessing || currentState === 'PROCESSING') return 'Understanding your response...';
+    if (currentState === 'LISTENING') {
+      return lang === 'te'
+        ? 'తెలుగులో వింటున్నాను... మాట్లాడండి'
+        : lang === 'hi'
+          ? 'हिंदी में सुन रहे हैं... बोलिए'
+          : 'Listening in English... please speak';
+    }
     if (currentState === 'SPEAKING') return 'Assistant speaking response...';
-    if (currentState === 'ERROR' || localError) return localError || 'Could not capture speech. Try again or type below.';
-    return 'Tap mic to speak in any language or type message below';
+    if (currentState === 'ERROR' || errorMessage) return errorMessage || 'Could not recognize audio. Try again or type below.';
+    return 'Tap mic to speak or type message below';
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px', margin: '16px 0', width: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', margin: '20px 0', width: '100%' }}>
       <button
         type="button"
-        onClick={currentState === 'LISTENING' ? stopListening : startListening}
-        disabled={isProcessing || currentState === 'PROCESSING' || currentState === 'THINKING'}
+        onClick={startListening}
+        disabled={isProcessing}
         style={{
           width: '84px',
           height: '84px',
           borderRadius: '50%',
-          background: currentState === 'LISTENING' ? 'var(--status-danger)' : currentState === 'SPEAKING' ? 'var(--accent-green, #10b981)' : 'var(--primary-600)',
+          background: currentState === 'LISTENING' ? 'var(--status-danger)' : 'var(--primary-600)',
           color: '#fff',
           border: 'none',
           cursor: 'pointer',
@@ -373,13 +505,7 @@ export const VoiceInput = ({ onSend, isProcessing, voiceState = 'IDLE', errorMes
         {currentState === 'LISTENING' ? <MicOff size={38} /> : <Mic size={38} />}
       </button>
 
-      {detectedLang && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--primary-50, #eff6ff)', border: '1px solid var(--primary-200, #bfdbfe)', padding: '4px 10px', borderRadius: '16px', fontSize: '12px', color: 'var(--primary-700, #1d4ed8)', fontWeight: 600 }}>
-          <Sparkles size={14} /> Spoken Language: <strong>{detectedLang.name}</strong> ({detectedLang.nativeName}) • {detectedLang.confidence}%
-        </div>
-      )}
-
-      <div style={{ fontSize: '13px', fontWeight: 600, color: currentState === 'ERROR' ? 'var(--status-danger)' : 'var(--text-muted)', textAlign: 'center' }}>
+      <div style={{ fontSize: '13px', fontWeight: 600, color: currentState === 'ERROR' ? 'var(--status-danger)' : 'var(--text-muted)' }}>
         {getStateText()}
       </div>
 
@@ -388,10 +514,16 @@ export const VoiceInput = ({ onSend, isProcessing, voiceState = 'IDLE', errorMes
           type="text"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Describe your skills, past work, education, or work goals in any language..."
+          placeholder={
+            lang === 'te'
+              ? 'మీ నైపుణ్యాలు, గత పని అనుభవం లేదా నేర్చుకోవాలనుకుంటున్న పనుల గురించి రాయండి...'
+              : lang === 'hi'
+                ? 'अपने कौशल, पुराने काम या भविष्य के लक्ष्य यहाँ लिखें...'
+                : 'Describe your skills, past work, education, or work goals...'
+          }
           style={{ flex: 1, padding: '12px 16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-medium)', fontSize: '14px' }}
         />
-        <button type="submit" className="btn btn-primary" disabled={isProcessing || !text.trim()}>Send</button>
+        <button type="submit" className="btn btn-primary" disabled={isProcessing}>Send</button>
       </form>
     </div>
   );
@@ -443,53 +575,29 @@ export const Spinner = ({ size = 24 }) => (
 export const LanguageSwitcher = () => {
   const { lang, setLang } = useLang();
 
-  const languages = [
-    { code: 'te', label: 'తెలుగు' },
-    { code: 'hi', label: 'हिंदी' },
-    { code: 'en', label: 'English' }
-  ];
-
   return (
     <div
-      className="language-switcher"
+      className="language-switcher-pill"
       role="tablist"
       aria-label="Select Language"
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '2px',
-        background: '#EEE7D9',
-        padding: '3px',
-        borderRadius: '8px',
-        border: '1px solid #E1D7C8'
-      }}
     >
-      {languages.map((l) => {
-        const active = lang === l.code;
-        return (
-          <button
-            key={l.code}
-            type="button"
-            onClick={() => setLang(l.code)}
-            style={{
-              padding: '4px 10px',
-              fontSize: '12px',
-              fontWeight: active ? 700 : 500,
-              color: active ? '#FEFCF6' : '#4F3728',
-              background: active ? '#CA6603' : 'transparent',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-              whiteSpace: 'nowrap'
-            }}
-            role="tab"
-            aria-selected={active}
-          >
-            {l.label}
-          </button>
-        );
-      })}
+      <Languages size={17} color="var(--primary-600, #c2410c)" style={{ marginLeft: '4px', marginRight: '2px', flexShrink: 0 }} />
+      {[
+        { code: 'te', label: 'తెలుగు' },
+        { code: 'hi', label: 'हिंदी' },
+        { code: 'en', label: 'English' }
+      ].map((l) => (
+        <button
+          key={l.code}
+          type="button"
+          onClick={() => setLang(l.code)}
+          className={`lang-pill-btn ${lang === l.code ? 'active' : ''}`}
+          role="tab"
+          aria-selected={lang === l.code}
+        >
+          {l.label}
+        </button>
+      ))}
     </div>
   );
 };
@@ -521,8 +629,13 @@ export const ReadAloudButton = ({ text }) => {
   );
 };
 
-export const RiskBadge = ({ risk = 'low', level = null }) => {
-  const r = (level || risk || 'low').toLowerCase();
+export const RiskBadge = ({ risk = 'low', level = null, score = null }) => {
+  let r = (level || risk || 'low').toLowerCase();
+  if (score !== null && score !== undefined) {
+    if (score >= 60) r = 'high';
+    else if (score >= 30) r = 'medium';
+    else r = 'low';
+  }
   let type = 'green';
   if (r.includes('high') || r === 'high') type = 'red';
   else if (r.includes('medium') || r === 'medium') type = 'amber';
@@ -531,23 +644,27 @@ export const RiskBadge = ({ risk = 'low', level = null }) => {
 
 export const SyntheticBadge = () => null;
 
-export const StatCard = ({ title, value, subtext, icon: Icon, color = 'var(--primary-600)' }) => (
-  <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-    {Icon && (
-      <div style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-md)', background: 'var(--surface-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', color, flexShrink: 0 }}>
-        <Icon size={24} />
+export const StatCard = ({ title, label, value, subtext, icon: Icon, color = 'var(--primary-600)' }) => {
+  const displayTitle = title || label;
+  return (
+    <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+      {Icon && (
+        <div style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-md)', background: 'var(--surface-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', color, flexShrink: 0, fontSize: typeof Icon === 'string' ? '22px' : undefined }}>
+          {typeof Icon === 'function' || (typeof Icon === 'object' && Icon !== null) ? <Icon size={24} /> : <span>{Icon}</span>}
+        </div>
+      )}
+      <div>
+        <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>{displayTitle}</div>
+        <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-main)' }}>{value}</div>
+        {subtext && <div style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>{subtext}</div>}
       </div>
-    )}
-    <div>
-      <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>{title}</div>
-      <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-main)' }}>{value}</div>
-      {subtext && <div style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>{subtext}</div>}
     </div>
-  </div>
-);
+  );
+};
 
-export const Modal = ({ isOpen, onClose, title, children }) => {
-  if (!isOpen) return null;
+export const Modal = ({ isOpen, open, onClose, title, children }) => {
+  const isShown = isOpen ?? open;
+  if (!isShown) return null;
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -561,14 +678,16 @@ export const Modal = ({ isOpen, onClose, title, children }) => {
   );
 };
 
-export const ConfirmDialog = ({ isOpen, onClose, onConfirm, title = 'Confirm Action', message = 'Are you sure?' }) => {
-  if (!isOpen) return null;
+export const ConfirmDialog = ({ isOpen, open, onClose, onCancel, onConfirm, title = 'Confirm Action', message = 'Are you sure?', danger = false }) => {
+  const isShown = isOpen ?? open;
+  if (!isShown) return null;
+  const handleClose = onClose || onCancel || (() => {});
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={title}>
+    <Modal isOpen={isShown} onClose={handleClose} title={title}>
       <p style={{ marginBottom: '20px', color: 'var(--text-muted)', fontSize: '14px' }}>{message}</p>
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-        <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
-        <button className="btn btn-primary" onClick={() => { onConfirm(); onClose(); }}>Confirm</button>
+        <button className="btn btn-secondary" onClick={handleClose}>Cancel</button>
+        <button className={`btn ${danger ? 'btn-danger' : 'btn-primary'}`} onClick={() => { onConfirm(); handleClose(); }}>Confirm</button>
       </div>
     </Modal>
   );
@@ -613,4 +732,6 @@ export class ErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
+
+export { EnrollmentModal } from './components/EnrollmentModal.jsx';
 

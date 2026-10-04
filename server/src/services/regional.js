@@ -49,7 +49,7 @@ export const attachRegionalDataToOpportunity = (occ, district = 'Warangal', regi
       avgIncome: demand.avgIncome,
       isSynthetic: demand.isSynthetic !== undefined ? demand.isSynthetic : true
     },
-    centers: matchedCenters,
+    centers: matchedCenters.length > 0 ? matchedCenters : centers.slice(0, 3),
     schemes: matchedSchemes
   };
 };

@@ -6,7 +6,7 @@ export const schemesData = [
     eligibilitySummary: 'Targeted livelihood projects, skill development, and self-employment capital subsidy for eligible beneficiaries in identified villages.',
     benefit: '100% grant for skilling, toolkit subsidy up to ₹50,000, and institutional micro-credit linkage.',
     link: 'https://pmajay.dosje.gov.in',
-    targetTrades: ['self_employed_tailor', 'pickle_making_technician', 'organic_grower', 'dairy_farmer_entrepreneur', 'general_mason', 'csc_village_level_entrepreneur'],
+    targetTrades: ['tractor_operator', 'self_employed_tailor', 'pickle_making_technician', 'organic_grower', 'dairy_farmer_entrepreneur', 'general_mason', 'csc_village_level_entrepreneur'],
     source: 'https://pmajay.dosje.gov.in/guidelines'
   },
   {
@@ -46,7 +46,7 @@ export const schemesData = [
     eligibilitySummary: 'Individuals above 18 years setting up new micro-enterprises in manufacturing (up to ₹50 Lakhs) or service (up to ₹20 Lakhs).',
     benefit: 'Government margin money subsidy of 25% (urban) to 35% (rural) on project cost through nationalized banks.',
     link: 'https://www.kviconline.gov.in/pmegpeportal',
-    targetTrades: ['baking_technician', 'spice_processing_technician', 'dairy_farmer_entrepreneur', 'welder_structural', 'micro_retailer_kirana_owner'],
+    targetTrades: ['tractor_operator', 'baking_technician', 'spice_processing_technician', 'dairy_farmer_entrepreneur', 'welder_structural', 'micro_retailer_kirana_owner'],
     source: 'https://www.kviconline.gov.in/pmegp/pmegpweb/index.jsp'
   },
   {
@@ -56,7 +56,7 @@ export const schemesData = [
     eligibilitySummary: 'Non-farm micro and small enterprises seeking collateral-free operational or asset expansion capital.',
     benefit: 'Shishu (up to ₹50,000), Kishore (up to ₹5,00,000), and Tarun (up to ₹10,00,000) collateral-free bank loans with Mudra debit card.',
     link: 'https://www.mudra.org.in',
-    targetTrades: ['self_employed_tailor', 'pickle_making_technician', 'field_technician_home_appliances', 'mobile_phone_repair_technician', 'micro_retailer_kirana_owner'],
+    targetTrades: ['tractor_operator', 'self_employed_tailor', 'pickle_making_technician', 'field_technician_home_appliances', 'mobile_phone_repair_technician', 'micro_retailer_kirana_owner'],
     source: 'https://www.mudra.org.in/Offerings'
   },
   {

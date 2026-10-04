@@ -72,6 +72,9 @@ export function useLang() {
         document.documentElement.lang = code;
       }
       i18nInstance.changeLanguage(code);
+      try {
+        window.dispatchEvent(new CustomEvent('pmajay_lang_changed', { detail: { lang: code } }));
+      } catch {}
     },
     [i18nInstance]
   );

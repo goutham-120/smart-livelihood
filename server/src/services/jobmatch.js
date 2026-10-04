@@ -28,12 +28,17 @@ export const rankCandidatesForJob = async (jobId, district = null) => {
     const prof = profileMap.get(u._id.toString()) || {};
     const plac = placementMap.get(u._id.toString()) || null;
 
-    const uSkills = new Set((prof.skills || []).map((s) => s.toLowerCase()));
+    const uSkills = new Set((prof.skills || []).map((s) => String(s).toLowerCase().replace(/[\s\-_]+/g, '_').trim()));
+    const uWords = (prof.skills || []).map((s) => String(s).toLowerCase().replace(/[\s\-_]+/g, ' ').trim());
     let matchedSkillsCount = 0;
 
     if (reqSkills.length > 0) {
       reqSkills.forEach((rs) => {
-        if (uSkills.has(rs.toLowerCase())) matchedSkillsCount++;
+        const rsNorm = String(rs).toLowerCase().replace(/[\s\-_]+/g, '_').trim();
+        const rsWord = String(rs).toLowerCase().replace(/[\s\-_]+/g, ' ').trim();
+        if (uSkills.has(rsNorm) || uWords.some((w) => w === rsWord || w.includes(rsWord) || rsWord.includes(w))) {
+          matchedSkillsCount++;
+        }
       });
     }
 
@@ -70,18 +75,23 @@ export const rankJobsForBeneficiary = async (userId, district = null) => {
   const districtRegex = new RegExp(`^${userDistrict}$`, 'i');
 
   const jobs = await JobOpening.find({ district: districtRegex, status: 'open' });
-  const uSkills = new Set((profile ? profile.skills : []).map((s) => s.toLowerCase()));
+  const uSkills = new Set((profile ? profile.skills : []).map((s) => String(s).toLowerCase().replace(/[\s\-_]+/g, '_').trim()));
+  const uWords = (profile ? profile.skills : []).map((s) => String(s).toLowerCase().replace(/[\s\-_]+/g, ' ').trim());
 
   const ranked = jobs.map((job) => {
     const reqSkills = job.requiredSkills || [];
     let matchCount = 0;
     reqSkills.forEach((rs) => {
-      if (uSkills.has(rs.toLowerCase())) matchCount++;
+      const rsNorm = String(rs).toLowerCase().replace(/[\s\-_]+/g, '_').trim();
+      const rsWord = String(rs).toLowerCase().replace(/[\s\-_]+/g, ' ').trim();
+      if (uSkills.has(rsNorm) || uWords.some((w) => w === rsWord || w.includes(rsWord) || rsWord.includes(w))) {
+        matchCount++;
+      }
     });
 
     const matchScore = reqSkills.length > 0
       ? Math.round((matchCount / reqSkills.length) * 100)
-      : (job.occupationKey && uSkills.has(job.occupationKey.toLowerCase()) ? 90 : 60);
+      : (job.occupationKey && uSkills.has(job.occupationKey.toLowerCase().replace(/[\s\-_]+/g, '_')) ? 90 : 50);
 
     return {
       job,

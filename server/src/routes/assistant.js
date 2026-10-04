@@ -5,7 +5,7 @@ import { Conversation } from '../models/Conversation.js';
 import { authenticate, optionalAuth } from '../middleware/auth.js';
 import { sanitizeString } from '../middleware/security.js';
 import { generateEmpatheticResponse } from '../services/aiService.js';
-import { extractLivelihoodProfile } from '../services/extract.js';
+import { extractLivelihoodProfile, inferLivelihoodFromSkills, resolveSkillToCanonicalKey, getSkillsList } from '../services/extract.js';
 import { unifiedSpeechEngine } from '../channels/speech.js';
 import {
   SUPPORTED_LANGUAGES,
@@ -13,6 +13,8 @@ import {
   normalizeLanguageCode,
   detectLanguageFromText
 } from '../channels/languages.js';
+import { logAudit } from '../middleware/audit.js';
+
 
 const router = express.Router();
 
@@ -336,53 +338,101 @@ const handleDialogueTurn = async (req, res) => {
   ]);
 
   if (profile) {
-    const existingSkills = new Set((profile.skills || []).map((s) => s.toLowerCase()));
-    let profileUpdated = false;
+    const allSkills = await getSkillsList();
+    const validKeySet = new Set(allSkills.map((s) => s.key));
 
-    if (ruleExtracted.skills && ruleExtracted.skills.length > 0) {
-      ruleExtracted.skills.forEach((s) => {
-        if (!existingSkills.has(s.toLowerCase())) {
-          profile.skills.push(s);
-          existingSkills.add(s.toLowerCase());
-          profileUpdated = true;
+    // Clean existing skills to strip legacy corrupt entries (e.g. 'd', 'ho', 'sma')
+    const cleanedExisting = (profile.skills || [])
+      .map((s) => resolveSkillToCanonicalKey(s, allSkills))
+      .filter((s) => s && validKeySet.has(s));
+
+    const existingSkills = new Set(cleanedExisting);
+    let profileUpdated = cleanedExisting.length !== (profile.skills || []).length;
+
+    // Merge skills safely
+    const rawNewSkills = [
+      ...(aiResult.extractedSkills || []),
+      ...(ruleExtracted.skills || [])
+    ];
+
+    if (rawNewSkills.length > 0) {
+      rawNewSkills.forEach((raw) => {
+        const resolved = resolveSkillToCanonicalKey(raw, allSkills);
+        if (resolved && validKeySet.has(resolved)) {
+          if (!existingSkills.has(resolved)) {
+            existingSkills.add(resolved);
+            profileUpdated = true;
+          }
         }
       });
     }
 
-    if (aiResult.extractedSkills && aiResult.extractedSkills.length > 0) {
-      aiResult.extractedSkills.forEach((s) => {
-        if (!existingSkills.has(s.toLowerCase())) {
-          profile.skills.push(s);
-          existingSkills.add(s.toLowerCase());
-          profileUpdated = true;
-        }
-      });
+    profile.skills = Array.from(existingSkills);
+
+    // Merge preference safely
+    const pref = aiResult.identifiedPreference || ruleExtracted.employmentPreference;
+    if (pref && pref !== profile.employmentPreference) {
+      profile.employmentPreference = pref;
+      profileUpdated = true;
+    }
+
+    // Merge Education safely
+    const edu = aiResult.education || ruleExtracted.education;
+    if (edu && edu !== profile.education) {
+      profile.education = edu;
+      profileUpdated = true;
     }
 
     // Merge Mobility Constraints safely
-    if (ruleExtracted.mobilityConstraints && ruleExtracted.mobilityConstraints.length > 0) {
+    const mob = (aiResult.mobilityConstraints && aiResult.mobilityConstraints.length > 0)
+      ? aiResult.mobilityConstraints
+      : ruleExtracted.mobilityConstraints;
+    if (mob && mob.length > 0) {
       const existingMobility = new Set(profile.mobilityConstraints || []);
-      ruleExtracted.mobilityConstraints.forEach((m) => existingMobility.add(m));
+      mob.forEach((m) => existingMobility.add(m));
       profile.mobilityConstraints = Array.from(existingMobility);
       profileUpdated = true;
     }
 
     // Merge Income Goal safely
-    if (ruleExtracted.incomeGoal && ruleExtracted.incomeGoal > 0) {
-      profile.incomeGoal = ruleExtracted.incomeGoal;
+    const inc = aiResult.incomeGoal || ruleExtracted.incomeGoal;
+    if (inc && inc > 0) {
+      profile.incomeGoal = inc;
       profileUpdated = true;
     }
 
     // Merge Experience Years safely
-    if (ruleExtracted.experienceYears && ruleExtracted.experienceYears > 0) {
-      profile.experienceYears = ruleExtracted.experienceYears;
+    const exp = aiResult.experienceYears || ruleExtracted.experienceYears;
+    if (exp && exp > 0) {
+      profile.experienceYears = exp;
       profileUpdated = true;
     }
 
     // Merge Current Livelihood safely
-    if (ruleExtracted.currentLivelihood && !profile.currentLivelihood) {
-      profile.currentLivelihood = ruleExtracted.currentLivelihood;
+    const curLiv = aiResult.currentLivelihood || ruleExtracted.currentLivelihood;
+    if (curLiv && (!profile.currentLivelihood || profile.currentLivelihood.trim() === '')) {
+      profile.currentLivelihood = curLiv;
       profileUpdated = true;
+    }
+
+    // Merge Family Occupation safely
+    const famOcc = aiResult.familyOccupation || ruleExtracted.familyOccupation;
+    if (famOcc && (!profile.familyOccupation || profile.familyOccupation.trim() === '')) {
+      profile.familyOccupation = famOcc;
+      profileUpdated = true;
+    }
+
+    // Infer Livelihood and Family Occupation from skills if still empty
+    if ((!profile.currentLivelihood || !profile.familyOccupation) && profile.skills.length > 0) {
+      const inferred = inferLivelihoodFromSkills(profile.skills);
+      if (inferred.currentLivelihood && (!profile.currentLivelihood || profile.currentLivelihood.trim() === '')) {
+        profile.currentLivelihood = inferred.currentLivelihood;
+        profileUpdated = true;
+      }
+      if (inferred.familyOccupation && (!profile.familyOccupation || profile.familyOccupation.trim() === '')) {
+        profile.familyOccupation = inferred.familyOccupation;
+        profileUpdated = true;
+      }
     }
 
     if (profileUpdated) {
@@ -392,7 +442,7 @@ const handleDialogueTurn = async (req, res) => {
         riskScore += 25;
         riskReasons.push('Restricted geographical mobility');
       }
-      if (profile.education === 'Primary School' || profile.education === 'None') {
+      if (profile.education === 'Primary (5th)' || profile.education === 'Below Primary' || profile.education === 'None') {
         riskScore += 20;
         riskReasons.push('Low formal education level');
       }
@@ -459,7 +509,10 @@ const handleDialogueTurn = async (req, res) => {
       mobilityConstraints: profile.mobilityConstraints,
       incomeGoal: profile.incomeGoal,
       experienceYears: profile.experienceYears,
-      riskScore: profile.riskScore
+      currentLivelihood: profile.currentLivelihood,
+      familyOccupation: profile.familyOccupation,
+      riskScore: profile.riskScore,
+      voiceCompleted: profile.voiceCompleted
     } : null
   });
 };

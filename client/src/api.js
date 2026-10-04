@@ -199,19 +199,40 @@ export const getDirectoryCenters = (params) => apiInstance.get('/directory/cente
 export const getDirectoryCounselors = (params) => apiInstance.get('/directory/counselors', { params });
 export const getDirectorySchemes = (params) => apiInstance.get('/directory/schemes', { params });
 
+export const getSelectedOccupation = () => {
+  try {
+    return localStorage.getItem('pmajay_selected_occ');
+  } catch {}
+  return null;
+};
+
+export const setSelectedOccupation = (occKey) => {
+  if (!occKey) return;
+  try {
+    localStorage.setItem('pmajay_selected_occ', occKey);
+    window.dispatchEvent(new CustomEvent('pmajay_occ_changed', { detail: occKey }));
+  } catch {}
+  try {
+    apiInstance.post('/pathway/progress', { targetOccupation: occKey }).catch(() => {});
+  } catch {}
+};
+
 /* PATHWAY */
 export const getSkillGaps = async (occKey) => {
-  const res = await apiInstance.get(`/pathway/skill-gaps/${occKey}`);
+  const effectiveKey = occKey || getSelectedOccupation() || 'default';
+  const res = await apiInstance.get(`/pathway/skill-gaps/${effectiveKey}`);
   return res.data;
 };
 
 export const getTraining = async (occKey) => {
-  const res = await apiInstance.get(`/pathway/training/${occKey}`);
+  const effectiveKey = occKey || getSelectedOccupation() || 'default';
+  const res = await apiInstance.get(`/pathway/training/${effectiveKey}`);
   return res.data;
 };
 
 export const getRoadmap = async (occKey) => {
-  const res = await apiInstance.get(`/pathway/roadmap/${occKey}`);
+  const effectiveKey = occKey || getSelectedOccupation() || 'default';
+  const res = await apiInstance.get(`/pathway/roadmap/${effectiveKey}`);
   return res.data;
 };
 
@@ -223,6 +244,32 @@ export const getProgress = async () => {
 export const runWhatIf = async (arg1, district) => {
   const payload = typeof arg1 === 'object' && !Array.isArray(arg1) ? arg1 : { skills: arg1, district };
   const res = await apiInstance.post('/pathway/what-if', payload);
+  return res.data;
+};
+
+/* ENROLLMENTS */
+export const createEnrollment = async (dataPayload) => {
+  const res = await apiInstance.post('/enrollments', dataPayload);
+  return res.data;
+};
+
+export const getMyEnrollments = async () => {
+  const res = await apiInstance.get('/enrollments/my');
+  return res.data;
+};
+
+export const getEnrollment = async (id) => {
+  const res = await apiInstance.get(`/enrollments/${id}`);
+  return res.data;
+};
+
+export const submitEnrollmentAction = async (id, dataPayload) => {
+  const res = await apiInstance.patch(`/enrollments/${id}/action`, dataPayload);
+  return res.data;
+};
+
+export const updateEnrollmentStatus = async (id, dataPayload) => {
+  const res = await apiInstance.patch(`/enrollments/${id}/status`, dataPayload);
   return res.data;
 };
 
@@ -244,6 +291,8 @@ apiInstance.getSkillGaps = getSkillGaps;
 apiInstance.getTraining = getTraining;
 apiInstance.getRoadmap = getRoadmap;
 apiInstance.getProgress = getProgress;
+apiInstance.getSelectedOccupation = getSelectedOccupation;
+apiInstance.setSelectedOccupation = setSelectedOccupation;
 apiInstance.runWhatIf = runWhatIf;
 apiInstance.login = login;
 apiInstance.demoLogin = demoLogin;
@@ -254,6 +303,9 @@ apiInstance.authRegister = authRegister;
 apiInstance.authOtpSend = authOtpSend;
 apiInstance.authOtpVerify = authOtpVerify;
 apiInstance.authDemoLogin = authDemoLogin;
+apiInstance.postConsent = postConsent;
+apiInstance.getPrivacyExport = getPrivacyExport;
+apiInstance.deletePrivacyMe = deletePrivacyMe;
 apiInstance.getPlacements = getPlacements;
 apiInstance.postPlacement = postPlacement;
 apiInstance.patchPlacement = patchPlacement;
@@ -271,6 +323,11 @@ apiInstance.getPlans = getPlans;
 apiInstance.getDirectoryCenters = getDirectoryCenters;
 apiInstance.getDirectoryCounselors = getDirectoryCounselors;
 apiInstance.getDirectorySchemes = getDirectorySchemes;
+apiInstance.createEnrollment = createEnrollment;
+apiInstance.getMyEnrollments = getMyEnrollments;
+apiInstance.getEnrollment = getEnrollment;
+apiInstance.submitEnrollmentAction = submitEnrollmentAction;
+apiInstance.updateEnrollmentStatus = updateEnrollmentStatus;
 
 export const api = apiInstance;
 export default apiInstance;

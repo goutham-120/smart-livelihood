@@ -49,7 +49,13 @@ router.get('/', optionalAuth, async (req, res) => {
       };
     });
 
-    opportunities.sort((a, b) => b.matchScore - a.matchScore);
+    opportunities.sort((a, b) => {
+      if (b.matchScore !== a.matchScore) return b.matchScore - a.matchScore;
+      const bMatched = b.matched?.length || 0;
+      const aMatched = a.matched?.length || 0;
+      if (bMatched !== aMatched) return bMatched - aMatched;
+      return (b.demand?.openings || 0) - (a.demand?.openings || 0);
+    });
 
     return res.json({ opportunities });
   } catch (err) {

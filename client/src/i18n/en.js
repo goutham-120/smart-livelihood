@@ -1,7 +1,7 @@
 /* i18n: English labels for SIH26097 PM-AJAY Livelihood Assistant */
 const en = {
   translation: {
-    appName: 'Livelihood Assistant',
+    appName: 'JeevanPath AI',
     tagline: 'AI Voice Skilling & Mapping',
     login: {
       trustTag: 'Ministry of Social Justice & Empowerment • PM-AJAY',
@@ -72,12 +72,12 @@ const en = {
       cap4Desc: 'Transform current skills into an actionable, step-by-step career path with progress tracking and milestone guidance.',
     },
     footer: {
-      brand: 'PM-AJAY Livelihood Assistant — Pradhan Mantri Anusuchit Jaati Abhyuday Yojana',
+      brand: 'JeevanPath AI — Pradhan Mantri Anusuchit Jaati Abhyuday Yojana',
       tagline: 'Voice-First • Multilingual • Empathetic Civic AI',
       help: 'Help',
     },
     helpModal: {
-      title: 'About PM-AJAY Livelihood Assistant',
+      title: 'About JeevanPath AI',
       desc: 'An AI-powered conversational guidance platform designed for beneficiaries under the Pradhan Mantri Anusuchit Jaati Abhyuday Yojana.',
       keyFeatures: 'Key Features:',
       feat1: 'Multilingual Voice Interaction (Telugu, Hindi, English)',
