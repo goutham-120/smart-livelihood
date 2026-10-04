@@ -960,18 +960,14 @@ export const Roadmap = () => {
               <span style={{ color: 'var(--status-success)', fontWeight: 800 }}>✓</span>
               <span>{t.expReq}</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ color: '#d97706', fontWeight: 800 }}>⚠</span>
-              <span style={{ color: 'var(--text-main)' }}>{t.docReq}</span>
-            </div>
           </div>
 
-          <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span className="badge badge-green" style={{ fontSize: '12px', fontWeight: 700 }}>
+          <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
+            <span className="badge badge-green" style={{ fontSize: '12px', fontWeight: 700, padding: '6px 14px', flexShrink: 0 }}>
               {t.eligibleStatus}
             </span>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-              {t.oneReqRemaining}
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'right', flex: 1, minWidth: '180px', paddingLeft: '12px' }}>
+              {t.eligibleSummary}
             </span>
           </div>
         </div>
