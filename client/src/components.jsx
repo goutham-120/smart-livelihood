@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useLang } from './lang.js';
@@ -157,41 +157,68 @@ export const VoiceInput = ({ onSend, isProcessing, voiceState = 'IDLE', errorMes
   const { lang } = useLang();
   const [text, setText] = useState('');
   const [currentState, setCurrentState] = useState(voiceState);
+  const recRef = useRef(null);
 
   useEffect(() => {
-    setCurrentState(voiceState);
-  }, [voiceState]);
+    if (!isProcessing) {
+      setCurrentState(voiceState || 'IDLE');
+    }
+  }, [isProcessing, voiceState]);
 
-  const startListening = () => {
+  const toggleListening = () => {
+    if (isProcessing) return;
+
+    if (currentState === 'LISTENING') {
+      if (recRef.current) {
+        try { recRef.current.stop(); } catch (e) {}
+      }
+      setCurrentState('IDLE');
+      return;
+    }
+
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
       alert('Browser speech recognition is unavailable. Please type your message in text.');
       return;
     }
 
-    const rec = new SpeechRecognition();
-    const localeMap = { te: 'te-IN', hi: 'hi-IN', en: 'en-IN' };
-    rec.lang = localeMap[lang] || 'te-IN';
-    rec.onstart = () => setCurrentState('LISTENING');
-    rec.onend = () => {
-      if (currentState === 'LISTENING') setCurrentState('IDLE');
-    };
-    rec.onerror = () => setCurrentState('ERROR');
-    rec.onresult = (e) => {
-      const transcript = e.results[0][0].transcript;
-      setText(transcript);
-      setCurrentState('PROCESSING');
-      onSend(transcript);
-    };
-    rec.start();
+    try {
+      const rec = new SpeechRecognition();
+      recRef.current = rec;
+      const localeMap = { te: 'te-IN', hi: 'hi-IN', en: 'en-IN' };
+      rec.lang = localeMap[lang] || 'te-IN';
+      rec.onstart = () => setCurrentState('LISTENING');
+      rec.onend = () => {
+        setCurrentState((prev) => (prev === 'LISTENING' ? 'IDLE' : prev));
+      };
+      rec.onerror = () => {
+        setCurrentState('ERROR');
+        setTimeout(() => {
+          setCurrentState((prev) => (prev === 'ERROR' ? 'IDLE' : prev));
+        }, 3000);
+      };
+      rec.onresult = (e) => {
+        const transcript = e.results[0][0]?.transcript;
+        if (transcript && transcript.trim() && !isProcessing) {
+          setText('');
+          setCurrentState('PROCESSING');
+          onSend(transcript.trim());
+        }
+      };
+      rec.start();
+    } catch (err) {
+      console.warn('Speech recognition failed to start', err);
+      setCurrentState('IDLE');
+    }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (text.trim()) {
-      setCurrentState('PROCESSING');
-      onSend(text);
+    if (text && text.trim() && !isProcessing) {
+      const msgText = text.trim();
       setText('');
+      setCurrentState('PROCESSING');
+      onSend(msgText);
     }
   };
 
@@ -207,7 +234,7 @@ export const VoiceInput = ({ onSend, isProcessing, voiceState = 'IDLE', errorMes
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', margin: '20px 0', width: '100%' }}>
       <button
         type="button"
-        onClick={startListening}
+        onClick={toggleListening}
         disabled={isProcessing}
         style={{
           width: '84px',

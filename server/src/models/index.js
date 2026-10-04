@@ -13,3 +13,4 @@ export { Counselor } from './Counselor.js';
 export { Task } from './Task.js';
 export { AuditLog } from './AuditLog.js';
 export { Plan } from './Plan.js';
+export { Conversation } from './Conversation.js';
