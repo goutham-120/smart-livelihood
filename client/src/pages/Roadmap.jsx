@@ -831,8 +831,8 @@ export const Roadmap = () => {
                 <span className="badge badge-amber" style={{ fontSize: '11px', fontWeight: 800 }}>
                   App ID: {activeApplication.applicationId}
                 </span>
-                <span className={activeApplication.status === 'ACCEPTED' ? 'badge badge-green' : activeApplication.status === 'ACTION_REQUIRED' ? 'badge badge-amber' : 'badge badge-blue'} style={{ fontSize: '11px', fontWeight: 800 }}>
-                  {activeApplication.status === 'ACCEPTED' ? '🎉 Accepted' : activeApplication.status === 'ACTION_REQUIRED' ? '⚠ Action Required' : '🟠 Under Review'}
+                <span className={activeApplication.status === 'ACCEPTED' ? 'badge badge-green' : activeApplication.status === 'ACTION_REQUIRED' ? 'badge badge-amber' : activeApplication.status === 'REJECTED' ? 'badge badge-red' : 'badge badge-blue'} style={{ fontSize: '11px', fontWeight: 800 }}>
+                  {activeApplication.status === 'ACCEPTED' ? '🎉 Accepted' : activeApplication.status === 'ACTION_REQUIRED' ? '⚠ Action Required' : activeApplication.status === 'REJECTED' ? '❌ Not Accepted' : '🟠 Under Review'}
                 </span>
               </div>
               <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-main)' }}>

@@ -556,8 +556,8 @@ export const Dashboard = ({ user }) => {
                 <span className="badge badge-amber" style={{ fontSize: '11px', fontWeight: 800 }}>
                   {activeApplication.applicationId}
                 </span>
-                <span className={activeApplication.status === 'ACCEPTED' ? 'badge badge-green' : activeApplication.status === 'ACTION_REQUIRED' ? 'badge badge-amber' : 'badge badge-blue'} style={{ fontSize: '11px', fontWeight: 800 }}>
-                  {activeApplication.status === 'ACCEPTED' ? '🎉 Accepted' : activeApplication.status === 'ACTION_REQUIRED' ? '⚠ Action Required' : '🟠 Pending Review'}
+                <span className={activeApplication.status === 'ACCEPTED' ? 'badge badge-green' : activeApplication.status === 'ACTION_REQUIRED' ? 'badge badge-amber' : activeApplication.status === 'REJECTED' ? 'badge badge-red' : 'badge badge-blue'} style={{ fontSize: '11px', fontWeight: 800 }}>
+                  {activeApplication.status === 'ACCEPTED' ? '🎉 Accepted' : activeApplication.status === 'ACTION_REQUIRED' ? '⚠ Action Required' : activeApplication.status === 'REJECTED' ? '❌ Not Accepted' : '🟠 Pending Review'}
                 </span>
               </div>
               <h3 style={{ fontSize: '17px', fontWeight: 800, margin: '2px 0 4px 0', color: 'var(--text-main)' }}>
@@ -573,7 +573,7 @@ export const Dashboard = ({ user }) => {
               className="btn btn-primary"
               style={{ fontSize: '13px', padding: '8px 18px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
-              <FileText size={15} /> {tDash.viewApp}
+              <FileText size={15} /> View Application Status
             </button>
           </div>
         ) : (

@@ -364,11 +364,18 @@ export const AppSidebar = ({ user, sidebarOpen, setSidebarOpen }) => {
         </div>
 
         <nav className="app-sidebar-nav">
-          {renderNavGroup(navText.beneficiaryGroup, beneficiaryNav)}
-          {renderNavGroup(navText.providerGroup || 'Training Provider', providerNav)}
-          {renderNavGroup(navText.accountGroup, accountNav)}
-          {renderNavGroup(navText.channelsGroup, channelNav)}
-          {isOfficer && renderNavGroup(navText.districtCommandGroup, adminNav)}
+          {isOfficer ? (
+            <>
+              {renderNavGroup(navText.districtCommandGroup || 'Admin Portal', adminNav)}
+              {renderNavGroup(navText.accountGroup, accountNav)}
+            </>
+          ) : (
+            <>
+              {renderNavGroup(navText.beneficiaryGroup, beneficiaryNav)}
+              {renderNavGroup(navText.accountGroup, accountNav)}
+              {renderNavGroup(navText.channelsGroup, channelNav)}
+            </>
+          )}
         </nav>
       </aside>
     </>
@@ -378,6 +385,7 @@ export const AppSidebar = ({ user, sidebarOpen, setSidebarOpen }) => {
 export const AppHeader = ({ user, onLogout, toggleSidebar, sidebarOpen }) => {
   const location = useLocation();
   const { lang } = useLang();
+  const isOfficer = user?.role === 'officer' || user?.role === 'admin';
 
   const isProviderView = location.pathname.startsWith('/admin') || location.pathname.startsWith('/provider');
 
@@ -394,67 +402,75 @@ export const AppHeader = ({ user, onLogout, toggleSidebar, sidebarOpen }) => {
         >
           <Menu size={20} />
         </button>
-        <Link to="/dashboard" style={{ textDecoration: 'none', color: 'inherit', display: 'inline-flex', alignItems: 'center' }}>
-          <h1 className="app-header-title" style={{ margin: 0, cursor: 'pointer' }}>JeevanPath AI</h1>
+        <Link to={isOfficer ? "/admin/overview" : "/dashboard"} style={{ textDecoration: 'none', color: 'inherit', display: 'inline-flex', alignItems: 'center' }}>
+          <h1 className="app-header-title" style={{ margin: 0, cursor: 'pointer' }}>
+            JeevanPath AI {isOfficer && <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--primary-600)', marginLeft: '6px' }}>• Admin Portal</span>}
+          </h1>
         </Link>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0 }}>
-        {/* Quick Portal Switcher */}
-        {isProviderView ? (
-          <Link
-            to="/roadmap"
-            className="btn"
-            style={{
-              padding: '6px 12px',
-              fontSize: '12px',
-              fontWeight: 700,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              border: '1px solid #10b981',
-              color: '#065f46',
-              background: '#ecfdf5',
-              borderRadius: '20px',
-              textDecoration: 'none'
-            }}
-            title="Switch back to Beneficiary Roadmap"
-          >
-            <span>👤</span>
-            <span>Beneficiary View</span>
-          </Link>
-        ) : (
-          <Link
-            to="/admin/applications"
-            className="btn"
-            style={{
-              padding: '6px 12px',
-              fontSize: '12px',
-              fontWeight: 700,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              border: '1px solid #3b82f6',
-              color: '#1e40af',
-              background: '#eff6ff',
-              borderRadius: '20px',
-              textDecoration: 'none'
-            }}
-            title="Open Provider Admissions & Review Desk"
-          >
-            <span>🏛️</span>
-            <span>Provider Desk</span>
-          </Link>
+        {/* Quick Portal Switcher (Visible ONLY to Admin / Officer roles) */}
+        {isOfficer && (
+          isProviderView ? (
+            <Link
+              to="/roadmap"
+              className="btn"
+              style={{
+                padding: '6px 12px',
+                fontSize: '12px',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                border: '1px solid #10b981',
+                color: '#065f46',
+                background: '#ecfdf5',
+                borderRadius: '20px',
+                textDecoration: 'none'
+              }}
+              title="Preview Beneficiary View"
+            >
+              <span>👤</span>
+              <span>Beneficiary View</span>
+            </Link>
+          ) : (
+            <Link
+              to="/admin/applications"
+              className="btn"
+              style={{
+                padding: '6px 12px',
+                fontSize: '12px',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                border: '1px solid #3b82f6',
+                color: '#1e40af',
+                background: '#eff6ff',
+                borderRadius: '20px',
+                textDecoration: 'none'
+              }}
+              title="Return to Admin Applications Desk"
+            >
+              <span>🏛️</span>
+              <span>Admin Desk</span>
+            </Link>
+          )
         )}
 
         <LanguageSwitcher />
 
         {user ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span className="badge badge-blue">{user.district || 'Warangal'}</span>
+            <span className={isOfficer ? "badge badge-purple" : "badge badge-blue"}>
+              {isOfficer ? (user.role === 'admin' ? 'Administrator' : 'District Officer') : (user.district || 'Warangal')}
+            </span>
             <div style={{ fontSize: '13px', textAlign: 'right' }}>
               <div style={{ fontWeight: 700, color: 'var(--text-main)', whiteSpace: 'nowrap' }}>{user.name}</div>
-              <div style={{ color: 'var(--text-muted)', fontSize: '11px', textTransform: 'capitalize', whiteSpace: 'nowrap' }}>{user.role || 'Beneficiary'}</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: '11px', textTransform: 'capitalize', whiteSpace: 'nowrap' }}>
+                {isOfficer ? 'Ministry Admin' : 'Beneficiary'}
+              </div>
             </div>
             <button onClick={onLogout} className="btn btn-ghost" style={{ padding: '6px', color: 'var(--status-danger)' }} title="Sign Out">
               <LogOut size={18} />

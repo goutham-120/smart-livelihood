@@ -35,6 +35,7 @@ apiInstance.interceptors.response.use(
 /* AUTH */
 export const authLogin = (data) => apiInstance.post('/auth/login', data);
 export const authRegister = (data) => apiInstance.post('/auth/register', data);
+export const authAdminRegister = (data) => apiInstance.post('/auth/admin/register', data);
 export const authOtpSend = (phone) => apiInstance.post('/auth/otp/send', { phone });
 export const authOtpVerify = (data) => apiInstance.post('/auth/otp/verify', data);
 export const authDemoLogin = (role, district) => apiInstance.post('/auth/demo-login', { role, district });

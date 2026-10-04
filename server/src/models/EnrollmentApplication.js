@@ -12,8 +12,15 @@ const enrollmentApplicationSchema = new mongoose.Schema(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
       index: true
+    },
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    adminMessage: {
+      type: String,
+      trim: true
     },
     beneficiaryName: {
       type: String,

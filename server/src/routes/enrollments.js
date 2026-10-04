@@ -3,7 +3,7 @@ import { EnrollmentApplication } from '../models/EnrollmentApplication.js';
 import { Profile } from '../models/Profile.js';
 import { Journey } from '../models/Journey.js';
 import { Occupation } from '../models/Occupation.js';
-import { authenticate, optionalAuth } from '../middleware/auth.js';
+import { authenticate, optionalAuth, requireRole } from '../middleware/auth.js';
 import { sanitizeString } from '../middleware/security.js';
 
 const router = express.Router();
@@ -422,6 +422,7 @@ router.get('/my', authenticate, async (req, res) => {
 const DEMO_APPLICATIONS = [
   {
     applicationId: 'JP-2026-004821',
+    user: '6ac23cbfcfbecc286b54fdfd',
     courseKey: 'tractor_operator',
     courseTitle: 'Tractor Mechanic & Operator Certification',
     occupationKey: 'tractor_operator',
@@ -450,6 +451,7 @@ const DEMO_APPLICATIONS = [
   },
   {
     applicationId: 'JP-2026-003914',
+    user: '6ac23cbfcfbecc286b54fdfd',
     courseKey: 'organic_farming',
     courseTitle: 'Organic Farming & Natural Manure Specialist',
     occupationKey: 'organic_farmer',
@@ -478,6 +480,7 @@ const DEMO_APPLICATIONS = [
   },
   {
     applicationId: 'JP-2026-002180',
+    user: '6ac23cbfcfbecc286b54fdfd',
     courseKey: 'solar_pump_technician',
     courseTitle: 'Solar Pump Installation & Grid Servicing',
     occupationKey: 'solar_technician',
@@ -512,6 +515,7 @@ const DEMO_APPLICATIONS = [
   },
   {
     applicationId: 'JP-2026-001054',
+    user: '6ac23cbfcfbecc286b54fdfd',
     courseKey: 'drone_agriculture',
     courseTitle: 'Kisan Drone Pilot & Precision Spraying',
     occupationKey: 'drone_operator',
@@ -544,8 +548,9 @@ const DEMO_APPLICATIONS = [
 /**
  * GET /api/enrollments/admin/all
  * Retrieve all applications for the training provider / admissions review desk
+ * Protected: Admin and Officer roles only
  */
-router.get('/admin/all', optionalAuth, async (req, res) => {
+router.get('/admin/all', authenticate, requireRole('admin', 'officer'), async (req, res) => {
   try {
     let applications = await EnrollmentApplication.find().sort({ updatedAt: -1, createdAt: -1 });
 
@@ -582,8 +587,9 @@ router.get('/admin/all', optionalAuth, async (req, res) => {
 /**
  * POST /api/enrollments/admin/seed
  * Seed or reset realistic demo applications for testing
+ * Protected: Admin and Officer roles only
  */
-router.post('/admin/seed', optionalAuth, async (req, res) => {
+router.post('/admin/seed', authenticate, requireRole('admin', 'officer'), async (req, res) => {
   try {
     for (const demoApp of DEMO_APPLICATIONS) {
       await EnrollmentApplication.updateOne(
@@ -621,6 +627,7 @@ router.get('/:id', authenticate, async (req, res) => {
 
     // Security check: ensure beneficiary only accesses their own application (unless admin/officer)
     if (
+      application.user &&
       application.user.toString() !== req.user._id.toString() &&
       !['officer', 'admin'].includes(req.user.role)
     ) {
@@ -691,9 +698,10 @@ router.patch('/:id/action', authenticate, async (req, res) => {
 
 /**
  * PATCH /api/enrollments/:id/status
- * Update application status (provider review: Accept, Action Required, Reject, Under Review)
+ * Update application status (Admin/officer review: Accept, Action Required, Reject, Under Review)
+ * Protected: Admin and Officer roles only
  */
-router.patch('/:id/status', optionalAuth, async (req, res) => {
+router.patch('/:id/status', authenticate, requireRole('admin', 'officer'), async (req, res) => {
   try {
     const { id } = req.params;
     const { status, providerMessage, rejectionReason, requestedDocument } = req.body;
@@ -708,6 +716,8 @@ router.patch('/:id/status', optionalAuth, async (req, res) => {
 
     application.status = status;
     application.reviewedAt = new Date();
+    application.reviewedBy = req.user._id;
+    application.adminMessage = providerMessage || rejectionReason || `Status updated to ${status}`;
 
     if (status === 'ACTION_REQUIRED') {
       application.providerMessage = providerMessage || 'The training center coordinator has requested your passport-size photograph.';

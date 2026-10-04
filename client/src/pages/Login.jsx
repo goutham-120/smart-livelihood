@@ -10,7 +10,7 @@ import {
 import { useAuth } from '../AuthContext.jsx';
 import { useToast } from '../ToastContext.jsx';
 import { Spinner, LanguageSwitcher } from '../components.jsx';
-import { authLogin, authOtpSend, authOtpVerify, authRegister } from '../api.js';
+import { authLogin, authOtpSend, authOtpVerify, authRegister, authAdminRegister, authDemoLogin } from '../api.js';
 import './Login.css';
 
 export function Login({ onLoginSuccess, initialTab = 'email', initialMode = 'auth' }) {
@@ -20,7 +20,8 @@ export function Login({ onLoginSuccess, initialTab = 'email', initialMode = 'aut
   const toast = toastCtx?.addToast || ((msg) => console.log(msg));
   const navigate = useNavigate();
 
-  const [mode, setMode] = useState(initialMode); // 'auth' | 'register' | 'forgot'
+  const [portalRole, setPortalRole] = useState('beneficiary'); // 'beneficiary' | 'admin'
+  const [mode, setMode] = useState(initialMode); // 'auth' | 'register' | 'forgot' | 'admin-register'
   const [tab, setTab] = useState(initialTab);   // 'email' | 'phone'
   const [loading, setLoading] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
@@ -40,6 +41,7 @@ export function Login({ onLoginSuccess, initialTab = 'email', initialMode = 'aut
   const [regPhone, setRegPhone] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regDistrict, setRegDistrict] = useState('Warangal');
+  const [adminSecretKey, setAdminSecretKey] = useState('');
 
   useEffect(() => {
     setTab(initialTab);
@@ -52,7 +54,47 @@ export function Login({ onLoginSuccess, initialTab = 'email', initialMode = 'aut
     if (auth?.setUser) auth.setUser(user);
     if (onLoginSuccess) onLoginSuccess(token, user);
     toast(t('login.welcomeUser', 'Welcome, {{name}}!', { name: user.name }), 'success');
-    navigate('/dashboard');
+    if (user.role === 'admin' || user.role === 'officer') {
+      navigate('/admin/overview');
+    } else {
+      navigate('/dashboard');
+    }
+  };
+
+  const handleDemoQuickLogin = async (role) => {
+    setLoading(true);
+    try {
+      const res = await authDemoLogin(role, 'Warangal');
+      completeLogin(res.data.token, res.data.user);
+    } catch (err) {
+      toast(err.response?.data?.error || 'Demo login failed.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAdminRegisterSubmit = async (e) => {
+    e.preventDefault();
+    if (!regName || !regEmail || !regPassword || !adminSecretKey) {
+      toast('Please enter name, official email, password, and the Administrator Authorization Key.', 'error');
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await authAdminRegister({
+        name: regName,
+        email: regEmail,
+        phone: regPhone,
+        password: regPassword,
+        district: regDistrict,
+        adminSecretKey
+      });
+      completeLogin(res.data.token, res.data.user);
+    } catch (err) {
+      toast(err.response?.data?.error || 'Admin registration failed. Please verify the Secret Key.', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleEmailLogin = async (e) => {
@@ -215,25 +257,75 @@ export function Login({ onLoginSuccess, initialTab = 'email', initialMode = 'aut
           {/* RIGHT: AUTHENTICATION CARD */}
           <div className="start-auth-wrapper">
             <div className="start-auth-card">
+              {/* PORTAL ROLE SWITCHER */}
+              <div style={{ display: 'flex', background: 'var(--surface-subtle)', padding: '4px', borderRadius: 'var(--radius-md)', marginBottom: '16px', border: '1px solid var(--border-medium)' }}>
+                <button
+                  type="button"
+                  onClick={() => { setPortalRole('beneficiary'); setMode('auth'); setIdentifier(''); setPassword(''); }}
+                  style={{
+                    flex: 1,
+                    padding: '7px 10px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    border: 'none',
+                    borderRadius: 'var(--radius-sm)',
+                    cursor: 'pointer',
+                    background: portalRole === 'beneficiary' ? 'var(--surface-card)' : 'transparent',
+                    color: portalRole === 'beneficiary' ? 'var(--primary-700)' : 'var(--text-muted)',
+                    boxShadow: portalRole === 'beneficiary' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  👤 Beneficiary
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setPortalRole('admin'); setMode('auth'); setTab('email'); setIdentifier(''); setPassword(''); }}
+                  style={{
+                    flex: 1,
+                    padding: '7px 10px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    border: 'none',
+                    borderRadius: 'var(--radius-sm)',
+                    cursor: 'pointer',
+                    background: portalRole === 'admin' ? 'var(--surface-card)' : 'transparent',
+                    color: portalRole === 'admin' ? 'var(--primary-700)' : 'var(--text-muted)',
+                    boxShadow: portalRole === 'admin' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  🏛️ Admin Portal
+                </button>
+              </div>
+
               <div className="auth-card-header">
                 <h2 className="auth-card-title">
                   {mode === 'register'
                     ? t('login.registerTitle', 'Create Account')
+                    : mode === 'admin-register'
+                    ? 'Admin Registration'
                     : mode === 'forgot'
                     ? t('login.forgotTitle', 'Reset Password')
+                    : portalRole === 'admin'
+                    ? 'Admin Portal Sign In'
                     : t('login.welcomeTitle', 'Welcome Back')}
                 </h2>
                 <p className="auth-card-sub">
                   {mode === 'register'
                     ? t('login.registerSub', 'Register to start your personalized livelihood journey')
+                    : mode === 'admin-register'
+                    ? 'Authorized official registration with PM-AJAY secret code'
                     : mode === 'forgot'
                     ? t('login.forgotSub', 'Enter your registered email or phone number to reset')
+                    : portalRole === 'admin'
+                    ? 'Ministry & District Officer access for review & admissions'
                     : t('login.welcomeSub', 'Sign in to access your livelihood dashboard or voice assistant')}
                 </p>
               </div>
 
-              {/* AUTH MODE */}
-              {mode === 'auth' && (
+              {/* BENEFICIARY AUTH MODE */}
+              {mode === 'auth' && portalRole === 'beneficiary' && (
                 <>
                   <div className="tab-group mb-5" role="tablist" aria-label="Login method">
                     <button
@@ -268,7 +360,7 @@ export function Login({ onLoginSuccess, initialTab = 'email', initialMode = 'aut
                             className="input input-padded"
                             type="text"
                             autoComplete="username"
-                            placeholder={t('login.emailPlaceholder', 'user@pmajay.gov.in')}
+                            placeholder="venkat@gmail.com"
                             value={identifier}
                             onChange={(e) => setIdentifier(e.target.value)}
                             required
@@ -294,7 +386,7 @@ export function Login({ onLoginSuccess, initialTab = 'email', initialMode = 'aut
                             className="input input-padded"
                             type="password"
                             autoComplete="current-password"
-                            placeholder={t('login.passwordPlaceholder', '••••••••')}
+                            placeholder="••••••••"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
@@ -323,7 +415,7 @@ export function Login({ onLoginSuccess, initialTab = 'email', initialMode = 'aut
                             id="inp-phone"
                             className="input input-padded"
                             type="tel"
-                            placeholder={t('login.phonePlaceholder', '9876543210')}
+                            placeholder="9876543210"
                             value={phone}
                             onChange={(e) => setPhone(e.target.value)}
                             disabled={otpSent}
@@ -370,7 +462,7 @@ export function Login({ onLoginSuccess, initialTab = 'email', initialMode = 'aut
                   )}
 
                   <div className="auth-card-footer">
-                    <span>{t('login.newAccountPrompt', 'New beneficiary or official?')} </span>
+                    <span>{t('login.newAccountPrompt', 'New beneficiary?')} </span>
                     <button
                       type="button"
                       className="btn-link font-bold"
@@ -382,7 +474,76 @@ export function Login({ onLoginSuccess, initialTab = 'email', initialMode = 'aut
                 </>
               )}
 
-              {/* REGISTER MODE */}
+              {/* ADMIN AUTH MODE */}
+              {mode === 'auth' && portalRole === 'admin' && (
+                <>
+                  <form onSubmit={handleEmailLogin} className="auth-form" noValidate>
+                    <div className="form-group">
+                      <label className="label" htmlFor="inp-admin-identifier">Official Email / ID</label>
+                      <div className="input-with-icon">
+                        <Mail size={18} className="input-icon" />
+                        <input
+                          id="inp-admin-identifier"
+                          className="input input-padded"
+                          type="text"
+                          autoComplete="username"
+                          placeholder="admin@demo.gov.in"
+                          value={identifier}
+                          onChange={(e) => setIdentifier(e.target.value)}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-group">
+                      <div className="label-row">
+                        <label className="label" htmlFor="inp-admin-password">{t('login.password', 'Password')}</label>
+                        <button
+                          type="button"
+                          className="btn-link text-xs"
+                          onClick={() => setMode('forgot')}
+                        >
+                          {t('login.forgotLink', 'Forgot password?')}
+                        </button>
+                      </div>
+                      <div className="input-with-icon">
+                        <Lock size={18} className="input-icon" />
+                        <input
+                          id="inp-admin-password"
+                          className="input input-padded"
+                          type="password"
+                          autoComplete="current-password"
+                          placeholder="••••••••"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="btn btn-primary btn-lg w-full mt-2"
+                      disabled={loading}
+                    >
+                      {loading ? <Spinner size={20} /> : 'Sign In as Administrator'}
+                    </button>
+                  </form>
+
+                  <div className="auth-card-footer">
+                    <span>Need admin access? </span>
+                    <button
+                      type="button"
+                      className="btn-link font-bold"
+                      onClick={() => setMode('admin-register')}
+                    >
+                      Register with Invite Code
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* BENEFICIARY REGISTER MODE */}
               {mode === 'register' && (
                 <form onSubmit={handleRegisterSubmit} className="auth-form" noValidate>
                   <div className="form-group">
@@ -479,6 +640,107 @@ export function Login({ onLoginSuccess, initialTab = 'email', initialMode = 'aut
                 </form>
               )}
 
+              {/* ADMIN REGISTER MODE (PROTECTED) */}
+              {mode === 'admin-register' && (
+                <form onSubmit={handleAdminRegisterSubmit} className="auth-form" noValidate>
+                  <div className="form-group">
+                    <label className="label">Full Name & Designation</label>
+                    <div className="input-with-icon">
+                      <User size={18} className="input-icon" />
+                      <input
+                        className="input input-padded"
+                        type="text"
+                        placeholder="e.g. S. Raman, District Officer"
+                        value={regName}
+                        onChange={(e) => setRegName(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="label">Official Email Address</label>
+                    <div className="input-with-icon">
+                      <Mail size={18} className="input-icon" />
+                      <input
+                        className="input input-padded"
+                        type="email"
+                        placeholder="official@pmajay.gov.in"
+                        value={regEmail}
+                        onChange={(e) => setRegEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="label">District Jurisdiction</label>
+                    <select
+                      className="input"
+                      value={regDistrict}
+                      onChange={(e) => setRegDistrict(e.target.value)}
+                    >
+                      <option value="Warangal">Warangal</option>
+                      <option value="Adilabad">Adilabad</option>
+                      <option value="Karimnagar">Karimnagar</option>
+                      <option value="Nalgonda">Nalgonda</option>
+                      <option value="Khammam">Khammam</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="label">Password</label>
+                    <div className="input-with-icon">
+                      <Lock size={18} className="input-icon" />
+                      <input
+                        className="input input-padded"
+                        type="password"
+                        placeholder="••••••••"
+                        value={regPassword}
+                        onChange={(e) => setRegPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="label">Administrator Authorization Key</label>
+                    <div className="input-with-icon">
+                      <ShieldCheck size={18} className="input-icon" />
+                      <input
+                        className="input input-padded"
+                        type="text"
+                        placeholder="PMAJAY-ADMIN-2026"
+                        value={adminSecretKey}
+                        onChange={(e) => setAdminSecretKey(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                      Key provided to nodal ministry officers (Demo: PMAJAY-ADMIN-2026)
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="btn btn-primary btn-lg w-full mt-2"
+                    disabled={loading}
+                  >
+                    {loading ? <Spinner size={20} /> : 'Create Administrator Account'}
+                  </button>
+
+                  <div className="auth-card-footer">
+                    <button
+                      type="button"
+                      className="btn-link font-bold"
+                      onClick={() => setMode('auth')}
+                    >
+                      ← Back to Admin Sign In
+                    </button>
+                  </div>
+                </form>
+              )}
+
               {/* FORGOT PASSWORD MODE */}
               {mode === 'forgot' && (
                 <form onSubmit={handleForgotSubmit} className="auth-form" noValidate>
@@ -513,6 +775,37 @@ export function Login({ onLoginSuccess, initialTab = 'email', initialMode = 'aut
                   </div>
                 </form>
               )}
+
+              {/* DEMO QUICK ACCOUNTS (SIH JUDGES & PROTOTYPE TESTING) */}
+              <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px dashed var(--border-medium)', textAlign: 'center' }}>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Quick Demo Accounts
+                </div>
+                <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    style={{ fontSize: '11px', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: '5px' }}
+                    onClick={() => handleDemoQuickLogin('beneficiary')}
+                    disabled={loading}
+                    title="Login as Beneficiary Venkat"
+                  >
+                    <span>👤</span>
+                    <span>Beneficiary (Venkat)</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    style={{ fontSize: '11px', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: '5px', borderColor: 'var(--primary-600)', color: 'var(--primary-700)' }}
+                    onClick={() => handleDemoQuickLogin('admin')}
+                    disabled={loading}
+                    title="Login as Ministry Administrator"
+                  >
+                    <span>🏛️</span>
+                    <span>Admin (Ministry)</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

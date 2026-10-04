@@ -1055,21 +1055,11 @@ export const EnrollmentModal = ({
               </div>
             </div>
 
-            {/* BENEFICIARY APPLICATION INFO CALLOUT & PROVIDER PORTAL LINK */}
-            <div style={{ background: '#f8fafc', border: '1px solid var(--border-warm)', borderRadius: 'var(--radius-md)', padding: '12px 16px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+            {/* BENEFICIARY APPLICATION INFO CALLOUT */}
+            <div style={{ background: '#f8fafc', border: '1px solid var(--border-warm)', borderRadius: 'var(--radius-md)', padding: '12px 16px', marginBottom: '20px' }}>
               <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                 ℹ️ Official status updates, document requests, and batch seat confirmations are issued by the accredited training center.
               </div>
-              <a
-                href="/admin/applications"
-                target="_blank"
-                rel="noreferrer"
-                className="btn btn-secondary btn-sm"
-                style={{ fontSize: '11px', padding: '4px 10px', color: 'var(--primary-700)', borderColor: 'var(--primary-600)', whiteSpace: 'nowrap' }}
-                title="Open Training Provider / Admin Dashboard to review applications"
-              >
-                Training Provider Portal →
-              </a>
             </div>
 
             {/* FOOTER ACTIONS */}
