@@ -51,6 +51,7 @@ export const seedCoreData = async () => {
 
   const demandProfiles = {
     Warangal: {
+      tractor_operator: 5,
       self_employed_tailor: 5,
       hand_embroiderer: 4,
       solar_pv_installer: 5,
@@ -73,11 +74,12 @@ export const seedCoreData = async () => {
       self_employed_tailor: 4,
       handloom_weaving: 4,
       grain_mill_operator: 4,
-      tractor_operator: 4,
+      tractor_operator: 5,
       home_health_aide: 4,
       csc_village_level_entrepreneur: 4
     },
     Nalgonda: {
+      tractor_operator: 4,
       dairy_farmer_entrepreneur: 5,
       micro_irrigation_technician: 5,
       grain_mill_operator: 5,

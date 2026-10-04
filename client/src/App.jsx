@@ -143,7 +143,7 @@ export default function App() {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#f8fafc', color: '#64748b' }}>
         <Spinner size={36} />
-        <div style={{ marginTop: '16px', fontWeight: 600, fontSize: '14px' }}>Loading PM-AJAY Livelihood Assistant...</div>
+        <div style={{ marginTop: '16px', fontWeight: 600, fontSize: '14px' }}>Loading JeevanPath AI...</div>
       </div>
     );
   }

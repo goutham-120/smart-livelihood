@@ -5,16 +5,156 @@ import { api } from './api.js';
 import {
   Mic, MicOff, Volume2, Briefcase, User, ShieldCheck, Sparkles, TrendingUp,
   Award, Compass, LogOut, Menu, X, Home, BookOpen, Layers, PhoneCall,
-  CheckCircle, AlertCircle, FileText, FolderKanban, Building2, Users, Lock
+  CheckCircle, AlertCircle, FileText, FolderKanban, Building2, Users, Lock, Languages
 } from 'lucide-react';
 
 export const QuickDemoBar = () => null;
+
+const PAGE_TITLES = {
+  en: {
+    assistant: 'Empathetic AI Voice Assistant',
+    opportunities: 'Tailored Livelihood Opportunities',
+    'skill-gaps': 'Skill Gap & Competency Analysis',
+    training: 'Certified Skilling Programs',
+    roadmap: 'Career Livelihood Roadmap',
+    'what-if': 'What-If Career Simulator',
+    'self-employment': 'Micro-Enterprise Business Guide',
+    progress: 'Active Livelihood Milestones',
+    profile: 'Livelihood Profile',
+    kiosk: 'Touch & Voice Kiosk',
+    'channel-demo': 'Channel Integration Simulator',
+    'admin/overview': 'District Officer Overview',
+    'admin/beneficiaries': 'Assisted Beneficiary Registration',
+    'admin/placements': 'Placements & Enrolment',
+    'admin/coordination': 'Inter-Agency Task Coordination',
+    'admin/plan': 'District Perspective Action Plan',
+    'admin/directory': 'Resource Directory Catalog',
+    default: 'JeevanPath AI'
+  },
+  hi: {
+    assistant: 'सहानुभूतिपूर्ण एआई वॉयस असिस्टेंट',
+    opportunities: 'अनुकूलित आजीविका के अवसर',
+    'skill-gaps': 'कौशल अंतर और क्षमता विश्लेषण',
+    training: 'प्रमाणित कौशल विकास कार्यक्रम',
+    roadmap: 'करियर आजीविका रोडमैप',
+    'what-if': 'करियर परिदृश्य सिम्युलेटर',
+    'self-employment': 'सूक्ष्म उद्यम व्यवसाय मार्गदर्शिका',
+    progress: 'सक्रिय आजीविका मील के पत्थर',
+    profile: 'आजीविका प्रोफ़ाइल',
+    kiosk: 'टच एवं वॉयस कियोस्क',
+    'channel-demo': 'चैनल एकीकरण सिम्युलेटर',
+    'admin/overview': 'जिला अधिकारी अवलोकन',
+    'admin/beneficiaries': 'सहायता प्राप्त लाभार्थी पंजीकरण',
+    'admin/placements': 'प्लेसमेंट एवं नामांकन',
+    'admin/coordination': 'अंतर-एजेंसी कार्य समन्वय',
+    'admin/plan': 'जिला परिप्रेक्ष्य कार्य योजना',
+    'admin/directory': 'संसाधन निर्देशिका सूची',
+    default: 'JeevanPath AI'
+  },
+  te: {
+    assistant: 'సానుభూతిపూర్వక AI వాయిస్ అసిస్టెంట్',
+    opportunities: 'వ్యక్తిగతీకరించిన ఉపాధి అవకాశాలు',
+    'skill-gaps': 'నైపుణ్య లోపాలు & విశ్లేషణ',
+    training: 'ప్రమాణిత శిక్షణా కార్యక్రమాలు',
+    roadmap: 'కెరీర్ జీవనోపాధి రోడ్‌మ్యాప్',
+    'what-if': 'కెరీర్ వాట్-ఇఫ్ సిమ్యులేటర్',
+    'self-employment': 'సూక్ష్మ వ్యాపార మార్గదర్శి',
+    progress: 'క్రియాశీల ఉపాధి మైలురాళ్ళు',
+    profile: 'జీవనోపాధి ప్రొఫైల్',
+    kiosk: 'టచ్ & వాయిస్ కియోస్క్',
+    'channel-demo': 'ఛానల్ ఇంటిగ్రేషన్ సిమ్యులేటర్',
+    'admin/overview': 'జిల్లా అధికారి సమీక్ష',
+    'admin/beneficiaries': 'లబ్ధిదారుల నమోదు',
+    'admin/placements': 'ఉద్యోగ నియామకాలు & నమోదు',
+    'admin/coordination': 'అంతర్-శాఖల సమన్వయం',
+    'admin/plan': 'జిల్లా దృక్పథ కార్యాచరణ ప్రణాళిక',
+    'admin/directory': 'వనరుల డైరెక్టరీ కేటలాగ్',
+    default: 'JeevanPath AI'
+  }
+};
+
+const NAV_TRANSLATIONS = {
+  en: {
+    dashboard: 'Dashboard',
+    assistant: 'AI Voice Assistant',
+    opportunities: 'Opportunities',
+    skillGaps: 'Skill Gaps',
+    training: 'Certified Training',
+    roadmap: 'Career Roadmap',
+    whatIf: 'What-If Simulator',
+    selfEmployment: 'Self-Employment',
+    progress: 'Active Milestones',
+    profile: 'Livelihood Profile',
+    kiosk: 'Kiosk Touch Mode',
+    channelDemo: 'Channel Simulator',
+    districtOverview: 'District Overview',
+    beneficiaries: 'Beneficiaries',
+    placements: 'Placements',
+    coordination: 'Task Coordination',
+    plan: 'Perspective Plan',
+    directory: 'Resource Directory',
+    beneficiaryGroup: 'Beneficiary',
+    accountGroup: 'Account',
+    channelsGroup: 'Channels',
+    districtCommandGroup: 'District Command'
+  },
+  hi: {
+    dashboard: 'डैशबोर्ड',
+    assistant: 'एआई वॉयस असिस्टेंट',
+    opportunities: 'अवसर',
+    skillGaps: 'कौशल अंतर',
+    training: 'प्रमाणित प्रशिक्षण',
+    roadmap: 'करियर रोडमैप',
+    whatIf: 'व्हॉट-इफ़ सिम्युलेटर',
+    selfEmployment: 'स्व-रोजगार',
+    progress: 'सक्रिय मील के पत्थर',
+    profile: 'आजीविका प्रोफ़ाइल',
+    kiosk: 'कियोस्क टच मोड',
+    channelDemo: 'चैनल सिम्युलेटर',
+    districtOverview: 'जिला अवलोकन',
+    beneficiaries: 'लाभार्थी',
+    placements: 'प्लेसमेंट',
+    coordination: 'कार्य समन्वय',
+    plan: 'परिप्रेक्ष्य योजना',
+    directory: 'संसाधन निर्देशिका',
+    beneficiaryGroup: 'लाभार्थी',
+    accountGroup: 'खाता',
+    channelsGroup: 'चैनल',
+    districtCommandGroup: 'जिला कमान'
+  },
+  te: {
+    dashboard: 'డాష్‌బోర్డ్',
+    assistant: 'AI వాయిస్ అసిస్టెంట్',
+    opportunities: 'అవకాశాలు',
+    skillGaps: 'నైపుణ్య అంతరాలు',
+    training: 'ప్రమాణిత శిక్షణ',
+    roadmap: 'కెరీర్ రోడ్‌మ్యాప్',
+    whatIf: 'వాట్-ఇఫ్ సిమ్యులేటర్',
+    selfEmployment: 'స్వయం ఉపాధి',
+    progress: 'క్రియాశీల మైలురాళ్ళు',
+    profile: 'జీవనోపాధి ప్రొఫైల్',
+    kiosk: 'కియోస్క్ టచ్ మోడ్',
+    channelDemo: 'ఛానల్ సిమ్యులేటర్',
+    districtOverview: 'జిల్లా సమీక్ష',
+    beneficiaries: 'లబ్ధిదారులు',
+    placements: 'నియామకాలు',
+    coordination: 'టాస్క్ సమన్వయం',
+    plan: 'దృక్పథ ప్రణాళిక',
+    directory: 'వనరుల డైరెక్టరీ',
+    beneficiaryGroup: 'లబ్ధిదారుడు',
+    accountGroup: 'ఖాతా',
+    channelsGroup: 'ఛానల్స్',
+    districtCommandGroup: 'జిల్లా కమాండ్'
+  }
+};
 
 
 export const AppSidebar = ({ user, sidebarOpen, setSidebarOpen }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { lang } = useLang();
   const isOfficer = user?.role === 'officer' || user?.role === 'admin';
+  const navText = NAV_TRANSLATIONS[lang] || NAV_TRANSLATIONS.en;
 
   const [isUnlocked, setIsUnlocked] = useState(() => {
     if (isOfficer) return true;
@@ -75,33 +215,33 @@ export const AppSidebar = ({ user, sidebarOpen, setSidebarOpen }) => {
   ]);
 
   const beneficiaryNav = [
-    { to: '/dashboard', label: 'Dashboard', icon: Home },
-    { to: '/assistant', label: 'AI Voice Assistant', icon: Mic },
-    { to: '/opportunities', label: 'Opportunities', icon: Briefcase },
-    { to: '/skill-gaps', label: 'Skill Gaps', icon: Layers },
-    { to: '/training', label: 'Certified Training', icon: BookOpen },
-    { to: '/roadmap', label: 'Career Roadmap', icon: TrendingUp },
-    { to: '/what-if', label: 'What-If Simulator', icon: Compass },
-    { to: '/self-employment', label: 'Self-Employment', icon: Award },
-    { to: '/progress', label: 'Active Milestones', icon: CheckCircle }
+    { to: '/dashboard', label: navText.dashboard, icon: Home },
+    { to: '/assistant', label: navText.assistant, icon: Mic },
+    { to: '/opportunities', label: navText.opportunities, icon: Briefcase },
+    { to: '/skill-gaps', label: navText.skillGaps, icon: Layers },
+    { to: '/training', label: navText.training, icon: BookOpen },
+    { to: '/roadmap', label: navText.roadmap, icon: TrendingUp },
+    { to: '/what-if', label: navText.whatIf, icon: Compass },
+    { to: '/self-employment', label: navText.selfEmployment, icon: Award },
+    { to: '/progress', label: navText.progress, icon: CheckCircle }
   ];
 
   const accountNav = [
-    { to: '/profile', label: 'Livelihood Profile', icon: User }
+    { to: '/profile', label: navText.profile, icon: User }
   ];
 
   const channelNav = [
-    { to: '/kiosk', label: 'Kiosk Touch Mode', icon: Building2 },
-    { to: '/channel-demo', label: 'Channel Simulator', icon: PhoneCall }
+    { to: '/kiosk', label: navText.kiosk, icon: Building2 },
+    { to: '/channel-demo', label: navText.channelDemo, icon: PhoneCall }
   ];
 
   const adminNav = [
-    { to: '/admin/overview', label: 'District Overview', icon: TrendingUp },
-    { to: '/admin/beneficiaries', label: 'Beneficiaries', icon: Users },
-    { to: '/admin/placements', label: 'Placements', icon: Award },
-    { to: '/admin/coordination', label: 'Task Coordination', icon: FolderKanban },
-    { to: '/admin/plan', label: 'Perspective Plan', icon: FileText },
-    { to: '/admin/directory', label: 'Resource Directory', icon: Building2 }
+    { to: '/admin/overview', label: navText.districtOverview, icon: TrendingUp },
+    { to: '/admin/beneficiaries', label: navText.beneficiaries, icon: Users },
+    { to: '/admin/placements', label: navText.placements, icon: Award },
+    { to: '/admin/coordination', label: navText.coordination, icon: FolderKanban },
+    { to: '/admin/plan', label: navText.plan, icon: FileText },
+    { to: '/admin/directory', label: navText.directory, icon: Building2 }
   ];
 
   const renderNavGroup = (title, items) => (
@@ -203,17 +343,17 @@ export const AppSidebar = ({ user, sidebarOpen, setSidebarOpen }) => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
             <img src="/assets/pm-ajay-logo.png" alt="PM-AJAY Logo" className="app-sidebar-brand-logo" />
             <div>
-              <div className="app-sidebar-brand-title">Livelihood Assistant</div>
+              <div className="app-sidebar-brand-title">JeevanPath AI</div>
               <div className="app-sidebar-brand-sub">AI Skilling & Livelihood</div>
             </div>
           </div>
         </div>
 
         <nav className="app-sidebar-nav">
-          {renderNavGroup('Beneficiary', beneficiaryNav)}
-          {renderNavGroup('Account', accountNav)}
-          {renderNavGroup('Channels', channelNav)}
-          {isOfficer && renderNavGroup('District Command', adminNav)}
+          {renderNavGroup(navText.beneficiaryGroup, beneficiaryNav)}
+          {renderNavGroup(navText.accountGroup, accountNav)}
+          {renderNavGroup(navText.channelsGroup, channelNav)}
+          {isOfficer && renderNavGroup(navText.districtCommandGroup, adminNav)}
         </nav>
       </aside>
     </>
@@ -222,26 +362,28 @@ export const AppSidebar = ({ user, sidebarOpen, setSidebarOpen }) => {
 
 export const AppHeader = ({ user, onLogout, toggleSidebar, sidebarOpen }) => {
   const location = useLocation();
+  const { lang } = useLang();
 
   const getPageTitle = (path) => {
-    if (path.includes('assistant')) return 'Empathetic AI Voice Assistant';
-    if (path.includes('opportunities')) return 'Tailored Livelihood Opportunities';
-    if (path.includes('skill-gaps')) return 'Skill Gap & Competency Analysis';
-    if (path.includes('training')) return 'Certified Skilling Programs';
-    if (path.includes('roadmap')) return 'Career Livelihood Roadmap';
-    if (path.includes('what-if')) return 'What-If Career Simulator';
-    if (path.includes('self-employment')) return 'Micro-Enterprise Business Guide';
-    if (path.includes('progress')) return 'Active Livelihood Milestones';
-    if (path.includes('profile')) return 'Livelihood Profile';
-    if (path.includes('kiosk')) return 'Touch & Voice Kiosk';
-    if (path.includes('channel-demo')) return 'Channel Integration Simulator';
-    if (path.includes('admin/overview')) return 'District Officer Overview';
-    if (path.includes('admin/beneficiaries')) return 'Assisted Beneficiary Registration';
-    if (path.includes('admin/placements')) return 'Placements & Enrolment';
-    if (path.includes('admin/coordination')) return 'Inter-Agency Task Coordination';
-    if (path.includes('admin/plan')) return 'District Perspective Action Plan';
-    if (path.includes('admin/directory')) return 'Resource Directory Catalog';
-    return 'Livelihood Assistant';
+    const titles = PAGE_TITLES[lang] || PAGE_TITLES.en;
+    if (path.includes('assistant')) return titles.assistant;
+    if (path.includes('opportunities')) return titles.opportunities;
+    if (path.includes('skill-gaps')) return titles['skill-gaps'];
+    if (path.includes('training')) return titles.training;
+    if (path.includes('roadmap')) return titles.roadmap;
+    if (path.includes('what-if')) return titles['what-if'];
+    if (path.includes('self-employment')) return titles['self-employment'];
+    if (path.includes('progress')) return titles.progress;
+    if (path.includes('profile')) return titles.profile;
+    if (path.includes('kiosk')) return titles.kiosk;
+    if (path.includes('channel-demo')) return titles['channel-demo'];
+    if (path.includes('admin/overview')) return titles['admin/overview'];
+    if (path.includes('admin/beneficiaries')) return titles['admin/beneficiaries'];
+    if (path.includes('admin/placements')) return titles['admin/placements'];
+    if (path.includes('admin/coordination')) return titles['admin/coordination'];
+    if (path.includes('admin/plan')) return titles['admin/plan'];
+    if (path.includes('admin/directory')) return titles['admin/directory'];
+    return titles.default;
   };
 
   return (
@@ -260,7 +402,9 @@ export const AppHeader = ({ user, onLogout, toggleSidebar, sidebarOpen }) => {
         <h1 className="app-header-title">{getPageTitle(location.pathname)}</h1>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0 }}>
+        <LanguageSwitcher />
+
         {user ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <span className="badge badge-blue">{user.district || 'Warangal'}</span>
@@ -432,7 +576,12 @@ export const LanguageSwitcher = () => {
   const { lang, setLang } = useLang();
 
   return (
-    <div className="language-switcher" role="tablist" aria-label="Select Language" style={{ display: 'flex', gap: '4px' }}>
+    <div
+      className="language-switcher-pill"
+      role="tablist"
+      aria-label="Select Language"
+    >
+      <Languages size={17} color="var(--primary-600, #c2410c)" style={{ marginLeft: '4px', marginRight: '2px', flexShrink: 0 }} />
       {[
         { code: 'te', label: 'తెలుగు' },
         { code: 'hi', label: 'हिंदी' },
@@ -442,8 +591,7 @@ export const LanguageSwitcher = () => {
           key={l.code}
           type="button"
           onClick={() => setLang(l.code)}
-          className={`btn ${lang === l.code ? 'btn-primary' : 'btn-ghost'}`}
-          style={{ padding: '5px 10px', fontSize: '13px', fontWeight: lang === l.code ? 700 : 500 }}
+          className={`lang-pill-btn ${lang === l.code ? 'active' : ''}`}
           role="tab"
           aria-selected={lang === l.code}
         >

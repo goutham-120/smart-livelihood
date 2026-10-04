@@ -88,9 +88,17 @@ router.get('/:id/candidates', authenticate, requireRole('officer', 'admin'), asy
         const matchedSkills = [];
 
         (p.skills || []).forEach((sk) => {
+          const skNorm = String(sk).toLowerCase().replace(/[\s\-_]+/g, '_').trim();
+          const skWord = String(sk).toLowerCase().replace(/[\s\-_]+/g, ' ').trim();
+          const occKeyNorm = String(job.occupationKey || '').toLowerCase().replace(/[\s\-_]+/g, '_').trim();
           if (
-            sk.toLowerCase().includes(job.occupationKey.toLowerCase()) ||
-            job.requiredSkills.some((rs) => rs.toLowerCase() === sk.toLowerCase())
+            skNorm.includes(occKeyNorm) ||
+            occKeyNorm.includes(skNorm) ||
+            job.requiredSkills.some((rs) => {
+              const rsNorm = String(rs).toLowerCase().replace(/[\s\-_]+/g, '_').trim();
+              const rsWord = String(rs).toLowerCase().replace(/[\s\-_]+/g, ' ').trim();
+              return rsNorm === skNorm || skWord === rsWord || skWord.includes(rsWord) || rsWord.includes(skWord);
+            })
           ) {
             matchScore += 35;
             matchedSkills.push(sk);

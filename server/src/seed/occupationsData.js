@@ -148,6 +148,38 @@ export const occupationsData = [
     requiredSkills: ['polyhouse_nursery_management', 'drip_irrigation_maintenance', 'integrated_pest_management'],
     source: 'https://www.skillindiadigital.gov.in/courses/detail/AGR/Q0801'
   },
+  {
+    key: 'tractor_operator',
+    title: 'Tractor and Farm Machinery Operator',
+    titles: { en: 'Tractor and Farm Machinery Operator', hi: 'ट्रैक्टर एवं कृषि मशीन ऑपरेटर', te: 'ట్రాక్టర్ మరియు వ్యవసాయ యంత్రాల ఆపరేటర్' },
+    sector: 'Agriculture',
+    nsqfLevel: 3,
+    ncoCode: '8341.0101',
+    incomeMin: 16000,
+    incomeMax: 36000,
+    workModes: ['field', 'workshop'],
+    travelRequired: true,
+    minEducation: 'Primary School',
+    selfEmploymentViable: true,
+    requiredSkills: ['tractor_farm_machinery'],
+    source: 'https://www.skillindiadigital.gov.in/courses/detail/AGR/Q1101'
+  },
+  {
+    key: 'medicinal_crops_cultivator',
+    title: 'Medicinal Plants Cultivator',
+    titles: { en: 'Medicinal Plants Cultivator', hi: 'औषधीय पौध कृषक', te: 'ఔషధ మొక్కల సాగుదారు' },
+    sector: 'Agriculture',
+    nsqfLevel: 3,
+    ncoCode: '6113.0201',
+    incomeMin: 14000,
+    incomeMax: 32000,
+    workModes: ['field'],
+    travelRequired: false,
+    minEducation: 'Primary School',
+    selfEmploymentViable: true,
+    requiredSkills: ['medicinal_plant_cultivation'],
+    source: 'https://www.skillindiadigital.gov.in/courses/detail/AGR/Q0901'
+  },
 
   // 4. Dairy & Animal Husbandry (3)
   {

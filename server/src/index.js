@@ -103,11 +103,14 @@ app.use('/api/plans', plansRoutes);
 // Safe Error Handler
 app.use(errorHandler);
 
+import { syncCatalogData } from './services/catalogSync.js';
+
 // Database connection and startup
 export const connectDB = async () => {
   try {
     await mongoose.connect(MONGO_URI);
     console.log(`Connected to MongoDB: ${MONGO_URI.includes('@') ? 'MongoDB Atlas' : MONGO_URI}`);
+    await syncCatalogData();
   } catch (err) {
     console.error('MongoDB connection error:', err.message);
   }

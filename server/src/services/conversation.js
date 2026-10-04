@@ -115,24 +115,54 @@ const computeRiskScore = (profileData) => {
 /**
  * Fetch top matching NSQF opportunities for the final confirmation stage.
  */
-const fetchTopOpportunities = async (district, userSkills = [], preference = 'either') => {
+const fetchTopOpportunities = async (district, userSkills = [], preference = 'either', collectedData = {}) => {
   try {
-    const occupations = await Occupation.find().limit(10);
+    const occupations = await Occupation.find();
     const demands = await RegionDemand.find({ district: new RegExp(`^${district}$`, 'i') });
     const demandMap = new Map();
     demands.forEach((d) => demandMap.set(d.occupationKey, d));
 
-    const skillSet = new Set((userSkills || []).map((s) => String(s).toLowerCase()));
+    const skillList = userSkills || [];
+    const skillKeys = new Set(skillList.map((s) => String(s).toLowerCase().replace(/[\s\-_]+/g, '_').trim()));
+    const skillWords = skillList.map((s) => String(s).toLowerCase().replace(/[\s\-_]+/g, ' ').trim());
+
+    const backgroundText = [
+      collectedData.familyOccupation || '',
+      collectedData.currentLivelihood || '',
+      ...skillWords
+    ].join(' ').toLowerCase();
 
     const scored = occupations.map((occ) => {
       const demand = demandMap.get(occ.key) || { demandLevel: 3, openings: 15, avgIncome: 15000 };
-      let skillMatch = 20;
+      let skillMatch = 0;
+      let matchedCount = 0;
+
       if (occ.requiredSkills && occ.requiredSkills.length > 0) {
-        let matchCount = 0;
         occ.requiredSkills.forEach((rs) => {
-          if (skillSet.has(rs.toLowerCase())) matchCount++;
+          const rNorm = rs.toLowerCase().replace(/[\s\-_]+/g, '_').trim();
+          const rWord = rs.toLowerCase().replace(/[\s\-_]+/g, ' ').trim();
+          if (
+            skillKeys.has(rNorm) ||
+            skillWords.some((w) => w === rWord || w.includes(rWord) || rWord.includes(w))
+          ) {
+            matchedCount++;
+          }
         });
-        skillMatch = Math.round((matchCount / occ.requiredSkills.length) * 100);
+        skillMatch = Math.round((matchedCount / occ.requiredSkills.length) * 100);
+      }
+
+      // Domain background synergy
+      let domainSynergy = 0;
+      if (occ.sector === 'Agriculture' && (backgroundText.includes('farm') || backgroundText.includes('tractor') || backgroundText.includes('agri') || backgroundText.includes('machinery'))) {
+        domainSynergy = 100;
+      } else if (occ.sector === 'Apparel & Handloom' && (backgroundText.includes('tailor') || backgroundText.includes('sew') || backgroundText.includes('garment') || backgroundText.includes('cloth'))) {
+        domainSynergy = 100;
+      } else if (occ.sector === 'Food Processing' && (backgroundText.includes('food') || backgroundText.includes('spice') || backgroundText.includes('pickle') || backgroundText.includes('baking'))) {
+        domainSynergy = 100;
+      } else if (occ.sector === 'Electronics & Hardware' && (backgroundText.includes('electric') || backgroundText.includes('appliance') || backgroundText.includes('mobile') || backgroundText.includes('solar'))) {
+        domainSynergy = 100;
+      } else if (occ.sector === 'Construction' && (backgroundText.includes('mason') || backgroundText.includes('weld') || backgroundText.includes('plumb'))) {
+        domainSynergy = 100;
       }
 
       const demandScore = demand.demandLevel * 20;
@@ -140,7 +170,19 @@ const fetchTopOpportunities = async (district, userSkills = [], preference = 'ei
       if (preference === 'self' && occ.selfEmploymentViable) prefScore = 100;
       if (preference === 'wage' && !occ.travelRequired) prefScore = 90;
 
-      const totalScore = Math.round(skillMatch * 0.45 + demandScore * 0.35 + prefScore * 0.20);
+      let totalScore;
+      if (skillList.length > 0) {
+        if (skillMatch > 0) {
+          totalScore = Math.round(skillMatch * 0.60 + domainSynergy * 0.20 + demandScore * 0.10 + prefScore * 0.10);
+        } else if (domainSynergy >= 50) {
+          totalScore = Math.round(25 + domainSynergy * 0.18 + demandScore * 0.10);
+        } else {
+          totalScore = Math.min(22, Math.round(demandScore * 0.10 + prefScore * 0.08));
+        }
+      } else {
+        totalScore = Math.round((domainSynergy > 0 ? 35 : 15) + demandScore * 0.45 + prefScore * 0.40);
+      }
+
       const track = occ.selfEmploymentViable && (preference === 'self' || preference === 'either') ? 'self' : 'wage';
 
       return {
@@ -150,13 +192,17 @@ const fetchTopOpportunities = async (district, userSkills = [], preference = 'ei
         titles: occ.titles,
         sector: occ.sector,
         nsqfLevel: occ.nsqfLevel,
-        matchScore: totalScore,
+        matchScore: Math.max(5, Math.min(100, totalScore)),
+        matchedCount,
         track,
         demand: { level: demand.demandLevel, openings: demand.openings, avgIncome: demand.avgIncome }
       };
     });
 
-    scored.sort((a, b) => b.matchScore - a.matchScore);
+    scored.sort((a, b) => {
+      if (b.matchScore !== a.matchScore) return b.matchScore - a.matchScore;
+      return (b.matchedCount || 0) - (a.matchedCount || 0);
+    });
     return scored.slice(0, 3);
   } catch (err) {
     return [];
@@ -382,7 +428,8 @@ export const processConversationTurn = async ({
       const topOpportunities = await fetchTopOpportunities(
         session.collectedData.district,
         session.collectedData.skills,
-        session.collectedData.employmentPreference
+        session.collectedData.employmentPreference,
+        session.collectedData
       );
 
       const completionCelebration = session.language === 'te'
