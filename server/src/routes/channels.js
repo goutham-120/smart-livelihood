@@ -6,6 +6,11 @@ import { handleIvrVoice, handleIvrGather } from '../channels/ivr.js';
 import { processConversationTurn } from '../services/conversation.js';
 import { User } from '../models/User.js';
 import { Profile } from '../models/Profile.js';
+import {
+  detectLanguageFromText,
+  normalizeLanguageCode,
+  getLanguageConfig
+} from '../channels/languages.js';
 
 const router = express.Router();
 
@@ -33,13 +38,98 @@ router.post('/simulate', async (req, res) => {
     const channel = sanitizeString(req.body.channel, 20) || 'whatsapp';
     const message = sanitizeString(req.body.message, 1000);
     const phone = sanitizeString(req.body.phone, 20) || '9876543210';
-    const lang = sanitizeString(req.body.language, 10) || 'te';
+    const rawLang = sanitizeString(req.body.language, 20);
     const dialect = sanitizeString(req.body.dialect, 40) || '';
     const digits = sanitizeString(req.body.digits, 10) || '';
     const ivrStep = sanitizeString(req.body.ivrStep, 20) || 'language';
 
+    // Per-turn language detection: Do NOT default or lock to English or Telugu!
+    let lang = rawLang;
+    if (!lang || lang === 'auto' || normalizeLanguageCode(lang) === 'en') {
+      const detected = detectLanguageFromText(message);
+      if (detected.language !== 'en' || !lang || lang === 'auto') {
+        lang = detected.language;
+      }
+    }
+    lang = normalizeLanguageCode(lang);
+
     // 1. IVR Specific Simulation Flow
     if (channel === 'ivr') {
+      // If arbitrary user speech input is passed (from browser microphone or audio transcription)
+      if (message && !digits) {
+        const activeLang = normalizeLanguageCode(rawLang || lang);
+        const langConfig = getLanguageConfig(activeLang);
+        const { generateEmpatheticResponse } = await import('../services/aiService.js');
+        const { extractLivelihoodProfile } = await import('../services/extract.js');
+
+        let user = await User.findOne({ phone });
+        if (!user) {
+          user = await User.create({
+            name: `Helpline Caller (${phone.slice(-4)})`,
+            phone,
+            role: 'beneficiary',
+            district: 'Warangal',
+            consent: { given: true, at: new Date(), version: '1.0', language: activeLang }
+          });
+        }
+
+        let profile = await Profile.findOne({ user: user._id });
+        if (!profile) {
+          profile = await Profile.create({
+            user: user._id,
+            district: 'Warangal',
+            state: 'Telangana',
+            channel: 'ivr',
+            language: activeLang,
+            skills: []
+          });
+        }
+
+        const userContext = {
+          name: user.name,
+          district: profile.district,
+          skills: profile.skills,
+          employmentPreference: profile.employmentPreference,
+          education: profile.education
+        };
+
+        const [aiResult, ruleExtracted] = await Promise.all([
+          generateEmpatheticResponse({
+            userMessage: message,
+            language: activeLang,
+            userContext
+          }),
+          extractLivelihoodProfile(message)
+        ]);
+
+        const mergedSkills = Array.from(new Set([
+          ...(profile.skills || []),
+          ...(aiResult.extractedSkills || []),
+          ...(ruleExtracted.skills || [])
+        ]));
+        profile.skills = mergedSkills;
+        await profile.save();
+
+        return res.json({
+          channel: 'ivr',
+          ivrStep: 'voice_conversation',
+          language: activeLang,
+          languageName: langConfig.name,
+          nativeName: langConfig.nativeName,
+          speechCode: langConfig.speechCode,
+          transcript: message,
+          audioPrompt: aiResult.replyText,
+          replyText: aiResult.replyText,
+          extractedSkills: profile.skills,
+          options: [
+            { digit: '1', label: 'Tailoring & Garments' },
+            { digit: '2', label: 'Dairy & Livestock' },
+            { digit: '3', label: 'Solar & Electrical' }
+          ]
+        });
+      }
+
+      // Existing DTMF Keypad Handling
       if (ivrStep === 'language') {
         const selectedLang = digits === '2' ? 'hi' : digits === '3' ? 'en' : 'te';
         const prompt = selectedLang === 'te'
@@ -65,10 +155,10 @@ router.post('/simulate', async (req, res) => {
         let tradeTitle = 'Self Employed Tailor';
         let tradeKey = 'self_employed_tailor';
 
-        if (digits === '2' || message.toLowerCase().includes('dairy')) {
+        if (digits === '2' || (message && message.toLowerCase().includes('dairy'))) {
           tradeTitle = 'Dairy Farmer Entrepreneur';
           tradeKey = 'dairy_farmer_entrepreneur';
-        } else if (digits === '3' || message.toLowerCase().includes('electric') || message.toLowerCase().includes('solar')) {
+        } else if (digits === '3' || (message && (message.toLowerCase().includes('electric') || message.toLowerCase().includes('solar')))) {
           tradeTitle = 'Solar PV Installation Technician';
           tradeKey = 'solar_pv_installer';
         }
@@ -111,8 +201,11 @@ router.post('/simulate', async (req, res) => {
         district: 'Warangal',
         consent: { given: true, at: new Date(), version: '1.0', language: lang }
       });
+    }
 
-      await Profile.create({
+    let profile = await Profile.findOne({ user: user._id });
+    if (!profile) {
+      profile = await Profile.create({
         user: user._id,
         district: 'Warangal',
         state: 'Telangana',
@@ -122,30 +215,64 @@ router.post('/simulate', async (req, res) => {
       });
     }
 
-    const sessionKey = `sim_${channel}_${phone}`;
-    const result = await processConversationTurn({
-      text: message || 'Namaste',
-      lang,
-      dialect,
-      channel,
-      userId: user._id,
-      sessionKey
-    });
+    const { generateEmpatheticResponse } = await import('../services/aiService.js');
+    const { extractLivelihoodProfile } = await import('../services/extract.js');
+
+    const userContext = {
+      name: user.name,
+      district: profile.district,
+      skills: profile.skills,
+      employmentPreference: profile.employmentPreference,
+      education: profile.education
+    };
+
+    const [aiResult, ruleExtracted] = await Promise.all([
+      generateEmpatheticResponse({
+        userMessage: message || 'Namaste',
+        language: lang,
+        userContext
+      }),
+      extractLivelihoodProfile(message || '')
+    ]);
+
+    const mergedSkills = Array.from(new Set([
+      ...(profile.skills || []),
+      ...(aiResult.extractedSkills || []),
+      ...(ruleExtracted.skills || [])
+    ]));
+    profile.skills = mergedSkills;
+    if (ruleExtracted.education) profile.education = ruleExtracted.education;
+    if (aiResult.identifiedPreference) profile.employmentPreference = aiResult.identifiedPreference;
+    await profile.save();
+
+    const langConfig = getLanguageConfig(lang);
+
+    console.log('Final assistant language:', langConfig.speechCode);
+    console.log('TTS language:', langConfig.speechCode);
 
     return res.json({
       channel,
       phone,
-      simulatedResponse: result.replyText,
-      replyText: result.replyText,
-      stage: result.stage,
-      isComplete: result.isComplete || false,
-      extractedSkills: result.extractedSkills || [],
-      updatedProfile: result.updatedProfile || {},
-      matchedOpportunities: result.matchedOpportunities || [],
+      simulatedResponse: aiResult.replyText,
+      replyText: aiResult.replyText,
+      stage: 'conversational_dialogue',
+      language: lang,
+      languageName: langConfig.name,
+      nativeName: langConfig.nativeName,
+      speechCode: langConfig.speechCode,
+      isComplete: false,
+      extractedSkills: profile.skills,
+      updatedProfile: {
+        skills: profile.skills,
+        district: profile.district,
+        education: profile.education,
+        employmentPreference: profile.employmentPreference
+      },
+      matchedOpportunities: [],
       profile: {
-        skills: result.extractedSkills || [],
-        district: result.updatedProfile?.district || 'Warangal',
-        riskScore: result.updatedProfile?.riskScore || 20
+        skills: profile.skills,
+        district: profile.district,
+        riskScore: profile.riskScore || 20
       }
     });
   } catch (err) {

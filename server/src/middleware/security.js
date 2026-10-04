@@ -54,6 +54,7 @@ export const errorHandler = (err, req, res, next) => {
   if (res.headersSent) {
     return next(err);
   }
+  console.error('Unhandled API Error:', err);
   const status = err.status || 500;
   return res.status(status).json({
     error: err.userMessage || 'An unexpected error occurred. Please try again.'

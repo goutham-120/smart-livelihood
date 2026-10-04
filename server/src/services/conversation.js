@@ -9,7 +9,7 @@ import { Profile } from '../models/Profile.js';
 import { Occupation } from '../models/Occupation.js';
 import { RegionDemand } from '../models/RegionDemand.js';
 import { processDialogueWithLLM } from './llm.js';
-import { STAGE_PROMPTS, SUPPORTED_LANGUAGES } from '../channels/languages.js';
+import { STAGE_PROMPTS, SUPPORTED_LANGUAGES, detectLanguageFromText, normalizeLanguageCode } from '../channels/languages.js';
 
 export const CONVERSATION_STAGES = [
   'greeting_consent',
@@ -189,17 +189,25 @@ const generateReadbackSummary = (data, language = 'en') => {
  */
 export const processConversationTurn = async ({
   text,
-  lang = 'te',
+  lang = null,
   dialect = '',
   channel = 'web',
   userId = null,
   forUserId = null,
   sessionKey = null
 }) => {
-  const effectiveSessionKey = sessionKey || (forUserId ? `officer_${forUserId}` : userId ? `user_${userId}` : `channel_${channel}_${Date.now()}`);
-  const session = getOrCreateSession(effectiveSessionKey, { channel, userId, forUserId, language: lang, dialect });
+  // Determine language for this turn dynamically: NEVER lock or default to Telugu
+  let activeLang = lang;
+  if (!activeLang || activeLang === 'auto') {
+    const detected = detectLanguageFromText(text);
+    activeLang = detected.language;
+  }
+  const normLang = normalizeLanguageCode(activeLang);
 
-  session.language = lang || session.language;
+  const effectiveSessionKey = sessionKey || (forUserId ? `officer_${forUserId}` : userId ? `user_${userId}` : `channel_${channel}_${Date.now()}`);
+  const session = getOrCreateSession(effectiveSessionKey, { channel, userId, forUserId, language: normLang, dialect });
+
+  session.language = normLang;
   session.dialect = dialect || session.dialect;
   session.lastActiveAt = Date.now();
 

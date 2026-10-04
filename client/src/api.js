@@ -72,7 +72,7 @@ export const putProfile = async (dataPayload) => {
 
 export const updateProfile = putProfile;
 
-/* ASSISTANT */
+/* ASSISTANT & MULTILINGUAL SPEECH */
 export const postMessage = async (dataPayload) => {
   const res = await apiInstance.post('/assistant/message', dataPayload);
   return res.data;
@@ -80,6 +80,41 @@ export const postMessage = async (dataPayload) => {
 
 export const sendVoiceMessage = async (text, lang = 'te', channel = 'web') => {
   const res = await apiInstance.post('/assistant/message', { text, lang, channel });
+  return res.data;
+};
+
+export const speechToText = async ({ audioBase64, mimeType = 'audio/webm', transcript = '', language = 'auto' }) => {
+  const res = await apiInstance.post('/assistant/speech-to-text', {
+    audio: audioBase64,
+    mimeType,
+    transcript,
+    language
+  });
+  return res.data;
+};
+
+export const chatAssistant = async ({ message, language, channel = 'web', phone, forUserId }) => {
+  const res = await apiInstance.post('/assistant/chat', {
+    message,
+    language,
+    channel,
+    phone,
+    forUserId
+  });
+  return res.data;
+};
+
+export const textToSpeech = async ({ text, language, speaker = 'meera' }) => {
+  const res = await apiInstance.post('/assistant/text-to-speech', {
+    text,
+    language,
+    speaker
+  });
+  return res.data;
+};
+
+export const getSupportedLanguages = async () => {
+  const res = await apiInstance.get('/assistant/languages');
   return res.data;
 };
 
@@ -178,6 +213,10 @@ apiInstance.updateProfile = updateProfile;
 apiInstance.getOpportunities = getOpportunities;
 apiInstance.getSelfEmployment = getSelfEmployment;
 apiInstance.sendVoiceMessage = sendVoiceMessage;
+apiInstance.speechToText = speechToText;
+apiInstance.chatAssistant = chatAssistant;
+apiInstance.textToSpeech = textToSpeech;
+apiInstance.getSupportedLanguages = getSupportedLanguages;
 apiInstance.postMessage = postMessage;
 apiInstance.getOfficerAnalytics = getOfficerAnalytics;
 apiInstance.getAnalyticsOverview = getAnalyticsOverview;

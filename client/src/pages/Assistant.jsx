@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../api.js';
 import { useLang } from '../lang.js';
 import { VoiceInput, Card, Badge } from '../components.jsx';
-import { Sparkles, ArrowRight, Languages, CheckCircle } from 'lucide-react';
+import { Sparkles, ArrowRight, Languages, Volume2, VolumeX } from 'lucide-react';
+import { playIndicSpeech, stopIndicSpeech, getLanguageByCode } from '../i18n/languages.js';
 import { Link } from 'react-router-dom';
 
 const GREETINGS = {
@@ -43,6 +44,8 @@ export const Assistant = ({ forUserId = null }) => {
   const [extractedSkills, setExtractedSkills] = useState([]);
   const [updatedProfile, setUpdatedProfile] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [activeDetectedLanguage, setActiveDetectedLanguage] = useState(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   useEffect(() => {
     api.getProfile(forUserId).then((res) => {
@@ -76,24 +79,66 @@ export const Assistant = ({ forUserId = null }) => {
     });
   };
 
-  const handleSendMessage = async (text) => {
+  useEffect(() => {
+    return () => {
+      stopIndicSpeech();
+    };
+  }, []);
+
+  const handleSendMessage = async (text, detectedLanguageCode, detectedLangObj) => {
+    stopIndicSpeech();
     const userMsg = { sender: 'user', text };
     setMessages((prev) => [...prev, userMsg]);
     setIsProcessing(true);
 
+    if (detectedLangObj) {
+      setActiveDetectedLanguage(detectedLangObj);
+    }
+
+    const targetLang = detectedLanguageCode || lang || 'auto';
+
     try {
-      const res = await api.sendVoiceMessage(text, lang, 'web');
-      if (res.replyText) {
-        setMessages((prev) => [...prev, { sender: 'ai', text: res.replyText }]);
+      const res = await api.chatAssistant({
+        message: text,
+        language: targetLang,
+        channel: 'web'
+      });
+
+      const replyText = res.replyText || res.response || 'ధన్యవాదాలు! మీ వివరాలు నమోదయ్యాయి.';
+      setMessages((prev) => [...prev, { sender: 'ai', text: replyText }]);
+
+      if (res.language) {
+        const langInfo = getLanguageByCode(res.language);
+        setActiveDetectedLanguage({
+          code: res.language,
+          name: res.languageName || langInfo.name,
+          nativeName: res.nativeName || langInfo.nativeName,
+          confidence: 96
+        });
       }
+
       if (res.extractedSkills && res.extractedSkills.length > 0) {
         setExtractedSkills(res.extractedSkills);
       }
       if (res.updatedProfile) {
         setUpdatedProfile((prev) => ({ ...prev, ...res.updatedProfile }));
       }
+
+      // Automatically speak the response in the user's detected language
+      setIsSpeaking(true);
+      playIndicSpeech({
+        text: replyText,
+        language: res.language || targetLang,
+        onEnd: () => setIsSpeaking(false)
+      });
     } catch (err) {
-      setMessages((prev) => [...prev, { sender: 'ai', text: 'Namaste! Thank you for sharing. We have recorded your information and are matching your profile.' }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: 'ai',
+          text: 'Namaste! Thank you for sharing. We have recorded your information and are matching your profile.'
+        }
+      ]);
     } finally {
       setIsProcessing(false);
     }
@@ -101,22 +146,62 @@ export const Assistant = ({ forUserId = null }) => {
 
   const currentPrompts = SAMPLE_PROMPTS[lang] || SAMPLE_PROMPTS.en;
 
+  const toggleSpeechAudio = () => {
+    if (isSpeaking) {
+      stopIndicSpeech();
+      setIsSpeaking(false);
+    } else {
+      const lastAiMessage = [...messages].reverse().find((m) => m.sender === 'ai');
+      if (lastAiMessage) {
+        setIsSpeaking(true);
+        playIndicSpeech({
+          text: lastAiMessage.text,
+          language: activeDetectedLanguage?.code || lang || 'te',
+          onEnd: () => setIsSpeaking(false)
+        });
+      }
+    }
+  };
+
   return (
     <div className="page-container">
+      {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
         <div>
           <h2 style={{ fontSize: '22px', fontWeight: 800 }}>Empathetic AI Voice Assistant</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Discuss your past work, trade skills, or livelihood goals in your language</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
+            Speak naturally in any of the 22 Scheduled Indian Languages or English. Language is automatically detected.
+          </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--surface-subtle)', padding: '4px 8px', borderRadius: 'var(--radius-md)' }}>
-          <Languages size={16} color="var(--primary-600)" />
-          <button onClick={() => handleLanguageChange('te')} className={`btn ${lang === 'te' ? 'btn-primary' : 'btn-ghost'}`} style={{ padding: '4px 8px', fontSize: '12px' }}>తెలుగు</button>
-          <button onClick={() => handleLanguageChange('hi')} className={`btn ${lang === 'hi' ? 'btn-primary' : 'btn-ghost'}`} style={{ padding: '4px 8px', fontSize: '12px' }}>हिंदी</button>
-          <button onClick={() => handleLanguageChange('en')} className={`btn ${lang === 'en' ? 'btn-primary' : 'btn-ghost'}`} style={{ padding: '4px 8px', fontSize: '12px' }}>English</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          {activeDetectedLanguage && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--primary-50, #eff6ff)', border: '1px solid var(--primary-200, #bfdbfe)', padding: '5px 12px', borderRadius: '16px', fontSize: '12px', color: 'var(--primary-700, #1d4ed8)', fontWeight: 700 }}>
+              <Languages size={15} /> Detected: {activeDetectedLanguage.name} ({activeDetectedLanguage.nativeName})
+            </div>
+          )}
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--surface-subtle)', padding: '4px 8px', borderRadius: 'var(--radius-md)' }}>
+            <Languages size={16} color="var(--primary-600)" />
+            <button onClick={() => handleLanguageChange('te')} className={`btn ${lang === 'te' ? 'btn-primary' : 'btn-ghost'}`} style={{ padding: '4px 8px', fontSize: '12px' }}>తెలుగు</button>
+            <button onClick={() => handleLanguageChange('hi')} className={`btn ${lang === 'hi' ? 'btn-primary' : 'btn-ghost'}`} style={{ padding: '4px 8px', fontSize: '12px' }}>हिंदी</button>
+            <button onClick={() => handleLanguageChange('en')} className={`btn ${lang === 'en' ? 'btn-primary' : 'btn-ghost'}`} style={{ padding: '4px 8px', fontSize: '12px' }}>English</button>
+          </div>
+
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={toggleSpeechAudio}
+            style={{ padding: '6px 10px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
+            title={isSpeaking ? 'Mute Speech Audio' : 'Replay Last Audio Response'}
+          >
+            {isSpeaking ? <VolumeX size={16} color="#ef4444" /> : <Volume2 size={16} color="var(--primary-600)" />}
+            {isSpeaking ? 'Mute Voice' : 'Audio On'}
+          </button>
         </div>
       </div>
 
+      {/* Profile Competencies Card */}
       {extractedSkills.length > 0 && (
         <Card style={{ marginBottom: '20px', background: 'var(--primary-50)', borderColor: '#c7d2fe' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
@@ -142,6 +227,7 @@ export const Assistant = ({ forUserId = null }) => {
         </Card>
       )}
 
+      {/* Main Dialogue Box */}
       <Card style={{ minHeight: '340px', display: 'flex', flexDirection: 'column' }}>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '14px', overflowY: 'auto', marginBottom: '20px', maxHeight: '420px', paddingRight: '4px' }}>
           {messages.map((m, idx) => (
@@ -164,8 +250,9 @@ export const Assistant = ({ forUserId = null }) => {
           ))}
         </div>
 
+        {/* Quick Multilingual Prompts */}
         <div style={{ marginBottom: '16px' }}>
-          <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px', fontWeight: 600 }}>Quick Voice Samples:</div>
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px', fontWeight: 600 }}>Quick Voice Samples (Any Language):</div>
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
             {currentPrompts.map((p, idx) => (
               <button
@@ -190,7 +277,13 @@ export const Assistant = ({ forUserId = null }) => {
           </div>
         </div>
 
-        <VoiceInput onSend={handleSendMessage} isProcessing={isProcessing} lang={lang} />
+        {/* Real Microphone Voice Input Component */}
+        <VoiceInput
+          onSend={(text, langCode, detectedObj) => handleSendMessage(text, langCode, detectedObj)}
+          isProcessing={isProcessing}
+          lang={lang}
+          voiceState={isSpeaking ? 'SPEAKING' : 'IDLE'}
+        />
       </Card>
     </div>
   );

@@ -64,9 +64,9 @@ app.use(
   })
 );
 
-// Request Size Limits & Parsing
-app.use(express.json({ limit: '100kb' }));
-app.use(express.urlencoded({ extended: true, limit: '100kb' }));
+// Request Size Limits & Parsing (supporting audio base64 buffers)
+app.use(express.json({ limit: '15mb' }));
+app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 
 // Global API Rate Limiting
 app.use('/api', apiLimiter);

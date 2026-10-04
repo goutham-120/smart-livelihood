@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useLang } from './lang.js';
+import { api } from './api.js';
 import {
   Mic, MicOff, Volume2, Briefcase, User, ShieldCheck, Sparkles, TrendingUp,
   Award, Compass, LogOut, Menu, X, Home, BookOpen, Layers, PhoneCall,
@@ -154,66 +155,209 @@ export const AppHeader = ({ user, onLogout, toggleSidebar, sidebarOpen }) => {
 };
 
 export const VoiceInput = ({ onSend, isProcessing, voiceState = 'IDLE', errorMessage = null }) => {
-  const { lang } = useLang();
+  const { lang, setLang } = useLang();
   const [text, setText] = useState('');
   const [currentState, setCurrentState] = useState(voiceState);
+  const [detectedLang, setDetectedLang] = useState(null);
+  const [localError, setLocalError] = useState(errorMessage);
+
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const recognitionRef = useRef(null);
+  const silenceTimerRef = useRef(null);
+  const isListeningRef = useRef(false);
 
   useEffect(() => {
     setCurrentState(voiceState);
   }, [voiceState]);
 
-  const startListening = () => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      alert('Browser speech recognition is unavailable. Please type your message in text.');
-      return;
+  useEffect(() => {
+    setLocalError(errorMessage);
+  }, [errorMessage]);
+
+  const startListening = async () => {
+    setLocalError(null);
+    audioChunksRef.current = [];
+    isListeningRef.current = true;
+    setCurrentState('LISTENING');
+
+    let candidateTranscript = '';
+
+    // 1. Browser Speech Recognition candidate listener (for zero-latency interim tokens)
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRec) {
+      try {
+        const rec = new SpeechRec();
+        rec.continuous = true;
+        rec.interimResults = true;
+        rec.lang = 'te-IN';
+        rec.onresult = (e) => {
+          const trans = Array.from(e.results).map((r) => r[0].transcript).join(' ');
+          candidateTranscript = trans;
+          setText(trans);
+
+          if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+          silenceTimerRef.current = setTimeout(() => {
+            if (isListeningRef.current) {
+              stopListening();
+            }
+          }, 2000);
+        };
+        rec.onerror = () => {};
+        rec.start();
+        recognitionRef.current = rec;
+      } catch (e) {}
     }
 
-    const rec = new SpeechRecognition();
-    const localeMap = { te: 'te-IN', hi: 'hi-IN', en: 'en-IN' };
-    rec.lang = localeMap[lang] || 'te-IN';
-    rec.onstart = () => setCurrentState('LISTENING');
-    rec.onend = () => {
-      if (currentState === 'LISTENING') setCurrentState('IDLE');
-    };
-    rec.onerror = () => setCurrentState('ERROR');
-    rec.onresult = (e) => {
-      const transcript = e.results[0][0].transcript;
-      setText(transcript);
-      setCurrentState('PROCESSING');
-      onSend(transcript);
-    };
-    rec.start();
+    // 2. Real Microphone MediaRecorder
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error('Microphone audio recording is not supported in this browser.');
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true }
+      });
+
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : MediaRecorder.isTypeSupported('audio/webm')
+          ? 'audio/webm'
+          : 'audio/mp4';
+
+      const mediaRecorder = new MediaRecorder(stream, { mimeType });
+      mediaRecorderRef.current = mediaRecorder;
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          audioChunksRef.current.push(e.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+        await handleAudioCaptured(audioBlob, candidateTranscript, mimeType);
+      };
+
+      mediaRecorder.start(250);
+    } catch (err) {
+      setCurrentState('ERROR');
+      setLocalError(
+        err.name === 'NotAllowedError'
+          ? 'Microphone permission denied. Please allow microphone access in browser settings.'
+          : 'Could not access microphone: ' + (err.message || 'Unknown error')
+      );
+      isListeningRef.current = false;
+    }
+  };
+
+  const stopListening = () => {
+    isListeningRef.current = false;
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {}
+      recognitionRef.current = null;
+    }
+
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      try {
+        mediaRecorderRef.current.stop();
+      } catch (e) {}
+    }
+  };
+
+  const handleAudioCaptured = async (audioBlob, candidateTranscript, mimeType) => {
+    setCurrentState('PROCESSING');
+
+    try {
+      let audioBase64 = null;
+      if (audioBlob && audioBlob.size > 500) {
+        audioBase64 = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(audioBlob);
+        });
+      }
+
+
+      const sttResult = await api.speechToText({
+        audioBase64,
+        mimeType,
+        transcript: candidateTranscript,
+        language: 'auto'
+      });
+
+      const finalTranscript = sttResult.transcript || candidateTranscript;
+      if (!finalTranscript || !finalTranscript.trim()) {
+        setCurrentState('ERROR');
+        setLocalError('No clear speech detected. Please speak clearly into your microphone.');
+        return;
+      }
+
+      const detected = {
+        code: sttResult.language || 'en',
+        name: sttResult.languageName || 'English',
+        nativeName: sttResult.nativeName || 'English',
+        confidence: Math.round((sttResult.confidence || 0.9) * 100)
+      };
+
+      setDetectedLang(detected);
+      setText(finalTranscript);
+      setCurrentState('LANGUAGE DETECTED');
+
+      // Update global language context if available
+      if (detected.code && (detected.code === 'te' || detected.code === 'hi' || detected.code === 'en')) {
+        setLang && setLang(detected.code);
+      }
+
+      // Hand off to parent assistant component
+      setTimeout(() => {
+        setCurrentState('THINKING');
+        onSend(finalTranscript, detected.code, detected);
+      }, 400);
+    } catch (err) {
+      setCurrentState('ERROR');
+      setLocalError(err.response?.data?.error || err.message || 'Speech recognition failed.');
+    }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (text.trim()) {
-      setCurrentState('PROCESSING');
-      onSend(text);
+      setCurrentState('THINKING');
+      onSend(text.trim(), detectedLang?.code || lang);
       setText('');
     }
   };
 
   const getStateText = () => {
-    if (isProcessing || currentState === 'PROCESSING') return 'Understanding your response...';
-    if (currentState === 'LISTENING') return 'Listening in Telugu / Hindi / English...';
+    if (isProcessing || currentState === 'PROCESSING') return 'Processing audio with Indic ASR...';
+    if (currentState === 'LISTENING') return 'Listening... Speak in Telugu, Hindi, Tamil, English, or any Indian language';
+    if (currentState === 'LANGUAGE DETECTED') return `Language detected: ${detectedLang?.name} (${detectedLang?.nativeName}) • ${detectedLang?.confidence}%`;
+    if (currentState === 'THINKING') return 'Formulating response in your language...';
     if (currentState === 'SPEAKING') return 'Assistant speaking response...';
-    if (currentState === 'ERROR' || errorMessage) return errorMessage || 'Could not recognize audio. Try again or type below.';
-    return 'Tap mic to speak or type message below';
+    if (currentState === 'ERROR' || localError) return localError || 'Could not capture speech. Try again or type below.';
+    return 'Tap mic to speak in any language or type message below';
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', margin: '20px 0', width: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px', margin: '16px 0', width: '100%' }}>
       <button
         type="button"
-        onClick={startListening}
-        disabled={isProcessing}
+        onClick={currentState === 'LISTENING' ? stopListening : startListening}
+        disabled={isProcessing || currentState === 'PROCESSING' || currentState === 'THINKING'}
         style={{
           width: '84px',
           height: '84px',
           borderRadius: '50%',
-          background: currentState === 'LISTENING' ? 'var(--status-danger)' : 'var(--primary-600)',
+          background: currentState === 'LISTENING' ? 'var(--status-danger)' : currentState === 'SPEAKING' ? 'var(--accent-green, #10b981)' : 'var(--primary-600)',
           color: '#fff',
           border: 'none',
           cursor: 'pointer',
@@ -227,7 +371,13 @@ export const VoiceInput = ({ onSend, isProcessing, voiceState = 'IDLE', errorMes
         {currentState === 'LISTENING' ? <MicOff size={38} /> : <Mic size={38} />}
       </button>
 
-      <div style={{ fontSize: '13px', fontWeight: 600, color: currentState === 'ERROR' ? 'var(--status-danger)' : 'var(--text-muted)' }}>
+      {detectedLang && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--primary-50, #eff6ff)', border: '1px solid var(--primary-200, #bfdbfe)', padding: '4px 10px', borderRadius: '16px', fontSize: '12px', color: 'var(--primary-700, #1d4ed8)', fontWeight: 600 }}>
+          <Sparkles size={14} /> Spoken Language: <strong>{detectedLang.name}</strong> ({detectedLang.nativeName}) • {detectedLang.confidence}%
+        </div>
+      )}
+
+      <div style={{ fontSize: '13px', fontWeight: 600, color: currentState === 'ERROR' ? 'var(--status-danger)' : 'var(--text-muted)', textAlign: 'center' }}>
         {getStateText()}
       </div>
 
@@ -236,10 +386,10 @@ export const VoiceInput = ({ onSend, isProcessing, voiceState = 'IDLE', errorMes
           type="text"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Describe your skills, past work, education, or work goals..."
+          placeholder="Describe your skills, past work, education, or work goals in any language..."
           style={{ flex: 1, padding: '12px 16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-medium)', fontSize: '14px' }}
         />
-        <button type="submit" className="btn btn-primary" disabled={isProcessing}>Send</button>
+        <button type="submit" className="btn btn-primary" disabled={isProcessing || !text.trim()}>Send</button>
       </form>
     </div>
   );

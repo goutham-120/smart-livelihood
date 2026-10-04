@@ -211,6 +211,107 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.wa-send-btn:hover {
+  transform: scale(1.05);
+}
+
+.wa-mic-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: #128c7e;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.wa-mic-btn:hover {
+  background: rgba(18, 140, 126, 0.1);
+}
+
+.wa-mic-btn.recording {
+  background: #ef4444;
+  color: #ffffff;
+  animation: waMicPulse 1.2s infinite ease-in-out;
+}
+
+@keyframes waMicPulse {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
+  50% { transform: scale(1.12); box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.wa-voice-status-banner {
+  background: #e0f2fe;
+  border-bottom: 1px solid #bae6fd;
+  color: #0369a1;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  animation: fadeIn 0.2s ease;
+}
+
+.wa-voice-error-banner {
+  background: #fee2e2;
+  border-bottom: 1px solid #fecaca;
+  color: #b91c1c;
+  padding: 6px 12px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.wa-voice-error-banner button {
+  background: none;
+  border: none;
+  color: #b91c1c;
+  font-size: 12px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.wa-recording-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  display: inline-block;
+  animation: waPulseDot 1s infinite alternate;
+}
+
+@keyframes waPulseDot {
+  from { opacity: 0.4; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1.2); }
+}
+
+.wa-play-audio-btn {
+  background: none;
+  border: none;
+  color: #075e54;
+  cursor: pointer;
+  padding: 2px 4px;
+  margin-left: 6px;
+  display: inline-flex;
+  align-items: center;
+  opacity: 0.75;
+  transition: opacity 0.15s ease;
+  vertical-align: middle;
+}
+
+.wa-play-audio-btn:hover {
+  opacity: 1;
 }
 
 /* Feature Phone / IVR Dialer Frame */
@@ -232,11 +333,44 @@
   border: 2px solid #334155;
   border-radius: 16px;
   padding: 16px;
-  min-height: 180px;
+  min-height: 220px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+  position: relative;
+  overflow: hidden;
+}
+
+.ivr-mode-tabs {
+  display: flex;
+  background: #0f172a;
+  border-radius: 12px;
+  padding: 4px;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.ivr-mode-tab {
+  flex: 1;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: transparent;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: all 0.2s;
+}
+
+.ivr-mode-tab.active {
+  background: #3b82f6;
+  color: #ffffff;
 }
 
 .ivr-call-status {
@@ -246,21 +380,126 @@
   color: #38bdf8;
   display: flex;
   justify-content: space-between;
+  align-items: center;
 }
 
-.ivr-speech-text {
-  font-size: 14px;
-  line-height: 1.5;
-  color: #f1f5f9;
-  margin: 10px 0;
+.ivr-state-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ivr-state-idle { background: rgba(148, 163, 184, 0.2); color: #cbd5e1; }
+.ivr-state-listening { background: rgba(239, 68, 68, 0.25); color: #f87171; animation: pulseRed 1.2s infinite; }
+.ivr-state-processing { background: rgba(245, 158, 11, 0.25); color: #fbbf24; }
+.ivr-state-detected { background: rgba(59, 130, 246, 0.25); color: #60a5fa; }
+.ivr-state-thinking { background: rgba(168, 85, 247, 0.25); color: #c084fc; }
+.ivr-state-speaking { background: rgba(34, 197, 94, 0.25); color: #4ade80; animation: pulseGreen 1.5s infinite; }
+.ivr-state-error { background: rgba(239, 68, 68, 0.3); color: #fca5a5; }
+
+@keyframes pulseRed {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(0.98); }
+}
+
+@keyframes pulseGreen {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.75; }
+}
+
+.ivr-detected-lang-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(37, 99, 235, 0.25);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  color: #93c5fd;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  margin: 6px 0;
+}
+
+.ivr-dialogue-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 6px 0;
+  max-height: 140px;
+  overflow-y: auto;
+}
+
+.ivr-bubble-user {
+  background: rgba(59, 130, 246, 0.18);
+  border-left: 3px solid #3b82f6;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #bfdbfe;
+}
+
+.ivr-bubble-ai {
+  background: rgba(34, 197, 94, 0.15);
+  border-left: 3px solid #22c55e;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #f0fdf4;
+}
+
+.ivr-mic-action-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.btn-ivr-mic {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  border: none;
+  background: #3b82f6;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+}
+
+.btn-ivr-mic.listening {
+  background: #ef4444;
+  box-shadow: 0 0 0 8px rgba(239, 68, 68, 0.35);
+  animation: ripple 1.2s infinite ease-out;
+}
+
+.btn-ivr-mic.speaking {
+  background: #10b981;
+  box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.3);
+}
+
+@keyframes ripple {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+  100% { box-shadow: 0 0 0 16px rgba(239, 68, 68, 0); }
 }
 
 .ivr-digits-display {
   font-family: monospace;
-  font-size: 18px;
+  font-size: 16px;
   color: #4ade80;
   text-align: right;
-  min-height: 24px;
+  min-height: 20px;
 }
 
 .ivr-keypad {

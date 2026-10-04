@@ -14,6 +14,7 @@ import { User } from '../models/User.js';
 import { Profile } from '../models/Profile.js';
 import { processConversationTurn } from '../services/conversation.js';
 import { getSpeechProvider } from './speech.js';
+import { detectLanguageFromText, normalizeLanguageCode } from './languages.js';
 
 const execAsync = promisify(exec);
 const { MessagingResponse } = twilio.twiml;
@@ -140,10 +141,11 @@ export const handleWhatsAppWebhook = async (req, res) => {
       await execAsync(`ffmpeg -y -i "${tempInputFile}" -ar 16000 -ac 1 "${tempOutputFile}"`);
       const wavBuffer = fs.readFileSync(tempOutputFile);
 
-      const provider = getSpeechProvider();
+      let detectedVoiceLang = null;
       if (process.env.SARVAM_API_KEY) {
-        const sttResult = await provider.transcribe(wavBuffer, userLang);
+        const sttResult = await provider.transcribe(wavBuffer, 'auto');
         processedText = sttResult.transcript || '';
+        detectedVoiceLang = sttResult.language;
       } else {
         twiml.message('We received your voice note. Please type your reply in text so our system can assist you immediately.');
         res.type('text/xml');
@@ -170,11 +172,12 @@ export const handleWhatsAppWebhook = async (req, res) => {
     return res.send(twiml.toString());
   }
 
-  // 3. Process turn with state machine
+  // 3. Process turn with state machine in detected language
+  const activeTurnLang = detectedVoiceLang || detectLanguageFromText(processedText).language || userLang;
   const sessionKey = `whatsapp_${from}`;
   const dialogueResult = await processConversationTurn({
     text: processedText,
-    lang: userLang,
+    lang: activeTurnLang,
     channel: 'whatsapp',
     userId: user._id,
     sessionKey
