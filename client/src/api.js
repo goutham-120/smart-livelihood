@@ -218,6 +218,16 @@ export const updateEnrollmentStatus = async (id, dataPayload) => {
   return res.data;
 };
 
+export const getAllEnrollmentApplications = async () => {
+  const res = await apiInstance.get('/enrollments/admin/all');
+  return res.data;
+};
+
+export const seedDemoApplications = async () => {
+  const res = await apiInstance.post('/enrollments/admin/seed');
+  return res.data;
+};
+
 /* Attach all helper methods onto apiInstance for object-style invocation compatibility */
 apiInstance.getProfile = getProfile;
 apiInstance.putProfile = putProfile;
@@ -269,6 +279,8 @@ apiInstance.getMyEnrollments = getMyEnrollments;
 apiInstance.getEnrollment = getEnrollment;
 apiInstance.submitEnrollmentAction = submitEnrollmentAction;
 apiInstance.updateEnrollmentStatus = updateEnrollmentStatus;
+apiInstance.getAllEnrollmentApplications = getAllEnrollmentApplications;
+apiInstance.seedDemoApplications = seedDemoApplications;
 
 export const api = apiInstance;
 export default apiInstance;

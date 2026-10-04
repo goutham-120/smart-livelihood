@@ -22,6 +22,7 @@ import Placements from './pages/admin/Placements.jsx';
 import Coordination from './pages/admin/Coordination.jsx';
 import PerspectivePlan from './pages/admin/PerspectivePlan.jsx';
 import Directory from './pages/admin/Directory.jsx';
+import Applications from './pages/admin/Applications.jsx';
 import Consent from './pages/Consent.jsx';
 
 // Authenticated Shell Component (Only renders Sidebar & Header for logged-in users)
@@ -218,8 +219,11 @@ export default function App() {
           <Route path="/kiosk" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Kiosk /></ProtectedRoute>} />
           <Route path="/channel-demo" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><ChannelDemo /></ProtectedRoute>} />
 
-          {/* Admin Command Routes */}
+          {/* Admin Command & Provider Routes */}
           <Route path="/admin/overview" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Overview /></ProtectedRoute>} />
+          <Route path="/admin/applications" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Applications /></ProtectedRoute>} />
+          <Route path="/provider" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Applications /></ProtectedRoute>} />
+          <Route path="/provider/applications" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Applications /></ProtectedRoute>} />
           <Route path="/admin/beneficiaries" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Beneficiaries /></ProtectedRoute>} />
           <Route path="/admin/placements" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Placements /></ProtectedRoute>} />
           <Route path="/admin/coordination" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Coordination /></ProtectedRoute>} />
