@@ -95,7 +95,8 @@ District: ${userContext.district || 'Warangal'}
 Family Background: ${userContext.familyOccupation || 'Not specified'}
 Current Work: ${userContext.currentLivelihood || 'Not specified'}
 Known Skills: ${(userContext.skills || []).join(', ') || 'None yet'}
-Preference: ${userContext.employmentPreference || 'Open'}
+RECENT CONVERSATION HISTORY:
+${userContext.historyContext || 'None (New Conversation)'}
 
 User Just Said: "${userMessage}"
 ${utteranceAnalysis.englishMeaning ? `Semantic Understanding / Interpretation: "${utteranceAnalysis.englishMeaning}"` : ''}

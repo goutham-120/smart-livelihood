@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '../api.js';
 import { useLang } from '../lang.js';
 import { VoiceInput, Card, Badge } from '../components.jsx';
-import { Sparkles, ArrowRight, CheckCircle } from 'lucide-react';
+import { Sparkles, Plus, History, MessageSquare, Clock, ChevronRight, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const GREETINGS = {
@@ -17,21 +17,36 @@ const ASSISTANT_CONTENT = {
     subtitle: 'Discuss your past work, trade skills, or livelihood goals in your language',
     bannerTitle: '2-Min Voice Assessment: Skills & Profile Identified!',
     bannerDesc: 'Your competencies have been extracted by AI. Verify your profile details to unlock your personalized Dashboard and livelihood pathways.',
-    samplePromptsLabel: 'Or choose a sample scenario to simulate conversation:'
+    samplePromptsLabel: 'Or choose a sample scenario to simulate conversation:',
+    newChatBtn: '+ New Chat',
+    historyTitle: 'Chat History',
+    noHistory: 'No past conversations yet',
+    activeChat: 'Active Chat',
+    newChatTitle: 'New Conversation'
   },
   hi: {
     title: 'सहानुभूतिपूर्ण एआई वॉयस असिस्टेंट',
     subtitle: 'अपने पिछले काम, कौशल या आजीविका लक्ष्यों पर अपनी भाषा में चर्चा करें',
     bannerTitle: '2-मिनट वॉइस मूल्यांकन: कौशल एवं प्रोफ़ाइल पहचानी गई!',
     bannerDesc: 'आपकी क्षमताएं एआई द्वारा पहचानी गई हैं। अपनी व्यक्तिगत आजीविका के अवसरों को अनलॉक करने के लिए विवरण सत्यापित करें।',
-    samplePromptsLabel: 'या बातचीत शुरू करने के लिए कोई उदाहरण चुनें:'
+    samplePromptsLabel: 'या बातचीत शुरू करने के लिए कोई उदाहरण चुनें:',
+    newChatBtn: '+ नई बातचीत',
+    historyTitle: 'बातचीत का इतिहास',
+    noHistory: 'कोई पुरानी बातचीत नहीं मिली',
+    activeChat: 'सक्रिय बातचीत',
+    newChatTitle: 'नई बातचीत'
   },
   te: {
     title: 'సానుభూతిపూర్వక AI వాయిస్ అసిస్టెంట్',
     subtitle: 'మీ గత పని, నైపుణ్యాలు లేదా జీవనోపాధి లక్ష్యాల గురించి మీ స్వంత భాషలో మాట్లాడండి',
     bannerTitle: '2 నిమిషాల వాయిస్ అసెస్‌మెంట్: నైపుణ్యాలు & ప్రొఫైల్ గుర్తించబడ్డాయి!',
     bannerDesc: 'మీ నైపుణ్యాలను AI గుర్తించింది. మీ వ్యక్తిగతీకరించిన డాష్‌బోర్డ్ మరియు ఉపాధి మార్గాలను అన్‌లాక్ చేయడానికి వివరాలను ధృవీకరించండి.',
-    samplePromptsLabel: 'లేదా సంభాషణ ప్రారంభించడానికి ఒక ఉదాహరణను ఎంచుకోండి:'
+    samplePromptsLabel: 'లేదా సంభాషణ ప్రారంభించడానికి ఒక ఉదాహరణను ఎంచుకోండి:',
+    newChatBtn: '+ కొత్త సంభాషణ',
+    historyTitle: 'గత సంభాషణలు',
+    noHistory: 'గత సంభాషణలేవీ లేవు',
+    activeChat: 'ప్రస్తుత సంభాషణ',
+    newChatTitle: 'కొత్త సంభాషణ'
   }
 };
 
@@ -46,7 +61,7 @@ const SAMPLE_PROMPTS = {
     { label: 'ट्रैक्टर एवं कृषि मशीनरी', text: 'मुझे ट्रैक्टर चलाने और कृषि उपकरणों की मरम्मत का काम आता है। मैं फार्म मशीनरी ऑपरेटर के रूप में काम करना चाहता हूँ।' },
     { label: 'सिलाई एवं स्वरोज़गार', text: 'मैंने 10वीं तक पढ़ाई की है। मुझे सिलाई मशीन और कपड़े सिलने का अच्छा अनुभव है। मैं घर से काम करके हर महीने 15000 कमाना चाहता हूँ।' },
     { label: 'जैविक खेती एवं वर्मीकम्पोस्ट', text: 'मुझे अपने गांव में जैविक खाद और वर्मीकम्पोस्ट बनाने का अनुभव है।' },
-    { label: 'इलेक्ट्रिकल एवं मोटर रिपेयर', text: 'मुझे घर की बिजली फिटिंग और इलेक्ट्रिक मोटर रिपेयर का काम आता है।' }
+    { label: 'इलेक्ट्रिकल एवं मोटर रिपेयर', text: 'मुझे घर की बिजली फिट फिटिंग और इलेक्ट्रिक मोटर रिपेयर का काम आता है।' }
   ],
   en: [
     { label: 'Tractor & Farm Machinery', text: 'I have experience in tractor driving and farm equipment maintenance. I want to earn good income as a farm machinery operator.' },
@@ -58,32 +73,34 @@ const SAMPLE_PROMPTS = {
 
 export const Assistant = ({ forUserId = null }) => {
   const { lang } = useLang();
+  
+  // Persistent Conversation State
+  const [conversationId, setConversationId] = useState(null);
+  const [conversations, setConversations] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
+  
   const [messages, setMessages] = useState(() => [
     {
       sender: 'ai',
       text: GREETINGS[lang] || GREETINGS.en
     }
   ]);
+  
   const [extractedSkills, setExtractedSkills] = useState([]);
   const [updatedProfile, setUpdatedProfile] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Sync greeting when user switches language from the sticky header
+  // Sync greeting ONLY when starting a brand-new conversation (no conversationId and 1 message)
   useEffect(() => {
     setMessages((prev) => {
-      if (prev.length === 0) {
+      if (!conversationId && prev.length === 1 && prev[0]?.sender === 'ai') {
         return [{ sender: 'ai', text: GREETINGS[lang] || GREETINGS.en }];
-      }
-      const isGreeting = (txt) => (
-        txt === GREETINGS.te || txt === GREETINGS.hi || txt === GREETINGS.en
-      );
-      if (prev[0]?.sender === 'ai' && isGreeting(prev[0].text)) {
-        return [{ sender: 'ai', text: GREETINGS[lang] || GREETINGS.en }, ...prev.slice(1)];
       }
       return prev;
     });
-  }, [lang]);
+  }, [lang, conversationId]);
 
+  // Load user profile
   useEffect(() => {
     api.getProfile(forUserId).then((res) => {
       if (res?.profile) {
@@ -93,13 +110,67 @@ export const Assistant = ({ forUserId = null }) => {
     }).catch(() => {});
   }, [forUserId]);
 
+  // Fetch conversation history list from backend
+  const fetchConversations = useCallback(async () => {
+    try {
+      const res = await api.getConversations(forUserId);
+      if (res?.conversations) {
+        setConversations(res.conversations);
+      }
+    } catch (err) {
+      console.error('Failed to load conversation history:', err);
+    }
+  }, [forUserId]);
+
+  useEffect(() => {
+    fetchConversations();
+  }, [fetchConversations]);
+
+  // Handle "+ New Chat" action
+  const handleNewChat = () => {
+    if (isProcessing) return;
+    setConversationId(null);
+    setMessages([{ sender: 'ai', text: GREETINGS[lang] || GREETINGS.en }]);
+    setShowHistory(false);
+    fetchConversations();
+  };
+
+  // Select and restore an existing conversation from history
+  const handleSelectConversation = async (id) => {
+    if (isProcessing || id === conversationId) return;
+    setIsProcessing(true);
+    try {
+      const res = await api.getConversation(id, forUserId);
+      if (res?.conversation) {
+        setConversationId(res.conversation._id);
+        const loaded = (res.conversation.messages || []).map((m) => ({
+          sender: m.sender,
+          text: m.text,
+          profileInsight: m.profileInsight
+        }));
+        setMessages(loaded.length > 0 ? loaded : [{ sender: 'ai', text: GREETINGS[lang] || GREETINGS.en }]);
+        setShowHistory(false);
+      }
+    } catch (err) {
+      console.error('Failed to load conversation:', err);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Send message (typed or spoken) using current conversationId
   const handleSendMessage = async (text) => {
+    if (!text || !text.trim()) return;
     const userMsg = { sender: 'user', text };
     setMessages((prev) => [...prev, userMsg]);
     setIsProcessing(true);
 
     try {
-      const res = await api.sendVoiceMessage(text, lang, 'web');
+      const res = await api.sendVoiceMessage(text, lang, 'web', conversationId, forUserId);
+      
+      if (res.conversationId && res.conversationId !== conversationId) {
+        setConversationId(res.conversationId);
+      }
       if (res.replyText) {
         setMessages((prev) => [...prev, { sender: 'ai', text: res.replyText }]);
       }
@@ -109,8 +180,21 @@ export const Assistant = ({ forUserId = null }) => {
       if (res.updatedProfile) {
         setUpdatedProfile((prev) => ({ ...prev, ...res.updatedProfile }));
       }
+      
+      // Update history list in background
+      fetchConversations();
     } catch (err) {
-      setMessages((prev) => [...prev, { sender: 'ai', text: 'Namaste! Thank you for sharing. We have recorded your information and are matching your profile.' }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: 'ai',
+          text: lang === 'te'
+            ? 'నమస్కారం! మీ సమాచారాన్ని రికార్డ్ చేశాము. మన సంభాషణను కొనసాగిద్దాం.'
+            : lang === 'hi'
+              ? 'नमस्ते! आपकी जानकारी दर्ज कर ली गई है। आइए अपनी बातचीत जारी रखें।'
+              : 'Namaste! We have recorded your information. Please continue your response.'
+        }
+      ]);
     } finally {
       setIsProcessing(false);
     }
@@ -119,12 +203,123 @@ export const Assistant = ({ forUserId = null }) => {
   const currentPrompts = SAMPLE_PROMPTS[lang] || SAMPLE_PROMPTS.en;
   const content = ASSISTANT_CONTENT[lang] || ASSISTANT_CONTENT.en;
 
+  const activeConvObj = conversations.find(c => c._id === conversationId);
+
   return (
     <div className="page-container">
-      <div style={{ marginBottom: '20px' }}>
-        <h2 style={{ fontSize: '22px', fontWeight: 800 }}>{content.title}</h2>
-        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{content.subtitle}</p>
+      {/* PAGE HEADER & CONTROLS */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
+        <div>
+          <h2 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>{content.title}</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: '2px 0 0 0' }}>{content.subtitle}</p>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button
+            type="button"
+            onClick={() => setShowHistory(!showHistory)}
+            className="btn btn-secondary"
+            style={{
+              fontSize: '13px',
+              fontWeight: 600,
+              padding: '8px 14px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: showHistory ? 'var(--primary-50, #fff7ed)' : undefined,
+              borderColor: showHistory ? 'var(--primary-600, #c2410c)' : undefined
+            }}
+          >
+            <History size={16} /> {content.historyTitle} ({conversations.length})
+          </button>
+
+          <button
+            type="button"
+            onClick={handleNewChat}
+            disabled={isProcessing}
+            className="btn btn-primary"
+            style={{
+              fontSize: '13px',
+              fontWeight: 700,
+              padding: '8px 16px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: 'var(--shadow-sm)'
+            }}
+          >
+            <Plus size={16} /> {content.newChatBtn}
+          </button>
+        </div>
       </div>
+
+      {/* CHAT HISTORY PANEL (EXPANDABLE) */}
+      {showHistory && (
+        <Card style={{ marginBottom: '20px', background: 'var(--surface-subtle)', borderColor: 'var(--border-light)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <History size={17} color="var(--primary-600)" /> {content.historyTitle}
+            </div>
+            <button
+              onClick={() => setShowHistory(false)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          {conversations.length === 0 ? (
+            <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontStyle: 'italic', padding: '12px 0' }}>
+              {content.noHistory}
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '10px' }}>
+              {conversations.map((c) => {
+                const isActive = c._id === conversationId;
+                const formattedDate = new Date(c.updatedAt || c.createdAt).toLocaleDateString(undefined, {
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                });
+
+                return (
+                  <button
+                    key={c._id}
+                    type="button"
+                    onClick={() => handleSelectConversation(c._id)}
+                    style={{
+                      textAlign: 'left',
+                      padding: '10px 14px',
+                      borderRadius: 'var(--radius-md)',
+                      background: isActive ? 'var(--primary-600)' : '#ffffff',
+                      color: isActive ? '#ffffff' : 'var(--text-main)',
+                      border: isActive ? '1px solid var(--primary-600)' : '1px solid var(--border-light)',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      boxShadow: 'var(--shadow-sm)'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                      <span style={{ fontWeight: 700, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '180px' }}>
+                        {c.title || 'Conversation'}
+                      </span>
+                      <span style={{ fontSize: '10.5px', opacity: isActive ? 0.9 : 0.6 }}>
+                        {formattedDate}
+                      </span>
+                    </div>
+                    {c.preview && (
+                      <div style={{ fontSize: '12px', opacity: isActive ? 0.9 : 0.75, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {c.preview}
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </Card>
+      )}
 
       {/* 2-Min Conversation Status & Identified Profile Banner */}
       {(extractedSkills.length > 0 || updatedProfile) && (
@@ -173,7 +368,24 @@ export const Assistant = ({ forUserId = null }) => {
         </Card>
       )}
 
+      {/* CHAT MESSAGES WINDOW */}
       <Card style={{ minHeight: '340px', display: 'flex', flexDirection: 'column' }}>
+        {/* ACTIVE CONVERSATION BADGE HEADER */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '10px', marginBottom: '12px', borderBottom: '1px solid var(--border-light)' }}>
+          <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <MessageSquare size={14} color="var(--primary-600)" />
+            {conversationId ? (
+              <span>{content.activeChat}: <strong>{activeConvObj?.title || 'Active Session'}</strong></span>
+            ) : (
+              <span>{content.newChatTitle}</span>
+            )}
+          </div>
+
+          <div style={{ fontSize: '11.5px', color: 'var(--text-subtle)' }}>
+            {messages.length} {messages.length === 1 ? 'message' : 'messages'}
+          </div>
+        </div>
+
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '14px', overflowY: 'auto', marginBottom: '20px', maxHeight: '420px', paddingRight: '4px' }}>
           {messages.map((m, idx) => (
             <div
