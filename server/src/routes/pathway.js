@@ -22,7 +22,12 @@ router.get('/skill-gaps/:occupationKey', optionalAuth, async (req, res) => {
       return res.status(404).json({ error: 'Occupation not found' });
     }
 
-    return res.json(result);
+    return res.json({
+      ...result,
+      userProfile: profile
+        ? { name: req.user?.name, district, skills: userSkills, education: profile.education, employmentPreference: profile.employmentPreference }
+        : { district, skills: [] }
+    });
   } catch (err) {
     return res.status(500).json({ error: 'Failed to analyze skill gaps' });
   }

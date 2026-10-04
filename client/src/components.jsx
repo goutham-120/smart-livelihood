@@ -168,8 +168,10 @@ export const VoiceInput = ({ onSend, isProcessing, voiceState = 'IDLE', errorMes
   const isListeningRef = useRef(false);
 
   useEffect(() => {
-    setCurrentState(voiceState);
-  }, [voiceState]);
+    if (!isProcessing) {
+      setCurrentState(voiceState || 'IDLE');
+    }
+  }, [isProcessing, voiceState]);
 
   useEffect(() => {
     setLocalError(errorMessage);
@@ -286,7 +288,6 @@ export const VoiceInput = ({ onSend, isProcessing, voiceState = 'IDLE', errorMes
         });
       }
 
-
       const sttResult = await api.speechToText({
         audioBase64,
         mimeType,
@@ -331,9 +332,10 @@ export const VoiceInput = ({ onSend, isProcessing, voiceState = 'IDLE', errorMes
   const handleSubmit = (e) => {
     e.preventDefault();
     if (text.trim()) {
-      setCurrentState('THINKING');
-      onSend(text.trim(), detectedLang?.code || lang);
+      const msgText = text.trim();
       setText('');
+      setCurrentState('THINKING');
+      onSend(msgText, detectedLang?.code || lang, detectedLang);
     }
   };
 

@@ -78,8 +78,28 @@ export const postMessage = async (dataPayload) => {
   return res.data;
 };
 
-export const sendVoiceMessage = async (text, lang = 'te', channel = 'web') => {
-  const res = await apiInstance.post('/assistant/message', { text, lang, channel });
+export const sendVoiceMessage = async (text, lang = 'te', channel = 'web', conversationId = null, forUserId = null) => {
+  const res = await apiInstance.post('/assistant/message', { text, lang, channel, conversationId, forUserId });
+  return res.data;
+};
+
+export const getConversations = async (forUserId = null) => {
+  const res = await apiInstance.get('/assistant/conversations', forUserId ? { params: { forUserId } } : {});
+  return res.data;
+};
+
+export const getConversation = async (id, forUserId = null) => {
+  const res = await apiInstance.get(`/assistant/conversations/${id}`, forUserId ? { params: { forUserId } } : {});
+  return res.data;
+};
+
+export const createConversation = async (lang = 'te', forUserId = null) => {
+  const res = await apiInstance.post('/assistant/conversations', { lang, forUserId });
+  return res.data;
+};
+
+export const confirmProfileInsight = async (dataPayload) => {
+  const res = await apiInstance.post('/assistant/confirm-insight', dataPayload);
   return res.data;
 };
 
