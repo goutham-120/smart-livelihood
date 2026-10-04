@@ -379,34 +379,11 @@ export const AppHeader = ({ user, onLogout, toggleSidebar, sidebarOpen }) => {
   const location = useLocation();
   const { lang } = useLang();
 
-  const getPageTitle = (path) => {
-    const titles = PAGE_TITLES[lang] || PAGE_TITLES.en;
-    if (path.includes('assistant')) return titles.assistant;
-    if (path.includes('opportunities')) return titles.opportunities;
-    if (path.includes('skill-gaps')) return titles['skill-gaps'];
-    if (path.includes('training')) return titles.training;
-    if (path.includes('roadmap')) return titles.roadmap;
-    if (path.includes('what-if')) return titles['what-if'];
-    if (path.includes('self-employment')) return titles['self-employment'];
-    if (path.includes('progress')) return titles.progress;
-    if (path.includes('profile')) return titles.profile;
-    if (path.includes('kiosk')) return titles.kiosk;
-    if (path.includes('channel-demo')) return titles['channel-demo'];
-    if (path.includes('admin/applications') || path.includes('provider')) return titles['admin/applications'];
-    if (path.includes('admin/overview')) return titles['admin/overview'];
-    if (path.includes('admin/beneficiaries')) return titles['admin/beneficiaries'];
-    if (path.includes('admin/placements')) return titles['admin/placements'];
-    if (path.includes('admin/coordination')) return titles['admin/coordination'];
-    if (path.includes('admin/plan')) return titles['admin/plan'];
-    if (path.includes('admin/directory')) return titles['admin/directory'];
-    return titles.default;
-  };
-
   const isProviderView = location.pathname.startsWith('/admin') || location.pathname.startsWith('/provider');
 
   return (
     <header className="app-header">
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
         <button
           type="button"
           className="btn btn-ghost"
@@ -417,7 +394,9 @@ export const AppHeader = ({ user, onLogout, toggleSidebar, sidebarOpen }) => {
         >
           <Menu size={20} />
         </button>
-        <h1 className="app-header-title">{getPageTitle(location.pathname)}</h1>
+        <Link to="/dashboard" style={{ textDecoration: 'none', color: 'inherit', display: 'inline-flex', alignItems: 'center' }}>
+          <h1 className="app-header-title" style={{ margin: 0, cursor: 'pointer' }}>JeevanPath AI</h1>
+        </Link>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0 }}>
