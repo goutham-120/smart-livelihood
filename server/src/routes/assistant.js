@@ -210,7 +210,6 @@ router.post('/confirm-insight', authenticate, async (req, res) => {
   }
 });
 
-<<<<<<< HEAD
 /**
  * Core conversation turn processor
  */
@@ -368,7 +367,6 @@ const handleDialogueTurn = async (req, res) => {
     if (edu && edu !== profile.education) {
       profile.education = edu;
       profileUpdated = true;
-    }
     }
 
     // Merge Mobility Constraints safely
