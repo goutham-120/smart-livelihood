@@ -22,6 +22,7 @@ import pathwayRoutes from './routes/pathway.js';
 import channelsRoutes from './routes/channels.js';
 import plansRoutes from './routes/plans.js';
 import analyticsRoutes from './routes/analytics.js';
+import enrollmentsRoutes from './routes/enrollments.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -99,15 +100,19 @@ app.use('/api/self-employment', opportunitiesRoutes);
 app.use('/api/pathway', pathwayRoutes);
 app.use('/api/channels', channelsRoutes);
 app.use('/api/plans', plansRoutes);
+app.use('/api/enrollments', enrollmentsRoutes);
 
 // Safe Error Handler
 app.use(errorHandler);
+
+import { syncCatalogData } from './services/catalogSync.js';
 
 // Database connection and startup
 export const connectDB = async () => {
   try {
     await mongoose.connect(MONGO_URI);
     console.log(`Connected to MongoDB: ${MONGO_URI.includes('@') ? 'MongoDB Atlas' : MONGO_URI}`);
+    await syncCatalogData();
   } catch (err) {
     console.error('MongoDB connection error:', err.message);
   }

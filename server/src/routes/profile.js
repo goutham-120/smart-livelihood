@@ -4,6 +4,8 @@ import { User } from '../models/User.js';
 import { authenticate } from '../middleware/auth.js';
 import { sanitizeString, sanitizeNumber, sanitizeArray } from '../middleware/security.js';
 import { logAudit } from '../middleware/audit.js';
+import { inferLivelihoodFromSkills, resolveSkillToCanonicalKey, getSkillsList } from '../services/extract.js';
+
 
 const router = express.Router();
 
@@ -82,6 +84,35 @@ router.get(['/', '/me'], authenticate, async (req, res) => {
       });
     }
 
+    const allSkills = await getSkillsList();
+    const validKeySet = new Set(allSkills.map((s) => s.key));
+
+    // Strip legacy corrupt entries (e.g. 'd', 'ho', 'sma')
+    const cleanedSkills = (profile.skills || [])
+      .map((s) => resolveSkillToCanonicalKey(s, allSkills))
+      .filter((s) => s && validKeySet.has(s));
+
+    if (cleanedSkills.length !== (profile.skills || []).length) {
+      profile.skills = cleanedSkills;
+      await profile.save();
+    }
+
+    if ((!profile.currentLivelihood || !profile.familyOccupation) && profile.skills && profile.skills.length > 0) {
+      const inferred = inferLivelihoodFromSkills(profile.skills);
+      let changed = false;
+      if (inferred.currentLivelihood && (!profile.currentLivelihood || profile.currentLivelihood.trim() === '')) {
+        profile.currentLivelihood = inferred.currentLivelihood;
+        changed = true;
+      }
+      if (inferred.familyOccupation && (!profile.familyOccupation || profile.familyOccupation.trim() === '')) {
+        profile.familyOccupation = inferred.familyOccupation;
+        changed = true;
+      }
+      if (changed) {
+        await profile.save();
+      }
+    }
+
     return res.json({ profile });
   } catch (err) {
     return res.status(500).json({ error: 'Unable to retrieve user profile' });
@@ -137,10 +168,24 @@ router.put('/', authenticate, async (req, res) => {
       }
     }
     if (req.body.skills !== undefined) {
-      updates.skills = sanitizeArray(req.body.skills);
+      const allSkills = await getSkillsList();
+      const validKeySet = new Set(allSkills.map((s) => s.key));
+      const rawList = Array.isArray(req.body.skills)
+        ? req.body.skills
+        : String(req.body.skills).split(',').map((s) => s.trim()).filter(Boolean);
+
+      updates.skills = Array.from(new Set(
+        rawList
+          .map((s) => resolveSkillToCanonicalKey(s, allSkills))
+          .filter((s) => s && validKeySet.has(s))
+      ));
     }
     if (req.body.education !== undefined) updates.education = sanitizeString(req.body.education, 50);
     if (req.body.experienceYears !== undefined) updates.experienceYears = sanitizeNumber(req.body.experienceYears, 0);
+    if (req.body.voiceCompleted !== undefined) {
+      updates.voiceCompleted = Boolean(req.body.voiceCompleted);
+      if (updates.voiceCompleted) updates.voiceCompletedAt = new Date();
+    }
 
     const calculated = calculateRiskScore(updates);
     updates.riskScore = calculated.riskScore;

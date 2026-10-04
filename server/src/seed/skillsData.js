@@ -188,7 +188,17 @@ export const skillsData = [
     key: 'tractor_farm_machinery',
     name: 'Tractor and Farm Machinery Operation',
     names: { en: 'Tractor and Farm Machinery Operation', hi: 'ट्रैक्टर और कृषि यंत्र संचालन', te: 'ట్రాక్టర్ వ్యవసాయ యంత్రాల నిర్వహణ' },
-    aliases: ['tractor ploughing cultivator', 'harvester farm equipment maintenance', 'rotavator field operation'],
+    aliases: [
+      'tractor ploughing cultivator',
+      'harvester farm equipment maintenance',
+      'rotavator field operation',
+      'tractor farm machinery',
+      'farm machinery repair',
+      'tractor repair mechanic',
+      'farm equipment repair',
+      'agricultural machinery operator',
+      'tractor operation'
+    ],
     level: 3,
     sector: 'Agriculture',
     prerequisites: []

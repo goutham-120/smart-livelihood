@@ -1,7 +1,12 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { SarvamAIClient } from 'sarvamai';
 import { Skill } from '../models/Skill.js';
+<<<<<<< HEAD
 import { skillsData } from '../seed/skillsData.js';
+=======
+import { resolveSkillToCanonicalKey } from './extract.js';
+
+>>>>>>> kushal
 
 let geminiClient = null;
 let sarvamClient = null;
@@ -104,7 +109,17 @@ You MUST return your output strictly in this JSON format with no additional text
   "replyText": "Warm spoken reply text in ${langConfig.name} native script answering the user's ACTUAL question",
   "extractedSkills": ["skill_key_1"],
   "identifiedPreference": "self" | "wage" | "either" | null,
+<<<<<<< HEAD
   "followUpQuestion": "A short guiding question in ${langConfig.name} if relevant"
+=======
+  "familyOccupation": "e.g. Agriculture / Weaving / Carpentry / Business / Daily wage or null",
+  "currentLivelihood": "e.g. Farm machinery repair / Tailoring / Electrical work / Daily labour or null",
+  "education": "Secondary (10th)" | "Higher Secondary (12th)" | "Middle (8th)" | "Primary (5th)" | "Diploma / ITI" | "Graduate" | "Below Primary" | null,
+  "experienceYears": 3,
+  "incomeGoal": 18000,
+  "mobilityConstraints": ["Within Village Only" | "Within Block" | "Within District"] | null,
+  "followUpQuestion": "A short guiding question to discover more about what they enjoy doing"
+>>>>>>> kushal
 }
 `;
 
@@ -116,14 +131,29 @@ You MUST return your output strictly in this JSON format with no additional text
       const text = result.response.text();
       const parsed = parseJsonSafely(text);
       if (parsed && parsed.replyText) {
+<<<<<<< HEAD
         // Sanitize and whitelist skill keys
         const filteredSkills = (parsed.extractedSkills || []).filter((sk) => validSkillKeys.has(sk.toLowerCase()));
         console.log('Final assistant language:', langConfig.speechCode);
         console.log('TTS language:', langConfig.speechCode);
+=======
+        // Sanitize and whitelist skill keys via canonical resolver
+        const filteredSkills = Array.from(new Set(
+          (parsed.extractedSkills || [])
+            .map((sk) => resolveSkillToCanonicalKey(sk, allSkills))
+            .filter(Boolean)
+        ));
+>>>>>>> kushal
         return {
           replyText: parsed.replyText,
           extractedSkills: filteredSkills,
           identifiedPreference: ['self', 'wage', 'either'].includes(parsed.identifiedPreference) ? parsed.identifiedPreference : null,
+          familyOccupation: parsed.familyOccupation || null,
+          currentLivelihood: parsed.currentLivelihood || null,
+          education: parsed.education || null,
+          experienceYears: typeof parsed.experienceYears === 'number' ? parsed.experienceYears : null,
+          incomeGoal: typeof parsed.incomeGoal === 'number' ? parsed.incomeGoal : null,
+          mobilityConstraints: Array.isArray(parsed.mobilityConstraints) ? parsed.mobilityConstraints : null,
           followUpQuestion: parsed.followUpQuestion || null
         };
       }
@@ -140,7 +170,11 @@ You MUST return your output strictly in this JSON format with no additional text
         messages: [
           {
             role: 'system',
+<<<<<<< HEAD
             content: `You are an empathetic Indian livelihood skilling counselor. Output strictly valid JSON with replyText in ${langConfig.name} answering the user's actual question.`
+=======
+            content: 'You are an empathetic Indian livelihood skilling counselor. Output strictly valid JSON with replyText, extractedSkills, familyOccupation, currentLivelihood, education, experienceYears, incomeGoal.'
+>>>>>>> kushal
           },
           {
             role: 'user',
@@ -152,13 +186,27 @@ You MUST return your output strictly in this JSON format with no additional text
       const text = completion.choices?.[0]?.message?.content || '';
       const parsed = parseJsonSafely(text);
       if (parsed && parsed.replyText) {
+<<<<<<< HEAD
         const filteredSkills = (parsed.extractedSkills || []).filter((sk) => validSkillKeys.has(sk.toLowerCase()));
         console.log('Final assistant language:', langConfig.speechCode);
         console.log('TTS language:', langConfig.speechCode);
+=======
+        const filteredSkills = Array.from(new Set(
+          (parsed.extractedSkills || [])
+            .map((sk) => resolveSkillToCanonicalKey(sk, allSkills))
+            .filter(Boolean)
+        ));
+>>>>>>> kushal
         return {
           replyText: parsed.replyText,
           extractedSkills: filteredSkills,
           identifiedPreference: ['self', 'wage', 'either'].includes(parsed.identifiedPreference) ? parsed.identifiedPreference : null,
+          familyOccupation: parsed.familyOccupation || null,
+          currentLivelihood: parsed.currentLivelihood || null,
+          education: parsed.education || null,
+          experienceYears: typeof parsed.experienceYears === 'number' ? parsed.experienceYears : null,
+          incomeGoal: typeof parsed.incomeGoal === 'number' ? parsed.incomeGoal : null,
+          mobilityConstraints: Array.isArray(parsed.mobilityConstraints) ? parsed.mobilityConstraints : null,
           followUpQuestion: parsed.followUpQuestion || null
         };
       }
@@ -378,6 +426,12 @@ You MUST return your output strictly in this JSON format with no additional text
     replyText: fallbackReply,
     extractedSkills: [],
     identifiedPreference: null,
-    followUpQuestion: followUp
+    familyOccupation: null,
+    currentLivelihood: null,
+    education: null,
+    experienceYears: null,
+    incomeGoal: null,
+    mobilityConstraints: null,
+    followUpQuestion: followUp || 'Would you prefer to start your own micro business or take up a wage employment job?'
   };
 };

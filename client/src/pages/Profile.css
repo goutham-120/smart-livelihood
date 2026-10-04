@@ -10,3 +10,19 @@
 @media (max-width: 600px) {
   .profile-section-grid { grid-template-columns: 1fr; }
 }
+
+/* Profile inputs locked state styling */
+.page-container input:disabled,
+.page-container select:disabled {
+  background-color: #f7f3ea !important;
+  color: #4F3728 !important;
+  border-color: #e5ded2 !important;
+  cursor: not-allowed;
+  opacity: 0.9;
+}
+
+.page-container input:disabled:hover,
+.page-container select:disabled:hover {
+  border-color: #e5ded2 !important;
+}
+

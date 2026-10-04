@@ -52,11 +52,7 @@ export function Login({ onLoginSuccess, initialTab = 'email', initialMode = 'aut
     if (auth?.setUser) auth.setUser(user);
     if (onLoginSuccess) onLoginSuccess(token, user);
     toast(t('login.welcomeUser', 'Welcome, {{name}}!', { name: user.name }), 'success');
-    if (user.role === 'admin' || user.role === 'officer') {
-      navigate('/dashboard');
-    } else {
-      navigate('/assistant');
-    }
+    navigate('/dashboard');
   };
 
   const handleEmailLogin = async (e) => {
