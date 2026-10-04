@@ -1,23 +1,23 @@
 /* Login.css: Styling for Public Start / Landing / Login Page
-   Civic-Tech Aesthetic: Deep Navy, Ocean Blue, Teal Accent, Light Blue-Gray */
+   Civic-Tech PM-AJAY Warm Palette: Deep Brown (#4F3728), Saffron (#CA6603), Cream (#F5F1EB), Off-White (#FEFCF6) */
 
 .start-page-root {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: var(--surface-ground);
-  color: var(--text-main);
+  background-color: #F9F5EC;
+  color: #4F3728;
   font-family: var(--font-sans);
 }
 
 /* PUBLIC HEADER */
 .start-header {
-  background: var(--surface-card);
-  border-bottom: 1px solid var(--border-light);
+  background: #F5F1EB;
+  border-bottom: 1px solid #E1D7C8;
   position: sticky;
   top: 0;
   z-index: 40;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 3px rgba(79, 55, 40, 0.05);
 }
 
 .start-header-inner {
@@ -44,13 +44,13 @@
 .start-brand-title {
   font-size: 16px;
   font-weight: 800;
-  color: var(--primary-900);
+  color: #4F3728;
   line-height: 1.2;
 }
 
 .start-brand-sub {
   font-size: 12px;
-  color: var(--text-muted);
+  color: #6b5240;
   font-weight: 500;
 }
 
@@ -67,17 +67,17 @@
   padding: 8px 12px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--text-main);
+  color: #4F3728;
   background: transparent;
-  border: 1px solid var(--border-light);
+  border: 1px solid #E1D7C8;
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .start-help-btn:hover {
-  background: var(--surface-ground);
-  border-color: var(--border-dark);
+  background: #EEE7D9;
+  border-color: #CA6603;
 }
 
 /* HERO & AUTH CONTAINER */
@@ -105,7 +105,7 @@
 .login-bg-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(30, 58, 138, 0.75) 50%, rgba(15, 23, 42, 0.90) 100%);
+  background: linear-gradient(135deg, rgba(79, 55, 40, 0.75) 0%, rgba(60, 40, 28, 0.65) 50%, rgba(79, 55, 40, 0.80) 100%);
   z-index: 1;
 }
 
@@ -132,11 +132,11 @@
   align-items: center;
   gap: 8px;
   padding: 6px 14px;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(254, 252, 246, 0.15);
   backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(245, 241, 235, 0.25);
   border-radius: 9999px;
-  color: #e2e8f0;
+  color: #FEFCF6;
   font-size: 13px;
   font-weight: 600;
   margin-bottom: 24px;
@@ -147,7 +147,7 @@
   font-size: 2.75rem;
   font-weight: 800;
   line-height: 1.15;
-  color: #ffffff;
+  color: #FEFCF6;
   margin-bottom: 20px;
   letter-spacing: -0.02em;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
@@ -156,7 +156,7 @@
 .start-hero-subtitle {
   font-size: 1.125rem;
   line-height: 1.6;
-  color: #cbd5e1;
+  color: #F5F1EB;
   margin-bottom: 32px;
 }
 
@@ -170,36 +170,36 @@
   display: flex;
   align-items: flex-start;
   gap: 14px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(79, 55, 40, 0.28);
   backdrop-filter: blur(6px);
   padding: 14px 18px;
   border-radius: var(--radius-md);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(245, 241, 235, 0.25);
 }
 
 .start-feature-icon-box {
   width: 36px;
   height: 36px;
   border-radius: 8px;
-  background: rgba(59, 130, 246, 0.2);
-  border: 1px solid rgba(96, 165, 250, 0.3);
+  background: rgba(254, 252, 246, 0.15);
+  border: 1px solid rgba(245, 241, 235, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #93c5fd;
+  color: #CA6603;
   flex-shrink: 0;
 }
 
 .start-feature-title {
   font-size: 14px;
   font-weight: 700;
-  color: #ffffff;
+  color: #FEFCF6;
   margin-bottom: 2px;
 }
 
 .start-feature-desc {
   font-size: 12px;
-  color: #94a3b8;
+  color: #E1D7C8;
   line-height: 1.4;
 }
 
@@ -214,7 +214,7 @@
   border: 1px solid #E1D7C8;
   border-radius: var(--radius-lg);
   padding: 32px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 12px 32px rgba(79, 55, 40, 0.18);
   color: #4F3728;
 }
 
@@ -225,13 +225,13 @@
 .auth-card-title {
   font-size: 1.4rem;
   font-weight: 800;
-  color: var(--primary-900);
+  color: #4F3728;
   margin-bottom: 4px;
 }
 
 .auth-card-sub {
   font-size: 13px;
-  color: var(--text-muted);
+  color: #6b5240;
   line-height: 1.4;
 }
 
@@ -250,7 +250,7 @@
 .label {
   font-size: 13px;
   font-weight: 600;
-  color: var(--text-main);
+  color: #4F3728;
 }
 
 .label-row {
@@ -268,7 +268,7 @@
 .input-icon {
   position: absolute;
   left: 12px;
-  color: var(--text-muted);
+  color: #6b5240;
   pointer-events: none;
 }
 
@@ -280,23 +280,23 @@
   width: 100%;
   padding: 10px 14px;
   font-size: 14px;
-  background: #ffffff;
-  border: 1.5px solid #d1d5db;
+  background: #FEFCF6;
+  border: 1.5px solid #E1D7C8;
   border-radius: var(--radius-md);
-  color: var(--text-main);
+  color: #4F3728;
   outline: none;
   transition: all 0.2s ease;
   box-sizing: border-box;
 }
 
 .input:focus {
-  border-color: var(--primary-500);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  border-color: #CA6603;
+  box-shadow: 0 0 0 3px rgba(202, 102, 3, 0.15);
 }
 
 .tab-group {
   display: flex;
-  background: #e5e7eb;
+  background: #EEE7D9;
   padding: 4px;
   border-radius: var(--radius-md);
   gap: 4px;
@@ -311,28 +311,28 @@
   background: transparent;
   border: none;
   border-radius: 6px;
-  color: var(--text-muted);
+  color: #6b5240;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .tab.active {
-  background: #ffffff;
-  color: var(--primary-900);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: #FEFCF6;
+  color: #4F3728;
+  box-shadow: 0 1px 3px rgba(79, 55, 40, 0.1);
 }
 
 .auth-card-footer {
   margin-top: 20px;
   text-align: center;
   font-size: 13px;
-  color: var(--text-muted);
+  color: #6b5240;
 }
 
 .btn-link {
   background: none;
   border: none;
-  color: var(--primary-600);
+  color: #CA6603;
   cursor: pointer;
   padding: 0;
   font-size: inherit;
@@ -341,12 +341,13 @@
 
 .btn-link:hover {
   text-decoration: underline;
+  color: #4F3728;
 }
 
 /* CORE CAPABILITIES SECTION */
 .start-capabilities-section {
-  background: var(--surface-card);
-  border-top: 1px solid var(--border-light);
+  background: #F5F1EB;
+  border-top: 1px solid #E1D7C8;
   padding: 64px 24px;
 }
 
@@ -364,13 +365,13 @@
 .capabilities-title {
   font-size: 2rem;
   font-weight: 800;
-  color: var(--primary-900);
+  color: #4F3728;
   margin-bottom: 12px;
 }
 
 .capabilities-subtitle {
   font-size: 1rem;
-  color: var(--text-muted);
+  color: #6b5240;
   line-height: 1.6;
 }
 
@@ -381,8 +382,8 @@
 }
 
 .capability-card {
-  background: var(--surface-ground);
-  border: 1px solid var(--border-light);
+  background: #FEFCF6;
+  border: 1px solid #E1D7C8;
   border-radius: var(--radius-lg);
   padding: 24px;
   transition: all 0.25s ease;
@@ -392,8 +393,8 @@
 
 .capability-card:hover {
   transform: translateY(-4px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--primary-500);
+  box-shadow: 0 6px 16px rgba(79, 55, 40, 0.08);
+  border-color: #CA6603;
 }
 
 .capability-icon-box {
@@ -406,42 +407,42 @@
   margin-bottom: 16px;
 }
 
-.bg-blue-light {
-  background: var(--primary-100);
+.bg-warm-saffron {
+  background: rgba(202, 102, 3, 0.12);
 }
 
-.bg-teal-light {
-  background: var(--secondary-100);
+.bg-warm-cream {
+  background: #EEE7D9;
 }
 
-.text-blue {
-  color: var(--primary-600);
+.text-saffron {
+  color: #CA6603;
 }
 
-.text-teal {
-  color: var(--secondary-600);
+.text-brown {
+  color: #4F3728;
 }
 
 .capability-card-title {
   font-size: 16px;
   font-weight: 700;
-  color: var(--primary-900);
+  color: #4F3728;
   margin-bottom: 8px;
 }
 
 .capability-card-desc {
   font-size: 13px;
-  color: var(--text-muted);
+  color: #6b5240;
   line-height: 1.5;
 }
 
 /* PUBLIC FOOTER */
 .start-footer {
-  background: var(--primary-900);
-  color: #94a3b8;
+  background: #4F3728;
+  color: #E1D7C8;
   padding: 24px;
   font-size: 13px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(245, 241, 235, 0.2);
 }
 
 .start-footer-inner {
@@ -455,12 +456,12 @@
 }
 
 .footer-brand {
-  color: #ffffff;
+  color: #FEFCF6;
 }
 
 .footer-tagline {
   font-size: 12px;
-  color: #64748b;
+  color: #E1D7C8;
 }
 
 /* RESPONSIVE DESIGN */
