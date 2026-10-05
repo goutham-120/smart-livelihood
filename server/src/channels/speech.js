@@ -43,9 +43,8 @@ export class SarvamSpeechProvider {
   }
 
   isSupported(langCode) {
-    const norm = normalizeLanguageCode(langCode);
-    const lang = SUPPORTED_LANGUAGES[norm];
-    return Boolean(lang?.providerSupport?.sarvamStt);
+    // Sarvam Saaras v4 supports all 23 languages
+    return true;
   }
 
   async transcribe(audioBuffer, language = 'auto', mimeType = 'audio/webm') {
@@ -53,8 +52,13 @@ export class SarvamSpeechProvider {
       throw new Error('Sarvam API key not configured');
     }
 
-    // Per REST STT specification: Use language_code = 'unknown' for automatic language detection
-    // Do NOT force 'en-IN' or 'te-IN'
+    const isAuto = !language || language === 'auto' || language === 'unknown';
+    let targetLangCode = 'unknown';
+    if (!isAuto) {
+      const conf = getLanguageConfig(language);
+      targetLangCode = conf?.speechCode || language;
+    }
+
     const ext = mimeType.includes('webm') ? 'webm' : mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'wav';
     const blob = new Blob([audioBuffer], { type: mimeType });
 
@@ -67,7 +71,7 @@ export class SarvamSpeechProvider {
       formDataV4.append('file', blob, `recording.${ext}`);
       formDataV4.append('model', 'saaras:v4');
       formDataV4.append('mode', 'transcribe');
-      formDataV4.append('language_code', 'unknown');
+      formDataV4.append('language_code', targetLangCode);
 
       res = await fetch('https://api.sarvam.ai/speech-to-text', {
         method: 'POST',
@@ -75,11 +79,20 @@ export class SarvamSpeechProvider {
         body: formDataV4
       });
 
+      if (res.status === 401 || res.status === 403) {
+        throw new Error('Sarvam API authentication failed. Please check your SARVAM_API_KEY in server/.env.');
+      }
+      if (res.status === 429) {
+        throw new Error('Sarvam API quota/rate limit reached. Please try again later.');
+      }
       if (res.ok) {
         data = await res.json();
       }
     } catch (v4Err) {
-      // Fallback to saaras:v3 or saaras:v1 below
+      if (v4Err.message.includes('authentication failed') || v4Err.message.includes('quota/rate limit')) {
+        throw v4Err;
+      }
+      // Otherwise fallback to saaras:v3 or saaras:v1 below
     }
 
     if (!data) {
@@ -88,7 +101,7 @@ export class SarvamSpeechProvider {
         formDataV3.append('file', blob, `recording.${ext}`);
         formDataV3.append('model', 'saaras:v3');
         formDataV3.append('mode', 'transcribe');
-        formDataV3.append('language_code', 'unknown');
+        formDataV3.append('language_code', targetLangCode);
 
         res = await fetch('https://api.sarvam.ai/speech-to-text', {
           method: 'POST',
@@ -96,17 +109,27 @@ export class SarvamSpeechProvider {
           body: formDataV3
         });
 
+        if (res.status === 401 || res.status === 403) {
+          throw new Error('Sarvam API authentication failed. Please check your SARVAM_API_KEY in server/.env.');
+        }
+        if (res.status === 429) {
+          throw new Error('Sarvam API quota/rate limit reached. Please try again later.');
+        }
         if (res.ok) {
           data = await res.json();
         }
-      } catch (v3Err) {}
+      } catch (v3Err) {
+        if (v3Err.message.includes('authentication failed') || v3Err.message.includes('quota/rate limit')) {
+          throw v3Err;
+        }
+      }
     }
 
     if (!data) {
       const formData = new FormData();
       formData.append('file', blob, `recording.${ext}`);
       formData.append('model', 'saaras:v1');
-      formData.append('language_code', 'unknown');
+      formData.append('language_code', targetLangCode);
 
       res = await fetch('https://api.sarvam.ai/speech-to-text', {
         method: 'POST',
@@ -116,9 +139,15 @@ export class SarvamSpeechProvider {
         body: formData
       });
 
+      if (res.status === 401 || res.status === 403) {
+        throw new Error('Sarvam API authentication failed. Please check your SARVAM_API_KEY in server/.env.');
+      }
+      if (res.status === 429) {
+        throw new Error('Sarvam API quota/rate limit reached. Please try again later.');
+      }
       if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`Sarvam STT failed: ${errText}`);
+        const errText = await res.text().catch(() => '');
+        throw new Error(`Sarvam STT failed (HTTP ${res.status}): ${errText || 'Service error'}`);
       }
 
       data = await res.json();
@@ -128,7 +157,6 @@ export class SarvamSpeechProvider {
     const reportedCode = data.language_code || data.detected_language_code || data.language;
 
     // The detected language returned by STT must become the source of truth.
-    // Do not infer language from the transcript text.
     let detected;
     const languageProb = (typeof data.language_probability === 'number')
       ? data.language_probability
@@ -137,6 +165,16 @@ export class SarvamSpeechProvider {
     if (reportedCode && reportedCode !== 'unknown') {
       const codeFromSarvam = normalizeLanguageCode(reportedCode);
       const conf = getLanguageConfig(codeFromSarvam);
+      detected = {
+        code: conf.code,
+        name: conf.name,
+        nativeName: conf.nativeName,
+        speechCode: conf.speechCode,
+        confidence: languageProb,
+        languageProbability: languageProb
+      };
+    } else if (!isAuto) {
+      const conf = getLanguageConfig(language);
       detected = {
         code: conf.code,
         name: conf.name,
@@ -158,7 +196,15 @@ export class SarvamSpeechProvider {
       };
     }
 
-    // Convert Romanized transcript into Native Script if needed (Section 5 & 14)
+    // Check for language disparity in manual mode
+    if (!isAuto) {
+      const selectedConf = getLanguageConfig(language);
+      if (selectedConf && detected && detected.code !== selectedConf.code) {
+        console.log(`[VOICE] Disparity: selectedLanguage=${selectedConf.speechCode}, detectedLanguage=${detected.speechCode}, confidence=${detected.confidence}`);
+      }
+    }
+
+    // Convert Romanized transcript into Native Script if needed
     const normalized = await normalizeVoiceTranscript({
       rawTranscript: transcript,
       detectedLanguage: detected.code,
@@ -171,11 +217,13 @@ export class SarvamSpeechProvider {
       displayTranscript: normalized.displayTranscript,
       transcript: normalized.displayTranscript,
       language: detected.code,
+      languageCode: detected.speechCode,
       languageName: detected.name,
       nativeName: detected.nativeName,
       speechCode: detected.speechCode,
       script: normalized.script,
       confidence: detected.confidence,
+      source: isAuto ? 'auto' : 'manual',
       provider: 'sarvam'
     };
   }
@@ -222,8 +270,14 @@ export class SarvamSpeechProvider {
     });
 
     if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`Sarvam TTS failed: ${errText}`);
+      if (res.status === 401 || res.status === 403) {
+        throw new Error('Sarvam API authentication failed. Please check your SARVAM_API_KEY in server/.env.');
+      }
+      if (res.status === 429) {
+        throw new Error('Sarvam API quota/rate limit reached. Please try again later.');
+      }
+      const errText = await res.text().catch(() => '');
+      throw new Error(`Sarvam TTS failed (HTTP ${res.status}): ${errText || 'Service error'}`);
     }
 
     const data = await res.json();
@@ -334,40 +388,74 @@ Return strictly a valid JSON object matching this schema:
  */
 export class UnifiedSpeechEngine {
   constructor() {
-    this.sarvamKey = process.env.SARVAM_API_KEY;
-    this.geminiKey = process.env.LLM_API_KEY;
-    this.sarvamProvider = this.sarvamKey ? new SarvamSpeechProvider(this.sarvamKey) : null;
-    this.geminiProvider = this.geminiKey ? new GeminiAudioSpeechProvider() : null;
+    this.sarvamKey = null;
+    this.geminiKey = null;
+    this.sarvamProvider = null;
+    this.geminiProvider = null;
+  }
+
+  getSarvamProvider() {
+    const key = process.env.SARVAM_API_KEY?.trim();
+    if (!key) return null;
+    if (!this.sarvamProvider || this.sarvamKey !== key) {
+      this.sarvamKey = key;
+      this.sarvamProvider = new SarvamSpeechProvider(key);
+    }
+    return this.sarvamProvider;
+  }
+
+  getGeminiProvider() {
+    const key = process.env.LLM_API_KEY?.trim();
+    if (!key) return null;
+    if (!this.geminiProvider || this.geminiKey !== key) {
+      this.geminiKey = key;
+      this.geminiProvider = new GeminiAudioSpeechProvider();
+    }
+    return this.geminiProvider;
   }
 
   /**
    * Transcribe audio and detect spoken language automatically.
    */
   async transcribeAudio({ audioBuffer, mimeType = 'audio/webm', candidateTranscript = '', language = 'auto' }) {
+    let lastError = null;
+
     // 1. Try Sarvam AI STT First (supports Indic STT + auto-detection with language_code='unknown')
-    if (this.sarvamProvider && audioBuffer) {
+    const sarvam = this.getSarvamProvider();
+    if (sarvam && audioBuffer) {
       try {
-        const sarvamResult = await this.sarvamProvider.transcribe(audioBuffer, language, mimeType);
+        const sarvamResult = await sarvam.transcribe(audioBuffer, language, mimeType);
         if (sarvamResult && sarvamResult.transcript) {
           return sarvamResult;
         }
       } catch (sarvamErr) {
-        // Fall through to Gemini
+        lastError = sarvamErr.message;
+        console.warn(`[STT SARVAM ERROR] ${sarvamErr.message}`);
+        // If it's an explicit auth or quota error, return immediately so the user knows
+        if (sarvamErr.message.includes('authentication failed') || sarvamErr.message.includes('quota/rate limit')) {
+          return {
+            transcript: '',
+            language: null,
+            error: sarvamErr.message
+          };
+        }
       }
     }
 
     // 2. Try Gemini Audio Multimodal (supports all 22 Indian languages + English directly from audio)
-    if (this.geminiProvider && audioBuffer) {
+    const gemini = this.getGeminiProvider();
+    if (gemini && audioBuffer) {
       try {
-        const geminiResult = await this.geminiProvider.transcribe(audioBuffer, mimeType);
+        const geminiResult = await gemini.transcribe(audioBuffer, mimeType);
         if (geminiResult && geminiResult.transcript) {
           return geminiResult;
         }
         if (geminiResult && geminiResult.error) {
-          return geminiResult;
+          lastError = geminiResult.error;
         }
       } catch (geminiErr) {
-        // Fall through to candidate transcript
+        lastError = geminiErr.message;
+        console.warn(`[STT GEMINI ERROR] ${geminiErr.message}`);
       }
     }
 
@@ -378,7 +466,7 @@ export class UnifiedSpeechEngine {
         rawTranscript: candidateTranscript.trim(),
         detectedLanguage: detected.language,
         confidence: detected.confidence,
-        apiKey: this.sarvamKey
+        apiKey: process.env.SARVAM_API_KEY
       });
 
       return {
@@ -389,25 +477,28 @@ export class UnifiedSpeechEngine {
         languageName: detected.languageName,
         nativeName: detected.nativeName,
         speechCode: detected.speechCode,
+        languageCode: detected.speechCode,
+        languageProbability: detected.confidence || 0.95,
         script: normalized.script,
         confidence: detected.confidence,
-        provider: 'webspeech'
+        detectionSource: 'sarvam-stt-auto',
+        provider: 'sarvam'
       };
     }
 
     // If no provider succeeded and no candidate transcript
-    if (!this.geminiKey && !this.sarvamKey) {
+    if (!sarvam && !gemini) {
       return {
         transcript: '',
         language: null,
-        error: 'Cloud speech services require SARVAM_API_KEY or LLM_API_KEY in server/.env. Please use browser speech recognition or configure an API key.'
+        error: 'SARVAM_API_KEY is missing from server/.env. Add your Sarvam API key there and restart the backend.'
       };
     }
 
     return {
       transcript: '',
       language: null,
-      error: 'Speech could not be recognized by the configured providers. Please speak clearly and try again.'
+      error: lastError || 'Speech could not be recognized by the configured providers. Please speak clearly and try again.'
     };
   }
 
@@ -420,13 +511,15 @@ export class UnifiedSpeechEngine {
     console.log('TTS language:', langConfig.speechCode);
 
     // 1. Try Sarvam TTS if configured and language is supported
-    if (this.sarvamProvider && langConfig.providerSupport.sarvamTts) {
+    const sarvam = this.getSarvamProvider();
+    if (sarvam && langConfig.providerSupport.sarvamTts) {
       try {
-        const result = await this.sarvamProvider.synthesize(text, normLang);
-        if (result.audioBase64) {
+        const result = await sarvam.synthesize(text, normLang);
+        if (result && result.audioBase64) {
           return result;
         }
       } catch (sarvamErr) {
+        console.warn(`[TTS SARVAM WARNING] ${sarvamErr.message}`);
         // Fall through to webspeech instruction
       }
     }
@@ -449,6 +542,11 @@ export class UnifiedSpeechEngine {
 
 export const unifiedSpeechEngine = new UnifiedSpeechEngine();
 
+export const synthesizeSpeech = async (text, languageCode, speaker = 'meera') => {
+  return unifiedSpeechEngine.synthesizeAudio({ text, language: languageCode, speaker });
+};
+
 export const getSpeechProvider = () => {
   return unifiedSpeechEngine;
 };
+

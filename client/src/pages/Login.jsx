@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Mic, Target, BookOpen, Compass, ShieldCheck, HelpCircle,
-  User, Lock, Mail, Phone, X
+  User, Lock, Mail, Phone, X, AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../AuthContext.jsx';
 import { useToast } from '../ToastContext.jsx';
@@ -24,6 +24,7 @@ export function Login({ onLoginSuccess, initialTab = 'email', initialMode = 'aut
   const [tab, setTab] = useState(initialTab);   // 'email' | 'phone'
   const [loading, setLoading] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
+  const [formError, setFormError] = useState('');
 
   // Email form state
   const [identifier, setIdentifier] = useState('');
@@ -44,11 +45,13 @@ export function Login({ onLoginSuccess, initialTab = 'email', initialMode = 'aut
   useEffect(() => {
     setTab(initialTab);
     setMode(initialMode);
+    setFormError('');
   }, [initialTab, initialMode]);
 
   const completeLogin = (token, user) => {
     localStorage.setItem('pmajay_token', token);
     localStorage.setItem('pmajay_user', JSON.stringify(user));
+    if (auth?.login) auth.login(token, user);
     if (auth?.setUser) auth.setUser(user);
     if (onLoginSuccess) onLoginSuccess(token, user);
     toast(t('login.welcomeUser', 'Welcome, {{name}}!', { name: user.name }), 'success');
@@ -57,13 +60,19 @@ export function Login({ onLoginSuccess, initialTab = 'email', initialMode = 'aut
 
   const handleEmailLogin = async (e) => {
     e.preventDefault();
-    if (!identifier || !password) return;
+    setFormError('');
+    if (!identifier || !password) {
+      setFormError('Please enter your email/phone and password.');
+      return;
+    }
     setLoading(true);
     try {
-      const res = await authLogin({ identifier, password });
+      const res = await authLogin({ identifier: identifier.trim(), password });
       completeLogin(res.data.token, res.data.user);
     } catch (err) {
-      toast(err.response?.data?.error || t('login.invalidCreds', 'Incorrect email/phone or password.'), 'error');
+      const msg = err.response?.data?.error || t('login.invalidCreds', 'Incorrect email/phone or password.');
+      setFormError(msg);
+      toast(msg, 'error');
     } finally {
       setLoading(false);
     }
@@ -71,14 +80,20 @@ export function Login({ onLoginSuccess, initialTab = 'email', initialMode = 'aut
 
   const handleOtpSend = async (e) => {
     e.preventDefault();
-    if (!phone) return;
+    setFormError('');
+    if (!phone) {
+      setFormError('Please enter your 10-digit mobile number.');
+      return;
+    }
     setLoading(true);
     try {
-      await authOtpSend(phone);
+      await authOtpSend(phone.trim());
       setOtpSent(true);
-      toast(t('login.otpSentMsg', 'OTP sent to mobile phone.'), 'info');
+      toast(t('login.otpSentMsg', 'OTP sent to mobile phone (Demo mode: 123456).'), 'info');
     } catch (err) {
-      toast(err.response?.data?.error || t('login.otpFailMsg', 'Failed to send OTP. Please check mobile number.'), 'error');
+      const msg = err.response?.data?.error || t('login.otpFailMsg', 'Failed to send OTP. Please check mobile number.');
+      setFormError(msg);
+      toast(msg, 'error');
     } finally {
       setLoading(false);
     }
@@ -86,13 +101,19 @@ export function Login({ onLoginSuccess, initialTab = 'email', initialMode = 'aut
 
   const handleOtpVerify = async (e) => {
     e.preventDefault();
-    if (!otp) return;
+    setFormError('');
+    if (!otp) {
+      setFormError('Please enter the 6-digit OTP.');
+      return;
+    }
     setLoading(true);
     try {
-      const res = await authOtpVerify({ phone, otp });
+      const res = await authOtpVerify({ phone: phone.trim(), otp: otp.trim() });
       completeLogin(res.data.token, res.data.user);
     } catch (err) {
-      toast(err.response?.data?.error || t('login.invalidOtpMsg', 'Invalid 6-digit OTP. Please try again.'), 'error');
+      const msg = err.response?.data?.error || t('login.invalidOtpMsg', 'Invalid 6-digit OTP. Please try again.');
+      setFormError(msg);
+      toast(msg, 'error');
     } finally {
       setLoading(false);
     }
@@ -100,22 +121,41 @@ export function Login({ onLoginSuccess, initialTab = 'email', initialMode = 'aut
 
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
-    if (!regName || (!regEmail && !regPhone) || !regPassword) {
-      toast(t('login.fillRequired', 'Please fill in required details'), 'error');
+    setFormError('');
+    const cleanName = regName.trim();
+    const cleanEmail = regEmail.trim();
+    const cleanPhone = regPhone.trim();
+
+    if (!cleanName) {
+      setFormError('Please enter your Full Name.');
+      toast('Please enter your Full Name.', 'error');
       return;
     }
+    if (!cleanEmail && !cleanPhone) {
+      setFormError('Please enter either an Email Address or Mobile Phone Number.');
+      toast('Please enter either an Email Address or Mobile Phone Number.', 'error');
+      return;
+    }
+    if (!regPassword) {
+      setFormError('Please enter a Password.');
+      toast('Please enter a Password.', 'error');
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await authRegister({
-        name: regName,
-        email: regEmail,
-        phone: regPhone,
+        name: cleanName,
+        email: cleanEmail || undefined,
+        phone: cleanPhone || undefined,
         password: regPassword,
         district: regDistrict,
       });
       completeLogin(res.data.token, res.data.user);
     } catch (err) {
-      toast(err.response?.data?.error || t('login.regFailMsg', 'Registration failed. Email or phone may already exist.'), 'error');
+      const msg = err.response?.data?.error || t('login.regFailMsg', 'Registration failed. Email or phone may already exist.');
+      setFormError(msg);
+      toast(msg, 'error');
     } finally {
       setLoading(false);
     }
@@ -231,6 +271,25 @@ export function Login({ onLoginSuccess, initialTab = 'email', initialMode = 'aut
                     : t('login.welcomeSub', 'Sign in to access your livelihood dashboard or voice assistant')}
                 </p>
               </div>
+
+              {formError && (
+                <div style={{
+                  background: '#fef2f2',
+                  border: '1px solid #fca5a5',
+                  color: '#991b1b',
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  marginBottom: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontWeight: 500
+                }}>
+                  <AlertCircle size={16} style={{ flexShrink: 0 }} />
+                  <span>{formError}</span>
+                </div>
+              )}
 
               {/* AUTH MODE */}
               {mode === 'auth' && (

@@ -48,7 +48,9 @@ router.post('/speech-to-text', optionalAuth, async (req, res) => {
     const rawAudio = req.body.audio;
     const mimeType = sanitizeString(req.body.mimeType, 50) || 'audio/webm';
     const candidateTranscript = sanitizeString(req.body.transcript, 2000) || '';
-    const languageHint = sanitizeString(req.body.language || req.body.lang, 20) || 'auto';
+    // Always default to 'unknown' for true speech language auto-detection
+    const rawHint = sanitizeString(req.body.language || req.body.lang, 20);
+    const languageHint = (!rawHint || rawHint === 'auto') ? 'unknown' : rawHint;
 
     if (!rawAudio && !candidateTranscript) {
       return res.status(400).json({
@@ -62,8 +64,6 @@ router.post('/speech-to-text', optionalAuth, async (req, res) => {
       audioBuffer = Buffer.from(cleanBase64, 'base64');
     }
 
-    console.log(`\n[VOICE]\nAudio received`);
-
     const sttResult = await unifiedSpeechEngine.transcribeAudio({
       audioBuffer,
       mimeType,
@@ -76,25 +76,56 @@ router.post('/speech-to-text', optionalAuth, async (req, res) => {
       return res.status(400).json({ error: sttResult.error });
     }
 
-    const rawTranscript = sttResult.rawTranscript || sttResult.transcript || '';
-    const displayTranscript = sttResult.displayTranscript || sttResult.transcript || '';
-    const detectedSpeechCode = sttResult.speechCode || (sttResult.language ? `${sttResult.language}-IN` : 'en-IN');
-    const detectedScript = sttResult.script || 'Deva';
-    const langConfidence = sttResult.confidence || 0.98;
+    const transcript = sttResult.transcript || sttResult.displayTranscript || '';
+    const normLang = normalizeLanguageCode(sttResult.languageCode || sttResult.speechCode || sttResult.language);
+    const langConfig = getLanguageConfig(normLang);
+    const languageProbability = typeof sttResult.languageProbability === 'number'
+      ? sttResult.languageProbability
+      : (typeof sttResult.confidence === 'number' ? sttResult.confidence : 0.95);
 
-    console.log(`\n[STT]\nTranscript: ${rawTranscript}\n\n[STT]\nDetected language: ${detectedSpeechCode}\n\n[STT]\nLanguage confidence: ${langConfidence}\n\n[STT]\nDetected script: ${detectedScript}\n\n[NORMALIZATION]\nOriginal transcript: ${rawTranscript}\n\n[DISPLAY TRANSCRIPT]\n${displayTranscript}`);
+    // Section 11: Single Authoritative Language Object
+    const authoritativeLanguage = {
+      transcript,
+      languageCode: langConfig.speechCode, // e.g. "te-IN"
+      languageProbability,
+      languageName: langConfig.name,       // e.g. "Telugu"
+      nativeName: langConfig.nativeName,   // e.g. "తెలుగు"
+      detectionSource: sttResult.detectionSource || 'sarvam-stt-auto'
+    };
+
+    // Section 20: Low confidence handling
+    if (languageProbability < 0.35) {
+      return res.status(422).json({
+        error: 'Speech confidence is low. Please speak clearly into your microphone and try again.',
+        languageProbability
+      });
+    }
+
+    // Section 21: Required Debug Logging format
+    console.log(`\n[VOICE AUTO DETECT]`);
+    console.log(`audio received: ${Boolean(audioBuffer)}`);
+    console.log(`stt model: saaras:v4`);
+    console.log(`stt language request: unknown`);
+    console.log(`transcript: ${authoritativeLanguage.transcript}`);
+    console.log(`detected language: ${authoritativeLanguage.languageCode}`);
+    console.log(`language probability: ${authoritativeLanguage.languageProbability}`);
+    console.log(`response language: ${authoritativeLanguage.languageCode}`);
+    console.log(`tts language: ${authoritativeLanguage.languageCode}\n`);
 
     return res.json({
-      rawTranscript,
-      displayTranscript,
-      transcript: displayTranscript,
-      language: sttResult.language,
-      languageName: sttResult.languageName,
-      nativeName: sttResult.nativeName,
-      speechCode: detectedSpeechCode,
-      script: detectedScript,
-      confidence: sttResult.confidence,
-      provider: sttResult.provider
+      rawTranscript: sttResult.rawTranscript || transcript,
+      displayTranscript: transcript,
+      transcript: transcript,
+      language: normLang,
+      languageCode: authoritativeLanguage.languageCode,
+      languageProbability: authoritativeLanguage.languageProbability,
+      languageName: authoritativeLanguage.languageName,
+      nativeName: authoritativeLanguage.nativeName,
+      speechCode: authoritativeLanguage.languageCode,
+      script: sttResult.script || langConfig.script || 'Deva',
+      confidence: languageProbability,
+      detectionSource: authoritativeLanguage.detectionSource,
+      provider: sttResult.provider || 'sarvam'
     });
   } catch (err) {
     return res.status(500).json({
@@ -229,7 +260,7 @@ router.post('/confirm-insight', authenticate, async (req, res) => {
  */
 const handleDialogueTurn = async (req, res) => {
   const text = sanitizeString(req.body.message || req.body.text, 1500);
-  const rawLang = sanitizeString(req.body.language || req.body.lang, 20);
+  const rawLang = sanitizeString(req.body.language || req.body.lang || req.body.speechCode || req.body.languageCode, 30);
   const channel = sanitizeString(req.body.channel, 20) || 'web';
   const phone = sanitizeString(req.body.phone, 20) || '9876543210';
   const conversationId = req.body.conversationId;
@@ -238,13 +269,13 @@ const handleDialogueTurn = async (req, res) => {
     return res.status(400).json({ error: 'Message text is required' });
   }
 
-  // Automatic language identification from text if language not explicitly provided, marked auto, or misclassified as en
+  // Automatic language identification:
+  // If the request comes from voice STT (e.g. 'te-IN' or 'te'), use it directly.
+  // If rawLang is 'auto' or 'unknown' or empty, detect the language automatically from text.
   let langCode = rawLang;
-  if (!langCode || langCode === 'auto' || normalizeLanguageCode(langCode) === 'en') {
+  if (!langCode || langCode === 'auto' || langCode === 'unknown') {
     const detected = detectLanguageFromText(text);
-    if (detected.language !== 'en' || !langCode || langCode === 'auto') {
-      langCode = detected.language;
-    }
+    langCode = detected.speechCode || detected.language;
   }
   const normLang = normalizeLanguageCode(langCode);
   const langConfig = getLanguageConfig(normLang);
@@ -500,6 +531,9 @@ const handleDialogueTurn = async (req, res) => {
     languageName: langConfig.name,
     nativeName: langConfig.nativeName,
     speechCode: langConfig.speechCode,
+    languageCode: langConfig.speechCode,
+    responseLanguage: langConfig.speechCode,
+    ttsLanguage: langConfig.speechCode,
     extractedSkills: profile ? profile.skills : aiResult.extractedSkills || [],
     followUpQuestion: aiResult.followUpQuestion,
     updatedProfile: profile ? {

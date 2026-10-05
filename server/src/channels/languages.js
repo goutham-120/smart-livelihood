@@ -14,6 +14,32 @@ export const SCHEDULED_LANGUAGES_LIST = [
   'Sindhi', 'Tamil', 'Telugu', 'Urdu'
 ];
 
+export const SCHEDULED_23_LANGUAGES = [
+  { code: 'en', name: 'English', nativeName: 'English', speechCode: 'en-IN', script: 'Latin' },
+  { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी', speechCode: 'hi-IN', script: 'Devanagari' },
+  { code: 'bn', name: 'Bengali', nativeName: 'বাংলা', speechCode: 'bn-IN', script: 'Bengali' },
+  { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்', speechCode: 'ta-IN', script: 'Tamil' },
+  { code: 'te', name: 'Telugu', nativeName: 'తెలుగు', speechCode: 'te-IN', script: 'Telugu' },
+  { code: 'gu', name: 'Gujarati', nativeName: 'ગુજરાતી', speechCode: 'gu-IN', script: 'Gujarati' },
+  { code: 'kn', name: 'Kannada', nativeName: 'ಕನ್ನಡ', speechCode: 'kn-IN', script: 'Kannada' },
+  { code: 'ml', name: 'Malayalam', nativeName: 'മലയാളം', speechCode: 'ml-IN', script: 'Malayalam' },
+  { code: 'mr', name: 'Marathi', nativeName: 'मराठी', speechCode: 'mr-IN', script: 'Devanagari' },
+  { code: 'pa', name: 'Punjabi', nativeName: 'ਪੰਜਾਬੀ', speechCode: 'pa-IN', script: 'Gurmukhi' },
+  { code: 'od', name: 'Odia', nativeName: 'ଓଡ଼ିଆ', speechCode: 'od-IN', script: 'Odia' },
+  { code: 'as', name: 'Assamese', nativeName: 'অসমীয়া', speechCode: 'as-IN', script: 'Bengali-Assamese' },
+  { code: 'ur', name: 'Urdu', nativeName: 'اُردُو', speechCode: 'ur-IN', script: 'Perso-Arabic' },
+  { code: 'ne', name: 'Nepali', nativeName: 'नेपाली', speechCode: 'ne-IN', script: 'Devanagari' },
+  { code: 'kok', name: 'Konkani', nativeName: 'कोंकणी', speechCode: 'kok-IN', script: 'Devanagari' },
+  { code: 'ks', name: 'Kashmiri', nativeName: 'कॉशुर', speechCode: 'ks-IN', script: 'Perso-Arabic' },
+  { code: 'sd', name: 'Sindhi', nativeName: 'سنڌي', speechCode: 'sd-IN', script: 'Perso-Arabic' },
+  { code: 'sa', name: 'Sanskrit', nativeName: 'संस्कृतम्', speechCode: 'sa-IN', script: 'Devanagari' },
+  { code: 'sat', name: 'Santali', nativeName: 'ᱥᱟᱱᱛᱟᱲᱤ', speechCode: 'sat-IN', script: 'Ol Chiki' },
+  { code: 'mni', name: 'Manipuri', nativeName: 'মৈতৈলোন্', speechCode: 'mni-IN', script: 'Bengali' },
+  { code: 'brx', name: 'Bodo', nativeName: 'बड़ो', speechCode: 'brx-IN', script: 'Devanagari' },
+  { code: 'mai', name: 'Maithili', nativeName: 'मैथिली', speechCode: 'mai-IN', script: 'Devanagari' },
+  { code: 'doi', name: 'Dogri', nativeName: 'डोगरी', speechCode: 'doi-IN', script: 'Devanagari' }
+];
+
 export const SUPPORTED_LANGUAGES = {
   te: {
     code: 'te',
@@ -252,7 +278,7 @@ export const SUPPORTED_LANGUAGES = {
     script: 'Perso-Arabic',
     unicodeRange: /[\u0600-\u06FF]/,
     providerSupport: {
-      sarvamStt: false,
+      sarvamStt: true,
       sarvamTts: false,
       bhashiniStt: true,
       bhashiniTts: true,
@@ -270,7 +296,7 @@ export const SUPPORTED_LANGUAGES = {
     script: 'Bengali-Assamese',
     unicodeRange: /[\u0980-\u09FF]/,
     providerSupport: {
-      sarvamStt: false,
+      sarvamStt: true,
       sarvamTts: false,
       bhashiniStt: true,
       bhashiniTts: true,
@@ -288,7 +314,7 @@ export const SUPPORTED_LANGUAGES = {
     script: 'Devanagari',
     unicodeRange: /[\u0900-\u097F]/,
     providerSupport: {
-      sarvamStt: false,
+      sarvamStt: true,
       sarvamTts: false,
       bhashiniStt: true,
       bhashiniTts: true,
@@ -306,7 +332,7 @@ export const SUPPORTED_LANGUAGES = {
     script: 'Devanagari',
     unicodeRange: /[\u0900-\u097F]/,
     providerSupport: {
-      sarvamStt: false,
+      sarvamStt: true,
       sarvamTts: false,
       bhashiniStt: true,
       bhashiniTts: false,
@@ -324,7 +350,7 @@ export const SUPPORTED_LANGUAGES = {
     script: 'Devanagari',
     unicodeRange: /[\u0900-\u097F]/,
     providerSupport: {
-      sarvamStt: false,
+      sarvamStt: true,
       sarvamTts: false,
       bhashiniStt: true,
       bhashiniTts: false,
@@ -342,7 +368,7 @@ export const SUPPORTED_LANGUAGES = {
     script: 'Devanagari',
     unicodeRange: /[\u0900-\u097F]/,
     providerSupport: {
-      sarvamStt: false,
+      sarvamStt: true,
       sarvamTts: false,
       bhashiniStt: true,
       bhashiniTts: false,
@@ -360,7 +386,7 @@ export const SUPPORTED_LANGUAGES = {
     script: 'Perso-Arabic / Devanagari',
     unicodeRange: /[\u0600-\u06FF\u0900-\u097F]/,
     providerSupport: {
-      sarvamStt: false,
+      sarvamStt: true,
       sarvamTts: false,
       bhashiniStt: false,
       bhashiniTts: false,
@@ -378,7 +404,7 @@ export const SUPPORTED_LANGUAGES = {
     script: 'Devanagari',
     unicodeRange: /[\u0900-\u097F]/,
     providerSupport: {
-      sarvamStt: false,
+      sarvamStt: true,
       sarvamTts: false,
       bhashiniStt: false,
       bhashiniTts: false,
@@ -396,7 +422,7 @@ export const SUPPORTED_LANGUAGES = {
     script: 'Devanagari',
     unicodeRange: /[\u0900-\u097F]/,
     providerSupport: {
-      sarvamStt: false,
+      sarvamStt: true,
       sarvamTts: false,
       bhashiniStt: false,
       bhashiniTts: false,
@@ -414,7 +440,7 @@ export const SUPPORTED_LANGUAGES = {
     script: 'Bengali / Meetei Mayek',
     unicodeRange: /[\u0980-\u09FF\uABC0-\uABFF]/,
     providerSupport: {
-      sarvamStt: false,
+      sarvamStt: true,
       sarvamTts: false,
       bhashiniStt: false,
       bhashiniTts: false,
@@ -432,7 +458,7 @@ export const SUPPORTED_LANGUAGES = {
     script: 'Ol Chiki',
     unicodeRange: /[\u1C50-\u1C7F]/,
     providerSupport: {
-      sarvamStt: false,
+      sarvamStt: true,
       sarvamTts: false,
       bhashiniStt: false,
       bhashiniTts: false,
@@ -450,7 +476,7 @@ export const SUPPORTED_LANGUAGES = {
     script: 'Perso-Arabic',
     unicodeRange: /[\u0600-\u06FF]/,
     providerSupport: {
-      sarvamStt: false,
+      sarvamStt: true,
       sarvamTts: false,
       bhashiniStt: false,
       bhashiniTts: false,
@@ -498,8 +524,8 @@ export const getLanguageConfig = (code) => {
  */
 const LEXICAL_PATTERNS = {
   mr: /(?:^|[^\p{L}\p{M}])(आहे|आहेत|आहात|कसे|कसा|कशी|नाही|नाहीत|करा|करावे|करतो|करते|मला|तुला|आणि|येते|शिकायचे|पाहिजे|होय|नमस्कार|काय|झाले|करायचे|हवे|हवा|शिका|व्यवसाय|कर्ज)(?:$|[^\p{L}\p{M}])|\u0933/iu, // ळ is unique to Marathi in Devanagari
-  ne: /(?:^|[^\p{L}\p{M}])(छ|छैन|छन्|गर्छु|गर्न|हुन्छ|भयो|मलाई|हामी|काम|सिक्न|चाहन्छु|चाहिन्छ|तालिम)(?:$|[^\p{L}\p{M}])/iu,
-  sa: /(?:^|[^\p{L}\p{M}])(अस्ति|भवति|अस्मि|भवन्ति|कार्यम्|करोमि|नमो|कुशलम्|कथम्|इच्छामि|अहं|सूचीकर्म|प्रशिक्षणम्|वाञ्छामि)(?:$|[^\p{L}\p{M}])/iu,
+  ne: /(?:^|[^\p{L}\p{M}])(छ|छैन|छन्|गर्छु|गर्न|हुन्छ|भयो|मलाई|हामी|सिक्न|चाहन्छु|चाहिन्छ|तालिम|जागिर)(?:$|[^\p{L}\p{M}])/iu,
+  sa: /(?:^|[^\p{L}\p{M}])(अस्ति|भवति|अस्मि|भवन्ति|कार्यम्|करोमि|नमो|कुशलम्|कथम्|इच्छामि|अहं|सूचीकर्म|प्रशिक्षणम्|वाञ्छामि|मह्यम्|अध्यापकस्य|उद्योगः|आवश्यकः|वर्तते)(?:$|[^\p{L}\p{M}])/iu,
   mai: /(?:^|[^\p{L}\p{M}])(अछि|छैन|हम|हमर|हमरा|कऽ|करब|छी|अहाँ|कोनो|चाही|प्रशिक्षण)(?:$|[^\p{L}\p{M}])/iu,
   kok: /(?:^|[^\p{L}\p{M}])(आसा|म्हणून|म्हाका|तुका|करपाक|जाय)(?:$|[^\p{L}\p{M}])/iu,
   doi: /(?:^|[^\p{L}\p{M}])(ऐ|न|कम्म|करना|आखी|गल्ल|चाहिदी|दी)(?:$|[^\p{L}\p{M}])/iu,
@@ -512,7 +538,7 @@ const LEXICAL_PATTERNS = {
   bn: /(?:^|[^\p{L}\p{M}])(আমি|আছে|করতে|বলুন|শিখতে|কাজ|চাই|নমস্কার|ধন্যবাদ|ভালো|দর্জির|দর্জি|প্রশিক্ষণ|প্রকল্প)(?:$|[^\p{L}\p{M}])/iu,
 
   // Urdu vs Sindhi/Kashmiri
-  ks: /(?:^|[^\p{L}\p{M}])(چھُ|میٚے|پَہیجے|ہیکہٕ|تُہندِ|کۄرسَن)(?:$|[^\p{L}\p{M}])/iu,
+  ks: /(?:^|[^\p{L}\p{M}])(چھُ|میٚے|میٚہ|پَہیجے|ہیکہٕ|تُہندِ|کۄرسَن|پَزان|نۄکری|چھِ|مُعَلِم)(?:$|[^\p{L}\p{M}])/iu,
   sd: /(?:^|[^\p{L}\p{M}])(آهيان|آهي|گهرجي|ڪورس|اوھان|ٿو|ٿي)(?:$|[^\p{L}\p{M}])/iu,
   ur: /(?:^|[^\p{L}\p{M}])(ہے|ہیں|مجھے|کام|کرنا|سیکھنا|سلام|آپ|چاہتا|چاہتی|شکریہ|درزی|تربیت|اسکیم)(?:$|[^\p{L}\p{M}])/iu
 };

@@ -403,7 +403,7 @@ export const AppHeader = ({ user, onLogout, toggleSidebar, sidebarOpen }) => {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0 }}>
-        <LanguageSwitcher />
+        {!location.pathname.includes('assistant') && <LanguageSwitcher />}
 
         {user ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -441,9 +441,15 @@ export const VoiceInput = ({ onSend, isProcessing, voiceState = 'IDLE', errorMes
       return;
     }
 
+    const LANG_SPEECH_CODES = {
+      te: 'te-IN', hi: 'hi-IN', en: 'en-IN', bn: 'bn-IN', ta: 'ta-IN',
+      gu: 'gu-IN', kn: 'kn-IN', ml: 'ml-IN', mr: 'mr-IN', pa: 'pa-IN',
+      od: 'od-IN', as: 'as-IN', ur: 'ur-IN', ne: 'ne-IN', kok: 'kok-IN',
+      ks: 'ks-IN', sd: 'sd-IN', sa: 'sa-IN', sat: 'sat-IN', mni: 'mni-IN',
+      brx: 'brx-IN', mai: 'mai-IN', doi: 'doi-IN'
+    };
     const rec = new SpeechRecognition();
-    const langMap = { te: 'te-IN', hi: 'hi-IN', en: 'en-IN' };
-    rec.lang = langMap[lang] || 'te-IN';
+    rec.lang = LANG_SPEECH_CODES[lang] || 'en-IN';
     rec.onstart = () => setCurrentState('LISTENING');
     rec.onend = () => {
       if (currentState === 'LISTENING') setCurrentState('IDLE');
@@ -469,13 +475,7 @@ export const VoiceInput = ({ onSend, isProcessing, voiceState = 'IDLE', errorMes
 
   const getStateText = () => {
     if (isProcessing || currentState === 'PROCESSING') return 'Understanding your response...';
-    if (currentState === 'LISTENING') {
-      return lang === 'te'
-        ? 'తెలుగులో వింటున్నాను... మాట్లాడండి'
-        : lang === 'hi'
-          ? 'हिंदी में सुन रहे हैं... बोलिए'
-          : 'Listening in English... please speak';
-    }
+    if (currentState === 'LISTENING') return 'Listening… please speak now';
     if (currentState === 'SPEAKING') return 'Assistant speaking response...';
     if (currentState === 'ERROR' || errorMessage) return errorMessage || 'Could not recognize audio. Try again or type below.';
     return 'Tap mic to speak or type message below';
@@ -519,7 +519,7 @@ export const VoiceInput = ({ onSend, isProcessing, voiceState = 'IDLE', errorMes
               ? 'మీ నైపుణ్యాలు, గత పని అనుభవం లేదా నేర్చుకోవాలనుకుంటున్న పనుల గురించి రాయండి...'
               : lang === 'hi'
                 ? 'अपने कौशल, पुराने काम या भविष्य के लक्ष्य यहाँ लिखें...'
-                : 'Describe your skills, past work, education, or work goals...'
+                : 'Describe your skills, past work, education, or work goals in your language...'
           }
           style={{ flex: 1, padding: '12px 16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-medium)', fontSize: '14px' }}
         />
