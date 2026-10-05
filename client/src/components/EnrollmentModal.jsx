@@ -1055,47 +1055,10 @@ export const EnrollmentModal = ({
               </div>
             </div>
 
-            {/* SIMULATION & TESTING CONTROLS (Allows reviewer to test all states without provider dashboard) */}
-            <div style={{ background: '#fdf6ed', border: '1px dashed #d97706', borderRadius: 'var(--radius-md)', padding: '12px 16px', marginBottom: '20px' }}>
-              <div style={{ fontSize: '11px', fontWeight: 800, color: '#92400e', marginBottom: '2px' }}>
-                🛠️ {t.simulateTitle}
-              </div>
-              <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '0 0 10px 0' }}>
-                {t.simulateDesc}
-              </p>
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                <button
-                  onClick={() => handleSimulateStatus('UNDER_REVIEW', 'Training coordinator is validating documents')}
-                  disabled={actionLoading}
-                  className="btn btn-secondary btn-sm"
-                  style={{ fontSize: '11px', padding: '4px 10px' }}
-                >
-                  Simulate Under Review
-                </button>
-                <button
-                  onClick={() => handleSimulateStatus('ACTION_REQUIRED', 'The training provider has requested your passport-size photograph.')}
-                  disabled={actionLoading}
-                  className="btn btn-secondary btn-sm"
-                  style={{ fontSize: '11px', padding: '4px 10px' }}
-                >
-                  Simulate Action Required
-                </button>
-                <button
-                  onClick={() => handleSimulateStatus('ACCEPTED', 'Congratulations! Your enrollment request has been accepted. Seat reserved in upcoming batch.')}
-                  disabled={actionLoading}
-                  className="btn btn-secondary btn-sm"
-                  style={{ fontSize: '11px', padding: '4px 10px', borderColor: '#16a34a', color: '#16a34a' }}
-                >
-                  Simulate Accepted
-                </button>
-                <button
-                  onClick={() => handleSimulateStatus('REJECTED', 'Batch capacity reached for this month. Please apply for the next upcoming cycle.')}
-                  disabled={actionLoading}
-                  className="btn btn-secondary btn-sm"
-                  style={{ fontSize: '11px', padding: '4px 10px', borderColor: '#dc2626', color: '#dc2626' }}
-                >
-                  Simulate Rejected
-                </button>
+            {/* BENEFICIARY APPLICATION INFO CALLOUT */}
+            <div style={{ background: '#f8fafc', border: '1px solid var(--border-warm)', borderRadius: 'var(--radius-md)', padding: '12px 16px', marginBottom: '20px' }}>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                ℹ️ Official status updates, document requests, and batch seat confirmations are issued by the accredited training center.
               </div>
             </div>
 

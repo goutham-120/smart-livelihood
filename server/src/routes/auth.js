@@ -103,6 +103,61 @@ router.post('/register', authLimiter, async (req, res) => {
   }
 });
 
+// POST /api/auth/admin/register
+router.post('/admin/register', authLimiter, async (req, res) => {
+  try {
+    const adminSecretKey = req.body.adminSecretKey || req.body.secretKey;
+    const requiredSecret = process.env.ADMIN_SECRET_KEY || 'PMAJAY-ADMIN-2026';
+
+    if (!adminSecretKey || adminSecretKey !== requiredSecret) {
+      return res.status(403).json({ error: 'Invalid or missing administrator authorization key' });
+    }
+
+    const name = sanitizeString(req.body.name, 100);
+    const email = sanitizeString(req.body.email, 120).toLowerCase();
+    const phone = sanitizeString(req.body.phone, 20);
+    const password = sanitizeString(req.body.password, 128);
+    const district = sanitizeString(req.body.district, 80) || 'Warangal';
+    const role = 'admin';
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ error: 'Name, email, and password are required for admin registration' });
+    }
+
+    const existingEmail = await User.findOne({ email });
+    if (existingEmail) {
+      return res.status(400).json({ error: 'An account with this email already exists' });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const user = await User.create({
+      name,
+      email,
+      phone: phone || undefined,
+      passwordHash,
+      role,
+      district,
+      org: 'ministry'
+    });
+
+    const token = generateToken(user);
+    return res.status(201).json({
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        district: user.district,
+        org: user.org
+      }
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'Admin registration failed' });
+  }
+});
+
 // POST /api/auth/login
 router.post('/login', authLimiter, async (req, res) => {
   try {

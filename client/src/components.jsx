@@ -29,6 +29,7 @@ const PAGE_TITLES = {
     'admin/coordination': 'Inter-Agency Task Coordination',
     'admin/plan': 'District Perspective Action Plan',
     'admin/directory': 'Resource Directory Catalog',
+    'admin/applications': 'Training Provider & Admissions Desk',
     default: 'JeevanPath AI'
   },
   hi: {
@@ -49,6 +50,7 @@ const PAGE_TITLES = {
     'admin/coordination': 'अंतर-एजेंसी कार्य समन्वय',
     'admin/plan': 'जिला परिप्रेक्ष्य कार्य योजना',
     'admin/directory': 'संसाधन निर्देशिका सूची',
+    'admin/applications': 'प्रशिक्षण प्रदाता एवं प्रवेश डेस्क',
     default: 'JeevanPath AI'
   },
   te: {
@@ -69,6 +71,7 @@ const PAGE_TITLES = {
     'admin/coordination': 'అంతర్-శాఖల సమన్వయం',
     'admin/plan': 'జిల్లా దృక్పథ కార్యాచరణ ప్రణాళిక',
     'admin/directory': 'వనరుల డైరెక్టరీ కేటలాగ్',
+    'admin/applications': 'శిక్షణ ప్రదాత & అడ్మిషన్ల డెస్క్',
     default: 'JeevanPath AI'
   }
 };
@@ -93,6 +96,8 @@ const NAV_TRANSLATIONS = {
     coordination: 'Task Coordination',
     plan: 'Perspective Plan',
     directory: 'Resource Directory',
+    applications: 'Training Applications',
+    providerGroup: 'Training Provider',
     beneficiaryGroup: 'Beneficiary',
     accountGroup: 'Account',
     channelsGroup: 'Channels',
@@ -117,6 +122,8 @@ const NAV_TRANSLATIONS = {
     coordination: 'कार्य समन्वय',
     plan: 'परिप्रेक्ष्य योजना',
     directory: 'संसाधन निर्देशिका',
+    applications: 'प्रशिक्षण आवेदन',
+    providerGroup: 'प्रशिक्षण प्रदाता',
     beneficiaryGroup: 'लाभार्थी',
     accountGroup: 'खाता',
     channelsGroup: 'चैनल',
@@ -141,6 +148,8 @@ const NAV_TRANSLATIONS = {
     coordination: 'టాస్క్ సమన్వయం',
     plan: 'దృక్పథ ప్రణాళిక',
     directory: 'వనరుల డైరెక్టరీ',
+    applications: 'శిక్షణ దరఖాస్తులు',
+    providerGroup: 'శిక్షణ ప్రదాత',
     beneficiaryGroup: 'లబ్ధిదారుడు',
     accountGroup: 'ఖాతా',
     channelsGroup: 'ఛానల్స్',
@@ -235,8 +244,13 @@ export const AppSidebar = ({ user, sidebarOpen, setSidebarOpen }) => {
     { to: '/channel-demo', label: navText.channelDemo, icon: PhoneCall }
   ];
 
+  const providerNav = [
+    { to: '/admin/applications', label: navText.applications, icon: FileText }
+  ];
+
   const adminNav = [
     { to: '/admin/overview', label: navText.districtOverview, icon: TrendingUp },
+    { to: '/admin/applications', label: navText.applications, icon: FileText },
     { to: '/admin/beneficiaries', label: navText.beneficiaries, icon: Users },
     { to: '/admin/placements', label: navText.placements, icon: Award },
     { to: '/admin/coordination', label: navText.coordination, icon: FolderKanban },
@@ -350,10 +364,18 @@ export const AppSidebar = ({ user, sidebarOpen, setSidebarOpen }) => {
         </div>
 
         <nav className="app-sidebar-nav">
-          {renderNavGroup(navText.beneficiaryGroup, beneficiaryNav)}
-          {renderNavGroup(navText.accountGroup, accountNav)}
-          {renderNavGroup(navText.channelsGroup, channelNav)}
-          {isOfficer && renderNavGroup(navText.districtCommandGroup, adminNav)}
+          {isOfficer ? (
+            <>
+              {renderNavGroup(navText.districtCommandGroup || 'Admin Portal', adminNav)}
+              {renderNavGroup(navText.accountGroup, accountNav)}
+            </>
+          ) : (
+            <>
+              {renderNavGroup(navText.beneficiaryGroup, beneficiaryNav)}
+              {renderNavGroup(navText.accountGroup, accountNav)}
+              {renderNavGroup(navText.channelsGroup, channelNav)}
+            </>
+          )}
         </nav>
       </aside>
     </>
@@ -363,32 +385,13 @@ export const AppSidebar = ({ user, sidebarOpen, setSidebarOpen }) => {
 export const AppHeader = ({ user, onLogout, toggleSidebar, sidebarOpen }) => {
   const location = useLocation();
   const { lang } = useLang();
+  const isOfficer = user?.role === 'officer' || user?.role === 'admin';
 
-  const getPageTitle = (path) => {
-    const titles = PAGE_TITLES[lang] || PAGE_TITLES.en;
-    if (path.includes('assistant')) return titles.assistant;
-    if (path.includes('opportunities')) return titles.opportunities;
-    if (path.includes('skill-gaps')) return titles['skill-gaps'];
-    if (path.includes('training')) return titles.training;
-    if (path.includes('roadmap')) return titles.roadmap;
-    if (path.includes('what-if')) return titles['what-if'];
-    if (path.includes('self-employment')) return titles['self-employment'];
-    if (path.includes('progress')) return titles.progress;
-    if (path.includes('profile')) return titles.profile;
-    if (path.includes('kiosk')) return titles.kiosk;
-    if (path.includes('channel-demo')) return titles['channel-demo'];
-    if (path.includes('admin/overview')) return titles['admin/overview'];
-    if (path.includes('admin/beneficiaries')) return titles['admin/beneficiaries'];
-    if (path.includes('admin/placements')) return titles['admin/placements'];
-    if (path.includes('admin/coordination')) return titles['admin/coordination'];
-    if (path.includes('admin/plan')) return titles['admin/plan'];
-    if (path.includes('admin/directory')) return titles['admin/directory'];
-    return titles.default;
-  };
+  const isProviderView = location.pathname.startsWith('/admin') || location.pathname.startsWith('/provider');
 
   return (
     <header className="app-header">
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
         <button
           type="button"
           className="btn btn-ghost"
@@ -399,18 +402,75 @@ export const AppHeader = ({ user, onLogout, toggleSidebar, sidebarOpen }) => {
         >
           <Menu size={20} />
         </button>
-        <h1 className="app-header-title">{getPageTitle(location.pathname)}</h1>
+        <Link to={isOfficer ? "/admin/overview" : "/dashboard"} style={{ textDecoration: 'none', color: 'inherit', display: 'inline-flex', alignItems: 'center' }}>
+          <h1 className="app-header-title" style={{ margin: 0, cursor: 'pointer' }}>
+            JeevanPath AI {isOfficer && <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--primary-600)', marginLeft: '6px' }}>• Admin Portal</span>}
+          </h1>
+        </Link>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexShrink: 0 }}>
+        {/* Quick Portal Switcher (Visible ONLY to Admin / Officer roles) */}
+        {isOfficer && (
+          isProviderView ? (
+            <Link
+              to="/roadmap"
+              className="btn"
+              style={{
+                padding: '6px 12px',
+                fontSize: '12px',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                border: '1px solid #10b981',
+                color: '#065f46',
+                background: '#ecfdf5',
+                borderRadius: '20px',
+                textDecoration: 'none'
+              }}
+              title="Preview Beneficiary View"
+            >
+              <span>👤</span>
+              <span>Beneficiary View</span>
+            </Link>
+          ) : (
+            <Link
+              to="/admin/applications"
+              className="btn"
+              style={{
+                padding: '6px 12px',
+                fontSize: '12px',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                border: '1px solid #3b82f6',
+                color: '#1e40af',
+                background: '#eff6ff',
+                borderRadius: '20px',
+                textDecoration: 'none'
+              }}
+              title="Return to Admin Applications Desk"
+            >
+              <span>🏛️</span>
+              <span>Admin Desk</span>
+            </Link>
+          )
+        )}
+
         {!location.pathname.includes('assistant') && <LanguageSwitcher />}
 
         {user ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span className="badge badge-blue">{user.district || 'Warangal'}</span>
+            <span className={isOfficer ? "badge badge-purple" : "badge badge-blue"}>
+              {isOfficer ? (user.role === 'admin' ? 'Administrator' : 'District Officer') : (user.district || 'Warangal')}
+            </span>
             <div style={{ fontSize: '13px', textAlign: 'right' }}>
               <div style={{ fontWeight: 700, color: 'var(--text-main)', whiteSpace: 'nowrap' }}>{user.name}</div>
-              <div style={{ color: 'var(--text-muted)', fontSize: '11px', textTransform: 'capitalize', whiteSpace: 'nowrap' }}>{user.role || 'Beneficiary'}</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: '11px', textTransform: 'capitalize', whiteSpace: 'nowrap' }}>
+                {isOfficer ? 'Ministry Admin' : 'Beneficiary'}
+              </div>
             </div>
             <button onClick={onLogout} className="btn btn-ghost" style={{ padding: '6px', color: 'var(--status-danger)' }} title="Sign Out">
               <LogOut size={18} />

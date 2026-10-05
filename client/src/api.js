@@ -35,6 +35,7 @@ apiInstance.interceptors.response.use(
 /* AUTH */
 export const authLogin = (data) => apiInstance.post('/auth/login', data);
 export const authRegister = (data) => apiInstance.post('/auth/register', data);
+export const authAdminRegister = (data) => apiInstance.post('/auth/admin/register', data);
 export const authOtpSend = (phone) => apiInstance.post('/auth/otp/send', { phone });
 export const authOtpVerify = (data) => apiInstance.post('/auth/otp/verify', data);
 export const authDemoLogin = (role, district) => apiInstance.post('/auth/demo-login', { role, district });
@@ -273,6 +274,16 @@ export const updateEnrollmentStatus = async (id, dataPayload) => {
   return res.data;
 };
 
+export const getAllEnrollmentApplications = async () => {
+  const res = await apiInstance.get('/enrollments/admin/all');
+  return res.data;
+};
+
+export const seedDemoApplications = async () => {
+  const res = await apiInstance.post('/enrollments/admin/seed');
+  return res.data;
+};
+
 /* Attach all helper methods onto apiInstance for object-style invocation compatibility */
 apiInstance.getProfile = getProfile;
 apiInstance.putProfile = putProfile;
@@ -328,6 +339,8 @@ apiInstance.getMyEnrollments = getMyEnrollments;
 apiInstance.getEnrollment = getEnrollment;
 apiInstance.submitEnrollmentAction = submitEnrollmentAction;
 apiInstance.updateEnrollmentStatus = updateEnrollmentStatus;
+apiInstance.getAllEnrollmentApplications = getAllEnrollmentApplications;
+apiInstance.seedDemoApplications = seedDemoApplications;
 
 export const api = apiInstance;
 export default apiInstance;

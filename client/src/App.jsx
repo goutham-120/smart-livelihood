@@ -22,6 +22,7 @@ import Placements from './pages/admin/Placements.jsx';
 import Coordination from './pages/admin/Coordination.jsx';
 import PerspectivePlan from './pages/admin/PerspectivePlan.jsx';
 import Directory from './pages/admin/Directory.jsx';
+import Applications from './pages/admin/Applications.jsx';
 import Consent from './pages/Consent.jsx';
 
 // Authenticated Shell Component (Only renders Sidebar & Header for logged-in users)
@@ -88,10 +89,16 @@ function AppShell({ user, onLogout, children }) {
   );
 }
 
-const ProtectedRoute = ({ user, onLogout, children, requireUnlocked = false }) => {
+const ProtectedRoute = ({ user, onLogout, children, requireUnlocked = false, allowedRoles = null }) => {
   if (!user) {
     return <Navigate to="/login" replace />;
   }
+
+  // Real Role-based check: restrict unauthorized users from accessing admin routes
+  if (allowedRoles && Array.isArray(allowedRoles) && !allowedRoles.includes(user.role)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   const isOfficer = user?.role === 'officer' || user?.role === 'admin';
   const isUnlocked = isOfficer || (typeof localStorage !== 'undefined' && localStorage.getItem('pmajay_voice_unlocked') === 'true');
 
@@ -235,13 +242,18 @@ export default function App() {
           <Route path="/kiosk" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Kiosk /></ProtectedRoute>} />
           <Route path="/channel-demo" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><ChannelDemo /></ProtectedRoute>} />
 
-          {/* Admin Command Routes */}
-          <Route path="/admin/overview" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Overview /></ProtectedRoute>} />
-          <Route path="/admin/beneficiaries" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Beneficiaries /></ProtectedRoute>} />
-          <Route path="/admin/placements" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Placements /></ProtectedRoute>} />
-          <Route path="/admin/coordination" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Coordination /></ProtectedRoute>} />
-          <Route path="/admin/plan" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><PerspectivePlan /></ProtectedRoute>} />
-          <Route path="/admin/directory" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Directory /></ProtectedRoute>} />
+          {/* Admin Command & Provider Routes (Strictly protected for Admin / Officer) */}
+          <Route path="/admin" element={activeUser?.role === 'admin' || activeUser?.role === 'officer' ? <Navigate to="/admin/overview" replace /> : <Navigate to="/dashboard" replace />} />
+          <Route path="/admin/overview" element={<ProtectedRoute user={activeUser} onLogout={handleLogout} allowedRoles={['admin', 'officer']}><Overview /></ProtectedRoute>} />
+          <Route path="/admin/applications" element={<ProtectedRoute user={activeUser} onLogout={handleLogout} allowedRoles={['admin', 'officer']}><Applications /></ProtectedRoute>} />
+          <Route path="/admin/training-applications" element={<ProtectedRoute user={activeUser} onLogout={handleLogout} allowedRoles={['admin', 'officer']}><Applications /></ProtectedRoute>} />
+          <Route path="/provider" element={<ProtectedRoute user={activeUser} onLogout={handleLogout} allowedRoles={['admin', 'officer']}><Applications /></ProtectedRoute>} />
+          <Route path="/provider/applications" element={<ProtectedRoute user={activeUser} onLogout={handleLogout} allowedRoles={['admin', 'officer']}><Applications /></ProtectedRoute>} />
+          <Route path="/admin/beneficiaries" element={<ProtectedRoute user={activeUser} onLogout={handleLogout} allowedRoles={['admin', 'officer']}><Beneficiaries /></ProtectedRoute>} />
+          <Route path="/admin/placements" element={<ProtectedRoute user={activeUser} onLogout={handleLogout} allowedRoles={['admin', 'officer']}><Placements /></ProtectedRoute>} />
+          <Route path="/admin/coordination" element={<ProtectedRoute user={activeUser} onLogout={handleLogout} allowedRoles={['admin', 'officer']}><Coordination /></ProtectedRoute>} />
+          <Route path="/admin/plan" element={<ProtectedRoute user={activeUser} onLogout={handleLogout} allowedRoles={['admin', 'officer']}><PerspectivePlan /></ProtectedRoute>} />
+          <Route path="/admin/directory" element={<ProtectedRoute user={activeUser} onLogout={handleLogout} allowedRoles={['admin', 'officer']}><Directory /></ProtectedRoute>} />
 
           <Route path="/consent" element={<Consent />} />
 
