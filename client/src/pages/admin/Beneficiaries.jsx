@@ -7,6 +7,7 @@ import { useAuth } from '../../AuthContext.jsx';
 import { SkeletonCard, EmptyState, RiskBadge, SyntheticBadge, Modal } from '../../components.jsx';
 import { getOfficerBeneficiaries } from '../../api.js';
 import Assistant from '../Assistant.jsx';
+import './Beneficiaries.css';
 
 export default function Beneficiaries() {
   const { t } = useTranslation();
@@ -48,27 +49,28 @@ export default function Beneficiaries() {
   });
 
   return (
-    <div className="page-enter">
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
-        <h1 className="text-3xl font-bold">{t('admin.beneficiaries')}</h1>
+    <div className="ben-page-container page-enter">
+      <div className="ben-header">
+        <h1 className="ben-title">{t('admin.beneficiaries')}</h1>
         <SyntheticBadge />
       </div>
 
       {/* Filters */}
-      <div className="flex gap-3 flex-wrap mb-6">
-        <input
-          id="inp-beneficiary-search"
-          className="input"
-          style={{ maxWidth: 280 }}
-          placeholder="🔍 Search by name, phone..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <div className="tab-group" style={{ width: 'auto' }}>
+      <div className="ben-filters-bar">
+        <div className="ben-search-wrapper">
+          <input
+            id="inp-beneficiary-search"
+            className="input ben-search-input"
+            placeholder="🔍 Search by name, phone..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <div className="ben-tab-group tab-group">
           {['all', 'high', 'medium', 'low'].map((f) => (
             <button
               key={f}
-              className={`tab ${riskFilter === f ? 'active' : ''}`}
+              className={`tab ben-filter-btn ${riskFilter === f ? 'active' : ''}`}
               onClick={() => setRiskFilter(f)}
               id={`ben-filter-${f}`}
             >
@@ -78,51 +80,58 @@ export default function Beneficiaries() {
         </div>
       </div>
 
-      <p className="text-xs text-muted mb-4">{filtered.length} beneficiaries shown</p>
+      <p className="ben-count-text">{filtered.length} beneficiaries shown</p>
 
       {loading ? (
-        <>
+        <div className="ben-cards-list">
           <SkeletonCard rows={3} />
           <SkeletonCard rows={3} />
-        </>
+        </div>
       ) : filtered.length === 0 ? (
         <EmptyState icon="👥" title="No beneficiaries found" description="Adjust filters or add new beneficiaries." />
       ) : (
-        <div className="flex-col gap-3 flex">
+        <div className="ben-cards-list">
           {filtered.map(({ user: u, profile, placements }) => (
-            <div key={u._id} className="card" style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--sp-4)', flexWrap: 'wrap' }}>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <span className="font-semibold text-base">{u.name}</span>
+            <div key={u._id} className="ben-card card">
+              {/* LEFT SECTION */}
+              <div className="ben-card-left">
+                <div className="ben-card-header-row">
+                  <span className="ben-name">{u.name}</span>
                   {u.isSynthetic && <SyntheticBadge />}
                   {profile && <RiskBadge score={profile.riskScore} />}
                 </div>
-                <p className="text-sm text-muted">
+                <p className="ben-location-text">
                   📍 {u.district} · {u.phone || u.email || 'No contact'}
                 </p>
                 {profile?.skills?.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
+                  <div className="ben-skills-list">
                     {profile.skills.slice(0, 3).map((s) => (
-                      <span key={s} className="badge badge-muted text-xs">{s}</span>
+                      <span key={s} className="badge badge-muted text-xs ben-skill-tag">{s}</span>
                     ))}
                     {profile.skills.length > 3 && (
-                      <span className="badge badge-muted text-xs">+{profile.skills.length - 3}</span>
+                      <span className="badge badge-muted text-xs ben-skill-tag">+{profile.skills.length - 3}</span>
                     )}
                   </div>
                 )}
                 {profile?.riskReasons?.length > 0 && (
-                  <p className="text-xs text-muted mt-1 italic">
+                  <p className="ben-warning-text">
                     ⚠ {profile.riskReasons[0]}
                   </p>
                 )}
               </div>
-              <div className="flex gap-2 flex-wrap">
-                <span className="text-xs text-muted self-center">
+
+              {/* CENTER SECTION */}
+              <div className="ben-card-center">
+                <span className="ben-placements-count">
                   {placements?.length || 0} placement(s)
                 </span>
+              </div>
+
+              {/* RIGHT SECTION */}
+              <div className="ben-card-right">
                 <button
                   id={`btn-interview-${u._id}`}
-                  className="btn btn-accent btn-sm"
+                  className="btn btn-accent ben-interview-btn"
                   onClick={() => {
                     setInterviewUserId(u._id);
                     setInterviewName(u.name);

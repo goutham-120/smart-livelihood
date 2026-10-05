@@ -1,0 +1,309 @@
+/* Applications.css - Training Applications & Admissions Desk Layout */
+
+.app-page-container {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 24px 32px;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.app-top-tag {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--text-muted, #6b5240);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-page-title {
+  font-size: 28px;
+  font-weight: 800;
+  font-family: var(--font-heading);
+  color: var(--text-main, #4F3728);
+  margin: 0 0 6px 0;
+  line-height: 1.2;
+}
+
+.app-page-subtitle {
+  font-size: 13px;
+  color: var(--text-muted, #6b5240);
+  margin-bottom: 20px;
+  max-width: 780px;
+  line-height: 1.5;
+}
+
+.app-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+/* SUMMARY CARDS ROW */
+.app-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.app-summary-card {
+  background-color: #ffffff;
+  border: 1px solid var(--border-light, #E1D7C8);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 6px rgba(79, 55, 40, 0.04);
+  box-sizing: border-box;
+}
+
+.app-summary-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted, #6b5240);
+  margin-bottom: 6px;
+}
+
+.app-summary-val {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text-main, #4F3728);
+  line-height: 1.2;
+}
+
+.app-summary-sub {
+  font-size: 11px;
+  color: var(--text-subtle, #8c7360);
+  margin-top: 4px;
+}
+
+/* FILTER BAR */
+.app-filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background-color: #ffffff;
+  border: 1px solid var(--border-light, #E1D7C8);
+  border-radius: 12px;
+  padding: 10px 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.app-filter-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.app-filter-pill {
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 20px;
+  border: 1px solid var(--border-light, #E1D7C8);
+  background-color: var(--surface-subtle, #EEE7D9);
+  color: var(--text-main, #4F3728);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.app-filter-pill:hover {
+  background-color: #e5ded2;
+}
+
+.app-filter-pill.active {
+  background-color: var(--primary-600, #CA6603);
+  color: #ffffff;
+  border-color: var(--primary-600, #CA6603);
+  font-weight: 700;
+}
+
+.app-filter-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  max-width: 520px;
+  justify-content: flex-end;
+}
+
+.app-search-input {
+  width: 100%;
+  max-width: 260px;
+  height: 38px;
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-medium, #E1D7C8);
+  background-color: #ffffff;
+}
+
+/* APPLICATION CARD LIST */
+.app-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+.app-card {
+  background-color: #ffffff;
+  border: 1px solid var(--border-light, #E1D7C8);
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow: 0 3px 10px rgba(79, 55, 40, 0.05);
+  box-sizing: border-box;
+  width: 100%;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.app-card:hover {
+  border-color: var(--primary-600, #CA6603);
+  box-shadow: 0 5px 16px rgba(79, 55, 40, 0.08);
+}
+
+.app-card-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border-light, #E1D7C8);
+  flex-wrap: wrap;
+}
+
+.app-card-id-badge {
+  font-size: 12px;
+  font-weight: 800;
+  background-color: var(--surface-subtle, #EEE7D9);
+  padding: 4px 10px;
+  border-radius: 6px;
+  color: var(--text-main, #4F3728);
+  border: 1px solid var(--border-light, #E1D7C8);
+  white-space: nowrap;
+}
+
+.app-two-col-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  padding: 18px;
+  background-color: var(--surface-ground, #F9F5EC);
+  border-radius: 10px;
+  border: 1px solid var(--border-light, #E1D7C8);
+  margin-bottom: 20px;
+}
+
+.app-col-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--text-muted, #6b5240);
+  margin-bottom: 10px;
+}
+
+.app-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-main, #4F3728);
+}
+
+.app-skill-badge {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background-color: #ffffff;
+  color: var(--text-main, #4F3728);
+  border: 1px solid var(--border-light, #E1D7C8);
+  font-weight: 500;
+}
+
+/* CREDENTIAL VERIFICATION CHECKLIST */
+.app-doc-section {
+  margin-top: 16px;
+  margin-bottom: 20px;
+}
+
+.app-doc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.app-doc-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  background-color: #ffffff;
+  border: 1px solid var(--border-light, #E1D7C8);
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+/* ACTION BUTTONS BAR */
+.app-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border-light, #E1D7C8);
+  flex-wrap: wrap;
+}
+
+/* RESPONSIVENESS */
+@media (max-width: 1024px) {
+  .app-summary-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .app-summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .app-two-col-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .app-filter-controls {
+    max-width: 100%;
+    width: 100%;
+    justify-content: stretch;
+  }
+  .app-search-input {
+    max-width: 100%;
+  }
+  .app-action-bar {
+    justify-content: stretch;
+  }
+  .app-action-bar button {
+    flex: 1 1 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-summary-grid {
+    grid-template-columns: 1fr;
+  }
+  .app-page-container {
+    padding: 16px;
+  }
+}

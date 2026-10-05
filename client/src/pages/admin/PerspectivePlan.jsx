@@ -10,21 +10,31 @@ import './PerspectivePlan.css';
 
 const DISTRICTS = ['Warangal', 'Adilabad', 'Nalgonda'];
 
+function formatLabel(str) {
+  if (!str) return '';
+  return str
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 function PlanDocument({ plan }) {
-  const date = plan.createdAt ? new Date(plan.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+  const date = plan.createdAt
+    ? new Date(plan.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
+    : new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+
   return (
     <div className="plan-doc" id="plan-print-area">
       {/* Header */}
       <div className="plan-header">
         <div className="plan-logo">🌱</div>
-        <div>
+        <div className="plan-header-content">
           <h1 className="plan-title">District Livelihood Action Plan</h1>
           <p className="plan-subtitle">PM-AJAY | GIA Component | SIH26097</p>
           <p className="plan-meta">{plan.district} · Generated {date}</p>
         </div>
       </div>
 
-      {/* Key numbers */}
+      {/* Key Summary Metrics */}
       <div className="plan-kpis">
         <div className="plan-kpi">
           <div className="plan-kpi-val">{plan.targetBeneficiaries?.toLocaleString()}</div>
@@ -44,16 +54,16 @@ function PlanDocument({ plan }) {
         </div>
       </div>
 
-      {/* Employment split */}
+      {/* Employment Pathway Split */}
       <div className="plan-section">
         <h2>Employment Pathway Split</h2>
         <div className="plan-split">
-          <div className="plan-split-item" style={{ background: 'hsl(30 100% 50% / 0.1)' }}>
+          <div className="plan-split-item" style={{ background: '#fff7ed', borderColor: '#fed7aa' }}>
             <span style={{ fontSize: '2rem' }}>🏪</span>
             <strong>{plan.projectedImpact?.selfEmploymentCount}</strong>
             <span>Self Employment</span>
           </div>
-          <div className="plan-split-item" style={{ background: 'hsl(204 85% 52% / 0.1)' }}>
+          <div className="plan-split-item" style={{ background: '#eff6ff', borderColor: '#bfdbfe' }}>
             <span style={{ fontSize: '2rem' }}>💼</span>
             <strong>{plan.projectedImpact?.wageEmploymentCount}</strong>
             <span>Wage Employment</span>
@@ -61,34 +71,41 @@ function PlanDocument({ plan }) {
         </div>
       </div>
 
-      {/* Allocations table */}
+      {/* Sectoral Allocation Table */}
       <div className="plan-section">
         <h2>Sectoral Allocation Plan</h2>
-        <table className="plan-table">
-          <thead>
-            <tr>
-              <th>Sector / Occupation</th>
-              <th>Beneficiaries</th>
-              <th>Budget Allocated</th>
-              <th>Expected Placements</th>
-              <th>Training Partners</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(plan.allocations || []).map((a, i) => (
-              <tr key={i}>
-                <td>
-                  <strong>{a.sector}</strong>
-                  <br /><span style={{ fontSize: '0.75rem', opacity: 0.7 }}>{a.occupationKey}</span>
-                </td>
-                <td>{a.beneficiaryCount?.toLocaleString()}</td>
-                <td>₹{(a.allocatedBudgetInr / 100000).toFixed(2)}L</td>
-                <td>{a.expectedPlacements?.toLocaleString()}</td>
-                <td style={{ fontSize: '0.75rem' }}>{(a.trainingPartners || []).join(', ')}</td>
+        <div className="plan-table-wrapper">
+          <table className="plan-table">
+            <thead>
+              <tr>
+                <th>Sector / Occupation</th>
+                <th>Beneficiaries</th>
+                <th>Budget Allocated</th>
+                <th>Expected Placements</th>
+                <th>Training Partners</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {(plan.allocations || []).map((a, i) => (
+                <tr key={i}>
+                  <td>
+                    <strong>{a.sector}</strong>
+                    <br />
+                    <span style={{ fontSize: '11px', color: 'var(--text-subtle)' }}>
+                      {formatLabel(a.occupationKey)}
+                    </span>
+                  </td>
+                  <td>{a.beneficiaryCount?.toLocaleString()}</td>
+                  <td>₹{(a.allocatedBudgetInr / 100000).toFixed(2)}L</td>
+                  <td>{a.expectedPlacements?.toLocaleString()}</td>
+                  <td style={{ fontSize: '12px', wordBreak: 'break-word', maxWidth: '240px' }}>
+                    {(a.trainingPartners || []).join(', ')}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div className="plan-footer">
@@ -145,12 +162,22 @@ export default function PerspectivePlan() {
     window.print();
   };
 
-  if (loading) return <SkeletonCard rows={6} />;
+  if (loading) {
+    return (
+      <div className="plan-page page-enter">
+        <div className="plan-page-header no-print">
+          <h1 className="plan-page-title">{t('admin.plan')}</h1>
+        </div>
+        <SkeletonCard rows={6} />
+      </div>
+    );
+  }
 
   return (
-    <div className="page-enter">
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-4 no-print">
-        <h1 className="text-3xl font-bold">{t('admin.plan')}</h1>
+    <div className="plan-page page-enter">
+      {/* Header bar */}
+      <div className="plan-page-header no-print">
+        <h1 className="plan-page-title">{t('admin.plan')}</h1>
         {selected && (
           <button id="btn-print-plan" className="btn btn-secondary" onClick={handlePrint}>
             🖨️ {t('admin.printPlan')}
@@ -158,35 +185,66 @@ export default function PerspectivePlan() {
         )}
       </div>
 
-      {/* Generate form */}
-      <div className="card mb-6 no-print">
-        <h2 className="text-lg font-semibold mb-4">⚙️ {t('admin.generatePlan')}</h2>
-        <form onSubmit={handleGenerate} className="flex gap-4 flex-wrap items-end">
+      {/* Generation Form */}
+      <div className="plan-form-card no-print">
+        <h2 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '14px', color: 'var(--text-main)' }}>
+          ⚙️ {t('admin.generatePlan')}
+        </h2>
+        <form onSubmit={handleGenerate} className="plan-form-grid">
           {user?.role === 'admin' && (
-            <div className="form-group" style={{ minWidth: 180 }}>
-              <label className="label">District</label>
-              <select id="sel-plan-district" className="input select" value={form.district} onChange={(e) => setForm((f) => ({ ...f, district: e.target.value }))}>
-                {DISTRICTS.map((d) => <option key={d}>{d}</option>)}
+            <div className="plan-form-field">
+              <label className="form-label">District</label>
+              <select
+                id="sel-plan-district"
+                className="input select"
+                value={form.district}
+                onChange={(e) => setForm((f) => ({ ...f, district: e.target.value }))}
+              >
+                {DISTRICTS.map((d) => (
+                  <option key={d}>{d}</option>
+                ))}
               </select>
             </div>
           )}
-          <div className="form-group" style={{ minWidth: 160 }}>
-            <label className="label">{t('admin.targetBeneficiaries')}</label>
-            <input id="inp-plan-target" className="input" type="number" min={10} max={10000} value={form.targetBeneficiaries} onChange={(e) => setForm((f) => ({ ...f, targetBeneficiaries: Number(e.target.value) }))} />
+          <div className="plan-form-field">
+            <label className="form-label">{t('admin.targetBeneficiaries')}</label>
+            <input
+              id="inp-plan-target"
+              className="input"
+              type="number"
+              min={10}
+              max={10000}
+              value={form.targetBeneficiaries}
+              onChange={(e) => setForm((f) => ({ ...f, targetBeneficiaries: Number(e.target.value) }))}
+            />
           </div>
-          <div className="form-group" style={{ minWidth: 180 }}>
-            <label className="label">{t('admin.budget')} (₹)</label>
-            <input id="inp-plan-budget" className="input" type="number" min={100000} step={100000} value={form.budgetInr} onChange={(e) => setForm((f) => ({ ...f, budgetInr: Number(e.target.value) }))} />
+          <div className="plan-form-field">
+            <label className="form-label">{t('admin.budget')} (₹)</label>
+            <input
+              id="inp-plan-budget"
+              className="input"
+              type="number"
+              min={100000}
+              step={100000}
+              value={form.budgetInr}
+              onChange={(e) => setForm((f) => ({ ...f, budgetInr: Number(e.target.value) }))}
+            />
           </div>
-          <button id="btn-generate-plan" type="submit" className="btn btn-primary" disabled={generating} style={{ alignSelf: 'flex-end', minHeight: 44 }}>
+          <button
+            id="btn-generate-plan"
+            type="submit"
+            className="btn btn-primary"
+            disabled={generating}
+            style={{ alignSelf: 'flex-end', minHeight: '42px', padding: '0 20px' }}
+          >
             {generating ? '⏳ Generating...' : '🗺️ Generate'}
           </button>
         </form>
       </div>
 
-      {/* Plan list */}
+      {/* Plan list selector */}
       {plans.length > 1 && (
-        <div className="flex gap-2 flex-wrap mb-4 no-print">
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }} className="no-print">
           {plans.map((p, i) => (
             <button
               key={p._id}

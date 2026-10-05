@@ -171,6 +171,10 @@ export const getJobCandidates = (id) => apiInstance.get(`/jobs/${id}/candidates`
 export const getTasks = (params) => apiInstance.get('/tasks', { params });
 export const postTask = (dataPayload) => apiInstance.post('/tasks', dataPayload);
 export const patchTask = (id, dataPayload) => apiInstance.patch(`/tasks/${id}`, dataPayload);
+export const deleteTask = (id) => apiInstance.delete(`/tasks/${id}`);
+export const postTaskComment = (taskId, text) => apiInstance.post(`/tasks/${taskId}/comments`, { text });
+export const patchTaskComment = (taskId, commentId, text) => apiInstance.patch(`/tasks/${taskId}/comments/${commentId}`, { text });
+export const deleteTaskComment = (taskId, commentId) => apiInstance.delete(`/tasks/${taskId}/comments/${commentId}`);
 
 /* ANALYTICS */
 export const getAnalyticsOverview = async (district) => {
@@ -248,6 +252,11 @@ export const runWhatIf = async (arg1, district) => {
 };
 
 /* ENROLLMENTS */
+export const getEnrollments = async (params) => {
+  const res = await apiInstance.get('/enrollments', { params });
+  return res.data;
+};
+
 export const createEnrollment = async (dataPayload) => {
   const res = await apiInstance.post('/enrollments', dataPayload);
   return res.data;
@@ -314,6 +323,10 @@ apiInstance.getJobCandidates = getJobCandidates;
 apiInstance.getTasks = getTasks;
 apiInstance.postTask = postTask;
 apiInstance.patchTask = patchTask;
+apiInstance.deleteTask = deleteTask;
+apiInstance.postTaskComment = postTaskComment;
+apiInstance.patchTaskComment = patchTaskComment;
+apiInstance.deleteTaskComment = deleteTaskComment;
 apiInstance.getOfficerBeneficiaries = getOfficerBeneficiaries;
 apiInstance.postOfficerBeneficiary = postOfficerBeneficiary;
 apiInstance.postAdminOfficer = postAdminOfficer;

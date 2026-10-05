@@ -18,6 +18,7 @@ import { SelfEmployment } from './pages/SelfEmployment.jsx';
 import { Kiosk } from './pages/Kiosk.jsx';
 import { ChannelDemo } from './pages/ChannelDemo.jsx';
 import Overview from './pages/admin/Overview.jsx';
+import Applications from './pages/admin/Applications.jsx';
 import Beneficiaries from './pages/admin/Beneficiaries.jsx';
 import Placements from './pages/admin/Placements.jsx';
 import Coordination from './pages/admin/Coordination.jsx';
@@ -175,7 +176,7 @@ export default function App() {
             path="/"
             element={
               activeUser ? (
-                <Navigate to="/dashboard" replace />
+                <Navigate to={activeUser.role === 'admin' || activeUser.role === 'officer' ? '/admin/overview' : '/dashboard'} replace />
               ) : (
                 <Login onLoginSuccess={handleLoginSuccess} />
               )
@@ -185,7 +186,7 @@ export default function App() {
             path="/login"
             element={
               activeUser ? (
-                <Navigate to="/dashboard" replace />
+                <Navigate to={activeUser.role === 'admin' || activeUser.role === 'officer' ? '/admin/overview' : '/dashboard'} replace />
               ) : (
                 <Login onLoginSuccess={handleLoginSuccess} initialTab="email" />
               )
@@ -195,7 +196,7 @@ export default function App() {
             path="/register"
             element={
               activeUser ? (
-                <Navigate to="/dashboard" replace />
+                <Navigate to={activeUser.role === 'admin' || activeUser.role === 'officer' ? '/admin/overview' : '/dashboard'} replace />
               ) : (
                 <Login onLoginSuccess={handleLoginSuccess} initialMode="register" />
               )
@@ -205,7 +206,7 @@ export default function App() {
             path="/forgot-password"
             element={
               activeUser ? (
-                <Navigate to="/dashboard" replace />
+                <Navigate to={activeUser.role === 'admin' || activeUser.role === 'officer' ? '/admin/overview' : '/dashboard'} replace />
               ) : (
                 <Login onLoginSuccess={handleLoginSuccess} initialMode="forgot" />
               )
@@ -215,7 +216,7 @@ export default function App() {
             path="/otp"
             element={
               activeUser ? (
-                <Navigate to="/dashboard" replace />
+                <Navigate to={activeUser.role === 'admin' || activeUser.role === 'officer' ? '/admin/overview' : '/dashboard'} replace />
               ) : (
                 <Login onLoginSuccess={handleLoginSuccess} initialTab="phone" />
               )
@@ -239,6 +240,7 @@ export default function App() {
 
           {/* Admin Command Routes */}
           <Route path="/admin/overview" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Overview /></ProtectedRoute>} />
+          <Route path="/admin/applications" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Applications /></ProtectedRoute>} />
           <Route path="/admin/beneficiaries" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Beneficiaries /></ProtectedRoute>} />
           <Route path="/admin/placements" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Placements /></ProtectedRoute>} />
           <Route path="/admin/coordination" element={<ProtectedRoute user={activeUser} onLogout={handleLogout}><Coordination /></ProtectedRoute>} />
@@ -248,7 +250,7 @@ export default function App() {
           <Route path="/consent" element={<Consent />} />
 
           {/* Catch-all fallback */}
-          <Route path="*" element={<Navigate to={activeUser ? '/dashboard' : '/login'} replace />} />
+          <Route path="*" element={<Navigate to={activeUser ? (activeUser.role === 'admin' || activeUser.role === 'officer' ? '/admin/overview' : '/dashboard') : '/login'} replace />} />
         </Routes>
       </ErrorBoundary>
     </Router>

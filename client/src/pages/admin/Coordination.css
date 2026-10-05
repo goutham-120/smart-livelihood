@@ -1,0 +1,54 @@
+/* Coordination.css - Layout and Styling for Admin Coordination Page */
+
+.coord-page-container {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 24px 32px;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.coord-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.coord-title {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text-main, #4F3728);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.coord-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  width: 100%;
+}
+
+.coord-card {
+  box-sizing: border-box;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.coord-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md, 0 4px 12px rgba(79, 55, 40, 0.08));
+}
+
+@media (max-width: 640px) {
+  .coord-page-container {
+    padding: 16px;
+  }
+
+  .coord-grid {
+    grid-template-columns: 1fr;
+  }
+}

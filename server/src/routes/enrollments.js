@@ -229,6 +229,271 @@ router.post('/', authenticate, async (req, res) => {
 });
 
 /**
+ * Helper to seed demo applications for Warangal District
+ */
+const seedDemoApplications = async (currentUser, force = false) => {
+  if (force) {
+    await EnrollmentApplication.deleteMany({ isSynthetic: true });
+  }
+  const count = await EnrollmentApplication.countDocuments({ isSynthetic: true });
+  if (count > 0 && !force) return;
+
+  const district = currentUser?.district || 'Warangal';
+  const targetUser = currentUser?._id || '6abf93a45ccfb461a27543a3';
+
+  const demoApps = [
+    {
+      applicationId: 'JP-2026-405933',
+      user: targetUser,
+      beneficiaryName: 'Lakshmi Goud (Demo Beneficiary)',
+      beneficiaryDistrict: district,
+      beneficiaryPhone: '9876543210',
+      beneficiaryEducation: 'Secondary (10th)',
+      beneficiarySkills: ['sewing machine operation', 'hand embroidery', 'garment pattern cutting', 'tractor farm machinery'],
+      occupationKey: 'tractor_operator',
+      occupationTitle: 'Tractor Mechanic and Operator Training',
+      courseKey: 'tractor_operator',
+      courseTitle: 'Tractor Mechanic and Operator Training',
+      qpCode: 'AGR/Q8341',
+      nsqfLevel: 3,
+      durationMonths: 3,
+      trainingCenter: {
+        id: 'center_warangal_iti',
+        name: 'Government ITI Warangal (Boys & Girls)',
+        district: district,
+        contact: '+91 870 245 9811',
+        location: `${district}, Telangana`
+      },
+      status: 'UNDER_REVIEW',
+      submittedAt: new Date(Date.now() - 3600000 * 2),
+      providerMessage: 'The training center coordinator is reviewing applicant eligibility and trade credentials.',
+      nextAction: 'Wait for the training provider to complete verification.',
+      documents: [
+        { key: 'aadhaar', name: 'Aadhaar Card', status: 'provided', fileName: 'aadhaar_lakshmi.pdf', fileSize: '1.2 MB', uploadedAt: new Date(), notes: 'Verified via DigiLocker' },
+        { key: 'bank_passbook', name: 'Bank Passbook / DBT Linkage', status: 'provided', fileName: 'passbook_sbi.pdf', fileSize: '850 KB', uploadedAt: new Date(), notes: 'SBI Warangal Branch' },
+        { key: 'passport_photo', name: 'Passport-size Photographs (4)', status: 'missing', notes: 'Pending upload by candidate' },
+        { key: 'education_certificate', name: 'Educational Certificate (10th/12th)', status: 'provided', fileName: '10th_ssc_memo.pdf', fileSize: '1.4 MB', uploadedAt: new Date(), notes: '10th Board Certificate' }
+      ],
+      orientationDate: '15th of next month, 10:00 AM',
+      orientationVenue: 'Government ITI Warangal, Main Workshop Block',
+      isSynthetic: true
+    },
+    {
+      applicationId: 'JP-2026-102948',
+      user: targetUser,
+      beneficiaryName: 'Ramesh Naik',
+      beneficiaryDistrict: district,
+      beneficiaryPhone: '9848022334',
+      beneficiaryEducation: 'Higher Secondary (12th)',
+      beneficiarySkills: ['solar panel installation', 'basic electrical wiring', 'inverter maintenance'],
+      occupationKey: 'solar_technician',
+      occupationTitle: 'Solar Panel Installation Technician',
+      courseKey: 'solar_technician',
+      courseTitle: 'Solar Rooftop & Off-Grid Technician',
+      qpCode: 'ELE/Q5901',
+      nsqfLevel: 4,
+      durationMonths: 3,
+      trainingCenter: {
+        id: 'center_warangal_solar',
+        name: 'Warangal Solar Training & Demonstration Center',
+        district: district,
+        contact: '+91 870 249 1100',
+        location: `${district}, Telangana`
+      },
+      status: 'UNDER_REVIEW',
+      submittedAt: new Date(Date.now() - 3600000 * 24),
+      providerMessage: 'Under review by training partner admissions panel.',
+      nextAction: 'Review documents and trade experience.',
+      documents: [
+        { key: 'aadhaar', name: 'Aadhaar Card', status: 'provided', fileName: 'aadhaar_ramesh.pdf', fileSize: '1.1 MB', uploadedAt: new Date(), notes: 'Verified' },
+        { key: 'bank_passbook', name: 'Bank Passbook / DBT Linkage', status: 'provided', fileName: 'bank_union.pdf', fileSize: '920 KB', uploadedAt: new Date(), notes: 'Union Bank' },
+        { key: 'passport_photo', name: 'Passport-size Photographs (4)', status: 'provided', fileName: 'photo_ramesh.jpg', fileSize: '450 KB', uploadedAt: new Date(), notes: 'Submitted' },
+        { key: 'education_certificate', name: 'Educational Certificate (10th/12th)', status: 'provided', fileName: '12th_memo.pdf', fileSize: '1.6 MB', uploadedAt: new Date(), notes: '12th Pass Memo' }
+      ],
+      orientationDate: '1st of next month, 09:30 AM',
+      orientationVenue: 'Warangal Solar Center, Block B',
+      isSynthetic: true
+    },
+    {
+      applicationId: 'JP-2026-883012',
+      user: targetUser,
+      beneficiaryName: 'Sunitha Bai',
+      beneficiaryDistrict: district,
+      beneficiaryPhone: '9701122334',
+      beneficiaryEducation: 'Primary (8th Pass)',
+      beneficiarySkills: ['organic farming', 'dairy cattle care', 'vermicomposting'],
+      occupationKey: 'dairy_farmer',
+      occupationTitle: 'Organic Dairy & Livestock Assistant',
+      courseKey: 'dairy_farmer',
+      courseTitle: 'Commercial Dairy & Livestock Management',
+      qpCode: 'AGR/Q4102',
+      nsqfLevel: 3,
+      durationMonths: 2,
+      trainingCenter: {
+        id: 'center_warangal_dairy',
+        name: 'District Dairy Cooperative Training Unit',
+        district: district,
+        contact: '+91 870 252 4433',
+        location: `${district}, Telangana`
+      },
+      status: 'ACTION_REQUIRED',
+      submittedAt: new Date(Date.now() - 3600000 * 48),
+      providerMessage: 'The training center coordinator has requested your passport-size photograph.',
+      nextAction: 'Candidate needs to upload passport photo.',
+      documents: [
+        { key: 'aadhaar', name: 'Aadhaar Card', status: 'provided', fileName: 'aadhaar_sunitha.pdf', fileSize: '1.0 MB', uploadedAt: new Date(), notes: 'Verified' },
+        { key: 'bank_passbook', name: 'Bank Passbook / DBT Linkage', status: 'provided', fileName: 'passbook_apgb.pdf', fileSize: '780 KB', uploadedAt: new Date(), notes: 'TGB Warangal' },
+        { key: 'passport_photo', name: 'Passport-size Photographs (4)', status: 'missing', notes: 'Action Required: Photo blurry' },
+        { key: 'education_certificate', name: 'Educational Certificate (10th/12th)', status: 'provided', fileName: 'school_certificate.pdf', fileSize: '950 KB', uploadedAt: new Date(), notes: '8th Transfer Certificate' }
+      ],
+      orientationDate: '15th of next month, 10:00 AM',
+      orientationVenue: 'District Dairy Cooperative Unit, Hanamkonda',
+      isSynthetic: true
+    },
+    {
+      applicationId: 'JP-2026-339102',
+      user: targetUser,
+      beneficiaryName: 'Venkatesh K.',
+      beneficiaryDistrict: district,
+      beneficiaryPhone: '9989011223',
+      beneficiaryEducation: 'ITI Diploma (Electrician)',
+      beneficiarySkills: ['auto electrics', 'battery diagnostic', 'ev motor winding'],
+      occupationKey: 'ev_mechanic',
+      occupationTitle: 'Electric Vehicle Service & Maintenance',
+      courseKey: 'ev_mechanic',
+      courseTitle: 'EV 2W/3W Service Technician Course',
+      qpCode: 'ASC/Q1421',
+      nsqfLevel: 4,
+      durationMonths: 4,
+      trainingCenter: {
+        id: 'center_warangal_iti',
+        name: 'Government ITI Warangal (Boys & Girls)',
+        district: district,
+        contact: '+91 870 245 9811',
+        location: `${district}, Telangana`
+      },
+      status: 'ACCEPTED',
+      submittedAt: new Date(Date.now() - 3600000 * 72),
+      providerMessage: 'Congratulations! Your enrollment request has been accepted. Seat reserved in upcoming batch.',
+      nextAction: 'Report to training workshop on batch start date.',
+      documents: [
+        { key: 'aadhaar', name: 'Aadhaar Card', status: 'provided', fileName: 'aadhaar_venkatesh.pdf', fileSize: '1.3 MB', uploadedAt: new Date(), notes: 'Verified' },
+        { key: 'bank_passbook', name: 'Bank Passbook / DBT Linkage', status: 'provided', fileName: 'passbook_sbi.pdf', fileSize: '890 KB', uploadedAt: new Date(), notes: 'SBI Warangal' },
+        { key: 'passport_photo', name: 'Passport-size Photographs (4)', status: 'provided', fileName: 'photo_venkat.jpg', fileSize: '520 KB', uploadedAt: new Date(), notes: 'Verified' },
+        { key: 'education_certificate', name: 'Educational Certificate (10th/12th)', status: 'provided', fileName: 'iti_diploma.pdf', fileSize: '2.1 MB', uploadedAt: new Date(), notes: 'NCVT ITI Certificate' }
+      ],
+      orientationDate: '15th of next month, 10:00 AM',
+      orientationVenue: 'Government ITI Warangal, EV Workshop Lab',
+      isSynthetic: true
+    },
+    {
+      applicationId: 'JP-2026-559201',
+      user: targetUser,
+      beneficiaryName: 'Anitha Reddy',
+      beneficiaryDistrict: district,
+      beneficiaryPhone: '9618033445',
+      beneficiaryEducation: 'Graduate (B.A.)',
+      beneficiarySkills: ['garment manufacturing', 'fashion tailoring'],
+      occupationKey: 'apparel_tailor',
+      occupationTitle: 'Self-Employed Tailor & Boutique Manager',
+      courseKey: 'apparel_tailor',
+      courseTitle: 'Advanced Apparel Tailoring & Boutique Setup',
+      qpCode: 'AMH/Q1947',
+      nsqfLevel: 4,
+      durationMonths: 3,
+      trainingCenter: {
+        id: 'center_warangal_apparel',
+        name: 'Kashish Skill Academy Warangal',
+        district: district,
+        contact: '+91 870 244 5566',
+        location: `${district}, Telangana`
+      },
+      status: 'REJECTED',
+      submittedAt: new Date(Date.now() - 3600000 * 96),
+      rejectionReason: 'Batch seats are currently full for this session. Candidate advised for next quarter.',
+      providerMessage: 'Batch seats are currently full for this session.',
+      nextAction: 'Explore alternative accredited training programs.',
+      documents: [
+        { key: 'aadhaar', name: 'Aadhaar Card', status: 'provided', fileName: 'aadhaar_anitha.pdf', fileSize: '1.2 MB', uploadedAt: new Date(), notes: 'Verified' },
+        { key: 'bank_passbook', name: 'Bank Passbook / DBT Linkage', status: 'provided', fileName: 'passbook_hdfc.pdf', fileSize: '910 KB', uploadedAt: new Date(), notes: 'HDFC Bank' },
+        { key: 'passport_photo', name: 'Passport-size Photographs (4)', status: 'provided', fileName: 'photo_anitha.jpg', fileSize: '480 KB', uploadedAt: new Date(), notes: 'Verified' },
+        { key: 'education_certificate', name: 'Educational Certificate (10th/12th)', status: 'provided', fileName: 'degree_certificate.pdf', fileSize: '1.8 MB', uploadedAt: new Date(), notes: 'Kakatiya University Degree' }
+      ],
+      orientationDate: 'Next Quarter',
+      orientationVenue: 'Kashish Skill Academy, Warangal',
+      isSynthetic: true
+    }
+  ];
+
+  await EnrollmentApplication.insertMany(demoApps);
+};
+
+/**
+ * GET /api/enrollments
+ * Fetch all applications (for officer/admin review portal)
+ */
+router.get('/', authenticate, async (req, res) => {
+  try {
+    const filter = {};
+    if (req.user.role === 'officer' && req.user.district) {
+      filter.beneficiaryDistrict = new RegExp(`^${req.user.district}$`, 'i');
+    }
+
+    if (req.query.status && req.query.status !== 'all') {
+      const st = req.query.status.toUpperCase();
+      if (st === 'UNDER_REVIEW' || st === 'PENDING') {
+        filter.status = { $in: ['SUBMITTED', 'UNDER_REVIEW'] };
+      } else {
+        filter.status = st;
+      }
+    }
+
+    if (req.query.search) {
+      const searchRegex = new RegExp(sanitizeString(req.query.search, 80), 'i');
+      filter.$or = [
+        { applicationId: searchRegex },
+        { beneficiaryName: searchRegex },
+        { beneficiaryPhone: searchRegex },
+        { courseTitle: searchRegex }
+      ];
+    }
+
+    let applications = await EnrollmentApplication.find(filter)
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Auto-seed demo applications if database is empty
+    if (applications.length === 0 && !req.query.search && (!req.query.status || req.query.status === 'all')) {
+      await seedDemoApplications(req.user);
+      applications = await EnrollmentApplication.find(filter)
+        .sort({ createdAt: -1 })
+        .lean();
+    }
+
+    return res.json({ applications });
+  } catch (err) {
+    console.error('Error fetching officer enrollments:', err);
+    return res.status(500).json({ error: 'Failed to retrieve training applications.' });
+  }
+});
+
+/**
+ * POST /api/enrollments/seed-demo
+ * Force seed/reset demo candidate applications
+ */
+router.post('/seed-demo', authenticate, async (req, res) => {
+  try {
+    await seedDemoApplications(req.user, true);
+    const filter = req.user.role === 'officer' && req.user.district ? { beneficiaryDistrict: new RegExp(`^${req.user.district}$`, 'i') } : {};
+    const applications = await EnrollmentApplication.find(filter).sort({ createdAt: -1 }).lean();
+    return res.json({ message: 'Demo candidate applications seeded successfully.', applications });
+  } catch (err) {
+    console.error('Error seeding demo applications:', err);
+    return res.status(500).json({ error: 'Failed to seed demo candidate applications.' });
+  }
+});
+
+/**
  * GET /api/enrollments/my
  * Fetch all applications of the logged in user + active application
  */
@@ -348,9 +613,10 @@ router.patch('/:id/status', authenticate, async (req, res) => {
     const { id } = req.params;
     const { status, providerMessage, rejectionReason, requestedDocument } = req.body;
 
+    const isOfficer = ['officer', 'admin'].includes(req.user.role);
     const query = id.startsWith('JP-')
-      ? { applicationId: id, user: req.user._id }
-      : { _id: id, user: req.user._id };
+      ? (isOfficer ? { applicationId: id } : { applicationId: id, user: req.user._id })
+      : (isOfficer ? { _id: id } : { _id: id, user: req.user._id });
 
     const application = await EnrollmentApplication.findOne(query);
 

@@ -31,6 +31,7 @@ router.get('/', authenticate, async (req, res) => {
       .populate('assignedTo', 'name email role')
       .populate('beneficiary', 'name phone district')
       .populate('createdBy', 'name role')
+      .populate('comments.author', 'name role')
       .sort({ dueAt: 1, createdAt: -1 })
       .limit(100);
 
@@ -73,7 +74,13 @@ router.post('/', authenticate, requireRole('officer', 'admin'), async (req, res)
       comments: []
     });
 
-    return res.status(201).json({ task });
+    const populatedTask = await Task.findById(task._id)
+      .populate('assignedTo', 'name email role')
+      .populate('beneficiary', 'name phone district')
+      .populate('createdBy', 'name role')
+      .populate('comments.author', 'name role');
+
+    return res.status(201).json({ task: populatedTask });
   } catch (err) {
     return res.status(500).json({ error: 'Failed to create task' });
   }
@@ -92,6 +99,13 @@ router.patch('/:id', authenticate, requireRole('officer', 'admin'), async (req, 
     }
 
     const updates = {};
+    if (req.body.title) updates.title = sanitizeString(req.body.title, 150);
+    if (req.body.description !== undefined) updates.description = sanitizeString(req.body.description, 500);
+    if (req.body.assignedOrg && ['corporation', 'department', 'ministry', 'training_partner'].includes(req.body.assignedOrg)) {
+      updates.assignedOrg = req.body.assignedOrg;
+    }
+    if (req.body.district) updates.district = sanitizeString(req.body.district, 80);
+    if (req.body.dueAt) updates.dueAt = new Date(req.body.dueAt);
     if (req.body.status && ['open', 'in_progress', 'done'].includes(req.body.status)) {
       updates.status = req.body.status;
     }
@@ -100,31 +114,158 @@ router.patch('/:id', authenticate, requireRole('officer', 'admin'), async (req, 
     }
     if (req.body.assignedTo !== undefined) updates.assignedTo = req.body.assignedTo;
 
-    let updatedTask;
     if (req.body.comment) {
-      const commentText = sanitizeString(req.body.comment, 300);
-      updatedTask = await Task.findByIdAndUpdate(
-        req.params.id,
-        {
-          $set: updates,
-          $push: {
-            comments: {
-              author: req.user._id,
-              authorName: req.user.name,
-              text: commentText,
-              at: new Date()
-            }
-          }
-        },
-        { new: true }
-      );
-    } else {
-      updatedTask = await Task.findByIdAndUpdate(req.params.id, { $set: updates }, { new: true });
+      const commentText = sanitizeString(req.body.comment, 500);
+      task.comments.push({
+        author: req.user._id,
+        authorName: req.user.name || 'Officer',
+        text: commentText,
+        at: new Date()
+      });
     }
+
+    Object.assign(task, updates);
+    await task.save();
+
+    const updatedTask = await Task.findById(task._id)
+      .populate('assignedTo', 'name email role')
+      .populate('beneficiary', 'name phone district')
+      .populate('createdBy', 'name role')
+      .populate('comments.author', 'name role');
 
     return res.json({ task: updatedTask });
   } catch (err) {
     return res.status(500).json({ error: 'Failed to update task' });
+  }
+});
+
+// DELETE /api/tasks/:id
+router.delete('/:id', authenticate, requireRole('officer', 'admin'), async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+
+    if (req.user.role === 'officer' && task.district && req.user.district && task.district.toLowerCase() !== req.user.district.toLowerCase()) {
+      return res.status(403).json({ error: 'Officer access restricted to assigned district' });
+    }
+
+    await Task.findByIdAndDelete(req.params.id);
+    return res.json({ message: 'Task deleted successfully', id: req.params.id });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to delete task' });
+  }
+});
+
+// POST /api/tasks/:id/comments
+router.post('/:id/comments', authenticate, requireRole('officer', 'admin'), async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+
+    const text = sanitizeString(req.body.text || req.body.comment, 500);
+    if (!text) {
+      return res.status(400).json({ error: 'Comment text is required' });
+    }
+
+    task.comments.push({
+      author: req.user._id,
+      authorName: req.user.name || 'Officer',
+      text,
+      at: new Date()
+    });
+
+    await task.save();
+
+    const updatedTask = await Task.findById(task._id)
+      .populate('assignedTo', 'name email role')
+      .populate('beneficiary', 'name phone district')
+      .populate('createdBy', 'name role')
+      .populate('comments.author', 'name role');
+
+    return res.status(201).json({ task: updatedTask });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to add comment' });
+  }
+});
+
+// PATCH /api/tasks/:id/comments/:commentId
+router.patch('/:id/comments/:commentId', authenticate, requireRole('officer', 'admin'), async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+
+    const comment = task.comments.id(req.params.commentId);
+    if (!comment) {
+      return res.status(404).json({ error: 'Comment not found' });
+    }
+
+    const authorId = comment.author?._id || comment.author;
+    const isAuthor = authorId && authorId.toString() === req.user._id.toString();
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isAuthor && !isAdmin) {
+      return res.status(403).json({ error: 'Not authorized to edit this comment' });
+    }
+
+    const text = sanitizeString(req.body.text, 500);
+    if (!text) {
+      return res.status(400).json({ error: 'Comment text is required' });
+    }
+
+    comment.text = text;
+    await task.save();
+
+    const updatedTask = await Task.findById(task._id)
+      .populate('assignedTo', 'name email role')
+      .populate('beneficiary', 'name phone district')
+      .populate('createdBy', 'name role')
+      .populate('comments.author', 'name role');
+
+    return res.json({ task: updatedTask, comment });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to update comment' });
+  }
+});
+
+// DELETE /api/tasks/:id/comments/:commentId
+router.delete('/:id/comments/:commentId', authenticate, requireRole('officer', 'admin'), async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+
+    const comment = task.comments.id(req.params.commentId);
+    if (!comment) {
+      return res.status(404).json({ error: 'Comment not found' });
+    }
+
+    const authorId = comment.author?._id || comment.author;
+    const isAuthor = authorId && authorId.toString() === req.user._id.toString();
+    const isAdminOrOfficer = ['admin', 'officer'].includes(req.user.role);
+
+    if (!isAuthor && !isAdminOrOfficer) {
+      return res.status(403).json({ error: 'Not authorized to delete this comment' });
+    }
+
+    task.comments.pull({ _id: req.params.commentId });
+    await task.save();
+
+    const updatedTask = await Task.findById(task._id)
+      .populate('assignedTo', 'name email role')
+      .populate('beneficiary', 'name phone district')
+      .populate('createdBy', 'name role')
+      .populate('comments.author', 'name role');
+
+    return res.json({ task: updatedTask, message: 'Comment deleted successfully' });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to delete comment' });
   }
 });
 
