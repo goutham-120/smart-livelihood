@@ -64,17 +64,23 @@ export function Login({ onLoginSuccess, initialTab = 'email', initialMode = 'aut
     }
   };
 
-  const handleDemoQuickLogin = async (role) => {
+  const handleDemoClick = async (role) => {
     setLoading(true);
     try {
       const res = await authDemoLogin(role, 'Warangal');
-      completeLogin(res.data.token, res.data.user);
+      if (res?.data?.token && res?.data?.user) {
+        completeLogin(res.data.token, res.data.user);
+      } else {
+        toast('Demo login failed.', 'error');
+      }
     } catch (err) {
-      toast(err.response?.data?.error || 'Demo login failed.', 'error');
+      toast(err.response?.data?.error || t('login.demoFailMsg', 'Demo login failed. Ensure ALLOW_DEMO=true on server.'), 'error');
     } finally {
       setLoading(false);
     }
   };
+
+  const handleDemoQuickLogin = handleDemoClick;
 
   const handleAdminRegisterSubmit = async (e) => {
     e.preventDefault();
@@ -519,6 +525,35 @@ export function Login({ onLoginSuccess, initialTab = 'email', initialMode = 'aut
                       )}
                     </form>
                   )}
+
+                  {/* Quick Demo Access Section */}
+                  <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid #E1D7C8' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 800, color: '#6b5240', marginBottom: '10px', textAlign: 'center', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                      ⚡ Quick Demo Login
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        style={{ fontSize: '13px', padding: '10px 8px', fontWeight: 700, justifyContent: 'center' }}
+                        onClick={() => handleDemoClick('beneficiary')}
+                        disabled={loading}
+                        id="btn-demo-beneficiary"
+                      >
+                        Beneficiary
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        style={{ fontSize: '13px', padding: '10px 8px', fontWeight: 700, justifyContent: 'center' }}
+                        onClick={() => handleDemoClick('officer')}
+                        disabled={loading}
+                        id="btn-demo-officer"
+                      >
+                        Officer / Admin
+                      </button>
+                    </div>
+                  </div>
 
                   <div className="auth-card-footer">
                     <span>{t('login.newAccountPrompt', 'New beneficiary?')} </span>

@@ -4,22 +4,23 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SkeletonCard, EmptyState, SyntheticBadge } from '../../components.jsx';
 import { getDirectoryCenters, getDirectoryCounselors, getDirectorySchemes } from '../../api.js';
+import './Directory.css';
 
 const DISTRICTS = ['Warangal', 'Adilabad', 'Nalgonda'];
 
 function CenterCard({ center }) {
   return (
-    <div className="card">
-      <div className="flex items-start justify-between mb-2">
-        <h3 className="font-semibold">{center.name}</h3>
+    <div className="card dir-card">
+      <div className="flex items-start justify-between mb-2 gap-2">
+        <h3 className="font-semibold dir-card-title">{center.name}</h3>
         {center.isSynthetic && <SyntheticBadge />}
       </div>
       <p className="text-sm text-muted">📍 {center.district}, {center.state}</p>
       {center.contact && <p className="text-sm mt-1">📞 {center.contact}</p>}
       {center.trades?.length > 0 && (
-        <div className="flex flex-wrap gap-1 mt-2">
+        <div className="dir-skills-container">
           {center.trades.slice(0, 4).map((t) => (
-            <span key={t} className="badge badge-muted text-xs">{t}</span>
+            <span key={t} className="badge badge-muted dir-skill-badge">{t}</span>
           ))}
         </div>
       )}
@@ -27,12 +28,12 @@ function CenterCard({ center }) {
         <p className="text-xs text-muted mt-2">NSQF Levels: {center.nsqfLevels.join(', ')}</p>
       )}
       {center.schemes?.length > 0 && (
-        <div className="flex flex-wrap gap-1 mt-2">
-          {center.schemes.map((s) => <span key={s} className="badge badge-primary text-xs">{s}</span>)}
+        <div className="dir-skills-container">
+          {center.schemes.map((s) => <span key={s} className="badge badge-primary dir-skill-badge">{s}</span>)}
         </div>
       )}
       {center.source && (
-        <a href={center.source} target="_blank" rel="noopener noreferrer" className="text-xs text-accent mt-2 block">
+        <a href={center.source} target="_blank" rel="noopener noreferrer" className="text-xs text-accent mt-2 block dir-link">
           🔗 Verified Source
         </a>
       )}
@@ -42,10 +43,10 @@ function CenterCard({ center }) {
 
 function CounselorCard({ counselor }) {
   return (
-    <div className="card">
-      <div className="flex items-start justify-between mb-2">
-        <h3 className="font-semibold">{counselor.name}</h3>
-        <div className="flex gap-2">
+    <div className="card dir-card">
+      <div className="flex items-start justify-between mb-2 gap-2">
+        <h3 className="font-semibold dir-card-title">{counselor.name}</h3>
+        <div className="flex gap-2 flex-wrap">
           {counselor.isSynthetic && <SyntheticBadge />}
           {counselor.verified && <span className="badge badge-success">✓ Verified</span>}
         </div>
@@ -61,19 +62,19 @@ function CounselorCard({ counselor }) {
 
 function SchemeCard({ scheme }) {
   return (
-    <div className="card">
-      <div className="flex items-start justify-between mb-2">
-        <h3 className="font-semibold">{scheme.name}</h3>
-        <span className="badge badge-primary">{scheme.type}</span>
+    <div className="card dir-card">
+      <div className="flex items-start justify-between mb-2 gap-2">
+        <h3 className="font-semibold dir-card-title">{scheme.name}</h3>
+        <span className="badge badge-primary dir-skill-badge">{scheme.type}</span>
       </div>
-      <p className="text-sm text-muted">{scheme.eligibilitySummary}</p>
-      {scheme.benefit && <p className="text-sm text-accent mt-2">💰 {scheme.benefit}</p>}
+      <p className="text-sm text-muted dir-word-break">{scheme.eligibilitySummary}</p>
+      {scheme.benefit && <p className="text-sm text-accent mt-2 dir-word-break">💰 {scheme.benefit}</p>}
       {scheme.link && (
         <a href={scheme.link} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm mt-3 inline-flex">
           Apply on Portal →
         </a>
       )}
-      {scheme.source && <p className="text-xs text-muted mt-1">Source: {scheme.source}</p>}
+      {scheme.source && <p className="text-xs text-muted mt-1 dir-word-break">Source: {scheme.source}</p>}
     </div>
   );
 }
@@ -113,15 +114,14 @@ export default function Directory() {
   const items = data[tab] || [];
 
   return (
-    <div className="page-enter">
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
-        <h1 className="text-3xl font-bold">{t('admin.directory')}</h1>
+    <div className="dir-page-container page-enter">
+      <div className="dir-header">
+        <h1 className="dir-title">{t('admin.directory')}</h1>
         <select
           id="sel-directory-district"
-          className="input select"
+          className="input select dir-district-select"
           value={district}
           onChange={(e) => setDistrict(e.target.value)}
-          style={{ width: 180 }}
         >
           <option value="">All Districts</option>
           {DISTRICTS.map((d) => <option key={d}>{d}</option>)}
@@ -129,7 +129,7 @@ export default function Directory() {
       </div>
 
       {/* Tab selector */}
-      <div className="tab-group mb-6" style={{ maxWidth: 480 }}>
+      <div className="tab-group dir-tab-group mb-6">
         {TABS.map(({ key, label }) => (
           <button
             key={key}
@@ -143,7 +143,7 @@ export default function Directory() {
       </div>
 
       {loading ? (
-        <div className="grid grid-3 gap-4">
+        <div className="dir-grid">
           {[1, 2, 3].map((i) => <SkeletonCard key={i} rows={3} />)}
         </div>
       ) : items.length === 0 ? (
@@ -153,7 +153,7 @@ export default function Directory() {
           description={`No ${tab} available for the selected filters.`}
         />
       ) : (
-        <div className="grid grid-3 gap-4">
+        <div className="dir-grid">
           {items.map((item) => (
             tab === 'centers' ? <CenterCard key={item._id} center={item} /> :
             tab === 'counselors' ? <CounselorCard key={item._id} counselor={item} /> :

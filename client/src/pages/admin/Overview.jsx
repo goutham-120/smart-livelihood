@@ -7,39 +7,32 @@ import { SkeletonCard, SyntheticBadge, StatCard } from '../../components.jsx';
 import { getAnalyticsOverview } from '../../api.js';
 import './Overview.css';
 
-/* Simple CSS bar chart */
-function Bar({ label, value, max, color }) {
-  const pct = max > 0 ? Math.round((value / max) * 100) : 0;
-  return (
-    <div className="bar-row">
-      <span className="bar-label text-xs" title={label}>{label}</span>
-      <div className="bar-track">
-        <div className="bar-fill" style={{ width: `${pct}%`, background: color || 'var(--color-saffron)' }} />
-      </div>
-      <span className="bar-val text-xs font-bold">{value.toLocaleString()}</span>
-    </div>
-  );
+function formatLabel(str) {
+  if (!str) return '';
+  return str
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 /* Funnel visualization */
 function Funnel({ data }) {
   const steps = [
-    { key: 'registered',       label: 'Registered',        icon: '👥', color: 'var(--color-info)' },
-    { key: 'skillsIdentified', label: 'Skills Identified',  icon: '💡', color: 'var(--color-warning)' },
-    { key: 'trainingEnrolled', label: 'Training Enrolled',  icon: '📚', color: 'var(--color-saffron)' },
-    { key: 'certified',        label: 'Certified',          icon: '🏅', color: 'var(--color-accent)' },
-    { key: 'placedOrSelfEmployed', label: 'Placed / Self-Employed', icon: '✅', color: 'var(--color-success)' },
+    { key: 'registered',            label: 'Registered',            icon: '👥', color: 'var(--primary-700, #994d02)' },
+    { key: 'skillsIdentified',      label: 'Skills Identified',      icon: '💡', color: 'var(--primary-600, #ca6603)' },
+    { key: 'trainingEnrolled',      label: 'Training Enrolled',      icon: '📚', color: 'var(--primary-500, #ea580c)' },
+    { key: 'certified',             label: 'Certified',              icon: '🏅', color: '#c2410c' },
+    { key: 'placedOrSelfEmployed',  label: 'Placed / Self-Employed', icon: '✅', color: 'var(--status-success, #16a34a)' },
   ];
   const maxVal = data.registered || 1;
 
   return (
     <div className="funnel">
-      {steps.map((s, i) => {
+      {steps.map((s) => {
         const val = data[s.key] || 0;
-        const widthPct = Math.max(15, Math.round((val / maxVal) * 100));
+        const widthPct = Math.max(18, Math.round((val / maxVal) * 100));
         return (
-          <div key={s.key} className="funnel-step" style={{ '--w': `${widthPct}%` }}>
-            <div className="funnel-bar" style={{ background: s.color }}>
+          <div key={s.key} className="funnel-step">
+            <div className="funnel-bar" style={{ width: `${widthPct}%`, background: s.color }}>
               <span className="funnel-icon" aria-hidden="true">{s.icon}</span>
               <span className="funnel-label">{s.label}</span>
               <span className="funnel-val">{val.toLocaleString()}</span>
@@ -73,10 +66,11 @@ export default function Overview() {
   }, [district]);
 
   return (
-    <div className="overview-root page-enter">
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
-        <h1 className="text-3xl font-bold">{t('admin.overview')}</h1>
-        <div className="flex items-center gap-3">
+    <div className="overview-page page-enter">
+      {/* Header Controls */}
+      <div className="overview-header">
+        <h1 className="overview-title">{t('admin.overview')}</h1>
+        <div className="overview-controls">
           <SyntheticBadge />
           {user?.role === 'admin' && (
             <select
@@ -94,47 +88,52 @@ export default function Overview() {
       </div>
 
       {loading ? (
-        <div className="grid grid-2 gap-6">
-          <SkeletonCard rows={4} />
-          <SkeletonCard rows={4} />
-          <SkeletonCard rows={4} />
-          <SkeletonCard rows={4} />
+        <div className="overview-kpi-grid">
+          <SkeletonCard rows={3} />
+          <SkeletonCard rows={3} />
+          <SkeletonCard rows={3} />
+          <SkeletonCard rows={3} />
         </div>
       ) : data ? (
         <>
-          {/* Key stats */}
-          <div className="grid grid-4 gap-4 mb-8">
-            <StatCard icon="👥" label="Registered" value={data.funnel?.registered || 0} color="var(--color-info)" />
-            <StatCard icon="✅" label="Placed" value={data.funnel?.placedOrSelfEmployed || 0} color="var(--color-success)" />
-            <StatCard icon="📈" label="Placement Rate" value={`${data.placementRate || 0}%`} color="var(--color-accent)" />
-            <StatCard icon="🚨" label="Dropout Risk (High)" value={data.dropoutRisk?.high || 0} color="var(--risk-high)" />
+          {/* KPI / Summary Cards Grid */}
+          <div className="overview-kpi-grid">
+            <StatCard icon="👥" label="Registered" value={data.funnel?.registered || 0} color="var(--primary-600, #ca6603)" />
+            <StatCard icon="✅" label="Placed" value={data.funnel?.placedOrSelfEmployed || 0} color="var(--status-success, #16a34a)" />
+            <StatCard icon="📈" label="Placement Rate" value={`${data.placementRate || 0}%`} color="var(--primary-600, #ca6603)" />
+            <StatCard icon="🚨" label="Dropout Risk (High)" value={data.dropoutRisk?.high || 0} color="var(--status-danger, #dc2626)" />
           </div>
 
-          <div className="grid grid-2 gap-6 mb-6">
-            {/* Training funnel */}
+          {/* Training Funnel & Dropout Risk Side-by-Side Row */}
+          <div className="overview-two-col">
+            {/* Training Funnel Card */}
             <div className="card">
-              <h2 className="text-lg font-semibold mb-4">📊 {t('admin.funnel')}</h2>
+              <h2 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                📊 {t('admin.funnel')}
+              </h2>
               <Funnel data={data.funnel || {}} />
               {data.funnel?.dropouts > 0 && (
-                <p className="text-xs text-muted mt-3">
-                  ⚠ {data.funnel.dropouts} dropouts recorded.
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '14px', fontWeight: 500 }}>
+                  ⚠️ {data.funnel.dropouts} dropouts recorded in funnel pipeline.
                 </p>
               )}
             </div>
 
-            {/* Dropout risk */}
+            {/* Dropout Risk Card */}
             <div className="card">
-              <h2 className="text-lg font-semibold mb-4">⚠️ {t('admin.dropoutRisk')}</h2>
+              <h2 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                ⚠️ {t('admin.dropoutRisk')}
+              </h2>
               <div className="risk-rings">
-                <div className="risk-ring" style={{ '--color': 'var(--risk-high)' }}>
+                <div className="risk-ring" style={{ '--risk-color': 'var(--status-danger, #dc2626)' }}>
                   <span className="risk-val">{data.dropoutRisk?.high || 0}</span>
                   <span className="risk-lbl">{t('admin.riskHigh')}</span>
                 </div>
-                <div className="risk-ring" style={{ '--color': 'var(--risk-medium)' }}>
+                <div className="risk-ring" style={{ '--risk-color': '#d97706' }}>
                   <span className="risk-val">{data.dropoutRisk?.medium || 0}</span>
                   <span className="risk-lbl">{t('admin.riskMedium')}</span>
                 </div>
-                <div className="risk-ring" style={{ '--color': 'var(--risk-low)' }}>
+                <div className="risk-ring" style={{ '--risk-color': 'var(--status-success, #16a34a)' }}>
                   <span className="risk-val">{data.dropoutRisk?.low || 0}</span>
                   <span className="risk-lbl">{t('admin.riskLow')}</span>
                 </div>
@@ -142,53 +141,77 @@ export default function Overview() {
             </div>
           </div>
 
-          {/* Demand vs Supply */}
+          {/* Demand vs Supply Section */}
           {data.demandVsSupply?.length > 0 && (
-            <div className="card mb-6">
-              <h2 className="text-lg font-semibold mb-4">📉 Demand vs Supply</h2>
+            <div className="card" style={{ marginBottom: '24px' }}>
+              <h2 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                📉 Demand vs Supply
+              </h2>
               <div className="dvs-grid">
-                {data.demandVsSupply.slice(0, 8).map((d) => (
-                  <div key={d.occupationKey} className="dvs-row">
-                    <span className="text-xs font-medium" style={{ minWidth: 120 }}>{d.occupationKey}</span>
-                    <div className="dvs-bars">
-                      <div className="dvs-bar-wrap">
-                        <span className="text-xs text-muted">Demand</span>
-                        <Bar label="" value={d.openings} max={Math.max(d.openings, d.availableCandidates) || 1} color="var(--color-saffron)" />
+                {data.demandVsSupply.slice(0, 8).map((d) => {
+                  const formattedName = formatLabel(d.occupationKey);
+                  const maxVal = Math.max(d.openings, d.availableCandidates) || 1;
+                  const demandPct = Math.round((d.openings / maxVal) * 100);
+                  const supplyPct = Math.round((d.availableCandidates / maxVal) * 100);
+
+                  return (
+                    <div key={d.occupationKey} className="dvs-row">
+                      <div className="dvs-occupation-title" title={formattedName}>{formattedName}</div>
+                      <div className="dvs-bars">
+                        <div className="dvs-bar-line">
+                          <span className="dvs-bar-label">Demand</span>
+                          <div className="dvs-bar-track">
+                            <div className="dvs-bar-fill" style={{ width: `${demandPct}%`, background: 'var(--primary-600, #ca6603)' }} />
+                          </div>
+                          <span className="dvs-bar-val">{d.openings.toLocaleString()}</span>
+                        </div>
+                        <div className="dvs-bar-line">
+                          <span className="dvs-bar-label">Supply</span>
+                          <div className="dvs-bar-track">
+                            <div className="dvs-bar-fill" style={{ width: `${supplyPct}%`, background: 'var(--status-success, #16a34a)' }} />
+                          </div>
+                          <span className="dvs-bar-val">{d.availableCandidates.toLocaleString()}</span>
+                        </div>
                       </div>
-                      <div className="dvs-bar-wrap">
-                        <span className="text-xs text-muted">Supply</span>
-                        <Bar label="" value={d.availableCandidates} max={Math.max(d.openings, d.availableCandidates) || 1} color="var(--color-green-light)" />
+                      <div className="dvs-gap-container">
+                        <span className={`dvs-gap-badge ${d.gap >= 0 ? 'dvs-gap-positive' : 'dvs-gap-negative'}`}>
+                          {d.gap > 0 ? `+${d.gap} gap` : d.gap === 0 ? 'Balanced' : `${d.gap} surplus`}
+                        </span>
                       </div>
                     </div>
-                    <span className={`text-xs ${d.gap > 0 ? 'text-success' : 'text-danger'}`}>
-                      {d.gap > 0 ? `+${d.gap} gap` : `${d.gap} surplus`}
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
 
-          {/* Top trades */}
+          {/* Top Trades / Skills Section */}
           {data.byTrade?.length > 0 && (
             <div className="card">
-              <h2 className="text-lg font-semibold mb-4">🔧 Top Skills in District</h2>
-              <div className="flex-col gap-2 flex">
-                {data.byTrade.map((t) => (
-                  <Bar
-                    key={t.trade}
-                    label={t.trade}
-                    value={t.count}
-                    max={data.byTrade[0].count}
-                    color="var(--color-saffron)"
-                  />
-                ))}
+              <h2 className="card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                🔧 Top Skills in District
+              </h2>
+              <div className="skills-grid">
+                {data.byTrade.map((t) => {
+                  const formattedTrade = formatLabel(t.trade);
+                  const maxVal = data.byTrade[0]?.count || 1;
+                  const pct = Math.round((t.count / maxVal) * 100);
+                  return (
+                    <div key={t.trade} className="skill-row">
+                      <span className="skill-name" title={formattedTrade}>{formattedTrade}</span>
+                      <div className="skill-track">
+                        <div className="skill-fill" style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className="skill-count">{t.count.toLocaleString()}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
         </>
       ) : (
-        <p className="text-muted">No data available for this district.</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: '14px', padding: '24px 0' }}>No data available for this district.</p>
       )}
     </div>
   );

@@ -25,12 +25,12 @@ const PAGE_TITLES = {
     kiosk: 'Touch & Voice Kiosk',
     'channel-demo': 'Channel Integration Simulator',
     'admin/overview': 'District Officer Overview',
+    'admin/applications': 'Training Applications & Admissions Desk',
     'admin/beneficiaries': 'Assisted Beneficiary Registration',
     'admin/placements': 'Placements & Enrolment',
     'admin/coordination': 'Inter-Agency Task Coordination',
     'admin/plan': 'District Perspective Action Plan',
     'admin/directory': 'Resource Directory Catalog',
-    'admin/applications': 'Training Provider & Admissions Desk',
     default: 'JeevanPath AI'
   },
   hi: {
@@ -95,6 +95,7 @@ const NAV_TRANSLATIONS = {
     kiosk: 'Kiosk Touch Mode',
     channelDemo: 'Channel Simulator',
     districtOverview: 'District Overview',
+    trainingApplications: 'Training Applications',
     beneficiaries: 'Beneficiaries',
     placements: 'Placements',
     coordination: 'Task Coordination',
@@ -122,6 +123,7 @@ const NAV_TRANSLATIONS = {
     kiosk: 'कियोस्क टच मोड',
     channelDemo: 'चैनल सिम्युलेटर',
     districtOverview: 'जिला अवलोकन',
+    trainingApplications: 'प्रशिक्षण आवेदन',
     beneficiaries: 'लाभार्थी',
     placements: 'प्लेसमेंट',
     coordination: 'कार्य समन्वय',
@@ -149,6 +151,7 @@ const NAV_TRANSLATIONS = {
     kiosk: 'కియోస్క్ టచ్ మోడ్',
     channelDemo: 'ఛానల్ సిమ్యులేటర్',
     districtOverview: 'జిల్లా సమీక్ష',
+    trainingApplications: 'శిక్షణ దరఖాస్తులు',
     beneficiaries: 'లబ్ధిదారులు',
     placements: 'నియామకాలు',
     coordination: 'టాస్క్ సమన్వయం',
@@ -257,7 +260,7 @@ export const AppSidebar = ({ user, sidebarOpen, setSidebarOpen }) => {
 
   const adminNav = [
     { to: '/admin/overview', label: navText.districtOverview, icon: TrendingUp },
-    { to: '/admin/applications', label: navText.applications, icon: FileText },
+    { to: '/admin/applications', label: navText.trainingApplications || navText.applications || 'Training Applications', icon: BookOpen },
     { to: '/admin/beneficiaries', label: navText.beneficiaries, icon: Users },
     { to: '/admin/placements', label: navText.placements, icon: Award },
     { to: '/admin/coordination', label: navText.coordination, icon: FolderKanban },
