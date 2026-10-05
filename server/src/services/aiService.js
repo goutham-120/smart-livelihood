@@ -99,22 +99,29 @@ Current Beneficiary Profile Context:
 - Employment Preference: ${userContext.employmentPreference || 'Open'}
 - Education Level: ${userContext.education || 'Not specified'}
 
+RECENT CONVERSATION HISTORY:
+${userContext.historyContext || formattedHistory || 'None (New Conversation)'}
+
+CURRENT USER MESSAGE: "${userMessage}"
+${utteranceAnalysis.englishMeaning ? `Semantic Meaning / Interpretation: "${utteranceAnalysis.englishMeaning}"` : ''}
+
 CRITICAL RULES:
-1. You MUST respond entirely in USER_LANGUAGE (${langConfig.name}).
+1. You MUST respond entirely in USER_LANGUAGE (${langConfig.name}) in its native script (${langConfig.nativeName}).
 2. Do not switch to English unless USER_LANGUAGE is English.
-3. Do not translate the answer into English.
-4. Do not append English instructions, questions, buttons, or follow-up sentences.
-5. Use the native script normally used for USER_LANGUAGE (${langConfig.nativeName}).
-6. Keep official organization names, course names, scheme names, URLs, technical names, and proper nouns unchanged when appropriate, but explain the surrounding content in USER_LANGUAGE.
-7. Maintain conversational continuity with CONVERSATION_HISTORY, understanding references to previous turns even if spoken in a different language.
-8. Respond directly to the user's ACTUAL question or intent. If the user asks a simple greeting or conversational question like "How are you?" or "Hello", respond warmly in ${langConfig.name} and ask how you can help them today.
-9. NEVER ask for or mention caste or sensitive personal attributes.
-10. Extract valid skills only if explicitly mentioned by user from this canonical list:
+3. Do not translate the answer into English or append English instructions, questions, or follow-up sentences.
+4. Keep official organization names, course names, scheme names, URLs, technical names, and proper nouns unchanged when appropriate.
+5. Understand the user's message semantically IN CONTEXT OF THE RECENT CONVERSATION HISTORY above.
+6. Resolve short follow-up responses, pronouns, affirmations, and short queries ("yes", "no", "okay", "tell me more", "explain", "how?", "where?", "continue") using the RECENT CONVERSATION HISTORY.
+7. Maintain topic continuity. Continue ongoing conversation topic smoothly without changing subject unless explicitly introduced.
+8. DO NOT restart with a generic initial greeting or welcome introduction during an ongoing conversation (where RECENT CONVERSATION HISTORY is present).
+9. Respond directly to the user's ACTUAL question or intent.
+10. NEVER ask for or mention caste or sensitive personal attributes.
+11. Extract valid skills only if explicitly mentioned by user from this canonical list:
 [${Array.from(validSkillKeys).join(', ')}]
 
 You MUST return your output strictly in this JSON format with no additional text:
 {
-  "replyText": "Warm spoken reply text entirely in ${langConfig.name} native script answering the user's ACTUAL question with NO English leakage",
+  "replyText": "Warm spoken reply text entirely in ${langConfig.name} native script answering the user's ACTUAL question in context with NO English leakage",
   "extractedSkills": ["skill_key_1"],
   "identifiedPreference": "self" | "wage" | "either" | null,
   "familyOccupation": "e.g. Agriculture / Weaving / Carpentry / Business / Daily wage or null",
@@ -167,7 +174,7 @@ You MUST return your output strictly in this JSON format with no additional text
         messages: [
           {
             role: 'system',
-            content: `You are an empathetic Indian livelihood skilling counselor. Output strictly valid JSON with replyText in ${langConfig.name}, extractedSkills, familyOccupation, currentLivelihood, education, experienceYears, incomeGoal.`
+            content: `You are an empathetic Indian livelihood skilling counselor. Resolve follow-up responses using conversation history. Output strictly valid JSON with replyText in ${langConfig.name}, extractedSkills, familyOccupation, currentLivelihood, education, experienceYears, incomeGoal.`
           },
           {
             role: 'user',
@@ -337,13 +344,37 @@ You MUST return your output strictly in this JSON format with no additional text
     }
   };
 
-  const intentKey = ['greeting_how_are_you', 'request_training', 'request_job', 'greeting'].includes(utteranceAnalysis.intent)
-    ? utteranceAnalysis.intent
-    : 'general';
+  const hasHistory = Boolean(userContext.historyContext && userContext.historyContext.trim().length > 0);
+  const isShortFollowUp = /^(yes|no|okay|ok|haan|ha|avunu|sare|sure|tell me more|explain|how|why|where|when|continue|more)$/i.test((userMessage || '').trim());
 
-  const categoryMap = NATIVE_FALLBACKS[intentKey] || NATIVE_FALLBACKS.general;
-  const fallbackReply = categoryMap[langConfig.code] || categoryMap.hi || categoryMap.en;
+  let fallbackReply = '';
+  // Contextual fallback during an ongoing conversation (DO NOT return initial welcome greeting if history exists!)
+  if (hasHistory && (isShortFollowUp || utteranceAnalysis.intent === 'greeting' || utteranceAnalysis.intent === 'greeting_how_are_you')) {
+    switch (langConfig.code) {
+      case 'te':
+        fallbackReply = 'తప్పకుండా! మన సంభాషణ ఆధారంగా మీ ప్రశ్నను స్వీకరించాను. ఈ అంశంపై మీకు ఎలాంటి మరిన్ని వివరాలు కావాలి?';
+        break;
+      case 'hi':
+        fallbackReply = 'बिल्कुल! हमारी बातचीत के संदर्भ में मैंने आपकी बात समझ ली है। कृपया बताएं कि आपको आगे क्या जानकारी चाहिए।';
+        break;
+      case 'ta':
+        fallbackReply = 'நிச்சயமாக! நமது உரையாடலின் தொடர்ச்சியாக உங்கள் பதிலைப் புரிந்து கொண்டேன்.';
+        break;
+      case 'kn':
+        fallbackReply = 'ಖಂಡಿತ! ನಮ್ಮ సంభాషణೆಯ ಆಧಾರದ ಮೇಲೆ ನಿಮ್ಮ ವಿಷಯವನ್ನು ಅರ್ಥಮಾಡಿಕೊಂಡಿದ್ದೇನೆ.';
+        break;
+      default:
+        fallbackReply = 'Certainly! Continuing our conversation, I understand your response. Please let me know what specific guidance or next steps you would like to explore.';
+        break;
+    }
+  } else {
+    const intentKey = ['greeting_how_are_you', 'request_training', 'request_job', 'greeting'].includes(utteranceAnalysis.intent)
+      ? utteranceAnalysis.intent
+      : 'general';
 
+    const categoryMap = NATIVE_FALLBACKS[intentKey] || NATIVE_FALLBACKS.general;
+    fallbackReply = categoryMap[langConfig.code] || categoryMap.hi || categoryMap.en;
+  }
   return {
     replyText: fallbackReply,
     extractedSkills: [],

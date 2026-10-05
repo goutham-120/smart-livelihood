@@ -226,11 +226,11 @@
 
 /* Current Milestone Panel (Spotlight Card) */
 .roadmap-current-panel {
-  background: linear-gradient(135deg, #FEFCF6 0%, #F5F1EB 100%);
-  border: 2px solid #CA6603;
+  background: #EEE0CC;
+  border: 1px solid #E1D7C8;
   border-radius: var(--radius-lg, 14px);
   padding: 24px;
-  box-shadow: 0 6px 16px rgba(202, 102, 3, 0.12);
+  box-shadow: 0 4px 12px rgba(79, 55, 40, 0.08);
   position: relative;
   overflow: hidden;
 }
@@ -262,13 +262,13 @@
   font-family: var(--font-heading), 'DM Serif Display', Georgia, serif;
   font-size: 20px;
   font-weight: 800;
-  color: var(--primary-900, #4F3728);
+  color: #4F3728;
   margin: 0 0 8px 0;
 }
 
 .roadmap-current-desc {
   font-size: 14px;
-  color: var(--text-main, #4F3728);
+  color: #4F3728;
   line-height: 1.6;
   margin: 0 0 16px 0;
 }
@@ -277,10 +277,10 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px;
-  background: var(--surface-subtle, #EEE7D9);
+  background: #F5F1EB;
   padding: 14px 16px;
   border-radius: var(--radius-md, 10px);
-  border: 1px solid var(--border-warm, #E1D7C8);
+  border: 1px solid #E1D7C8;
   margin-bottom: 20px;
 }
 
@@ -293,7 +293,8 @@
 .roadmap-detail-label {
   font-size: 11px;
   font-weight: 700;
-  color: var(--text-muted, #6b5240);
+  color: #4F3728;
+  opacity: 0.8;
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
@@ -301,14 +302,14 @@
 .roadmap-detail-value {
   font-size: 13.5px;
   font-weight: 700;
-  color: var(--primary-900, #4F3728);
+  color: #4F3728;
 }
 
 /* Action Button: Mark as Completed */
 .roadmap-mark-completed-btn {
-  background: var(--primary-600, #CA6603);
+  background: #CA6603;
   color: #FEFCF6;
-  border: 1px solid var(--primary-600, #CA6603);
+  border: 1px solid #CA6603;
   padding: 10px 20px;
   border-radius: var(--radius-md, 10px);
   font-size: 14px;

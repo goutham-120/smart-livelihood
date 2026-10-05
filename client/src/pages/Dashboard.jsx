@@ -516,14 +516,14 @@ export const Dashboard = ({ user }) => {
   return (
     <div className="page-container" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Greeting Banner */}
-      <Card style={{ background: 'linear-gradient(135deg, #1e40af, #2563eb)', color: '#fff', border: 'none', overflow: 'hidden' }}>
+      <Card style={{ background: '#EEE0CC', border: '1px solid #E1D7C8', color: '#4F3728', overflow: 'hidden' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           <div style={{ flex: '1 1 280px', minWidth: 0 }}>
-            <div style={{ fontSize: '13px', color: '#93c5fd', fontWeight: 600, marginBottom: '4px' }}>
+            <div style={{ fontSize: '13px', color: '#4F3728', fontWeight: 600, marginBottom: '4px' }}>
               {tDash.greeting(user?.name)}
             </div>
-            <h2 style={{ fontSize: '24px', fontWeight: 800, lineHeight: '1.25' }}>{tDash.heroTitle}</h2>
-            <p style={{ color: '#dbeafe', fontSize: '14px', marginTop: '6px' }}>
+            <h2 style={{ fontSize: '24px', fontWeight: 800, lineHeight: '1.25', color: '#4F3728' }}>{tDash.heroTitle}</h2>
+            <p style={{ color: '#4F3728', fontSize: '14px', marginTop: '6px' }}>
               {tDash.location}: <strong>{getLocalizedDistrict(profile?.district, lang)}, Telangana</strong> | {tDash.education}: <strong>{getLocalizedEducation(profile?.education, lang)}</strong>
             </p>
           </div>
@@ -531,12 +531,13 @@ export const Dashboard = ({ user }) => {
             to="/assistant"
             className="btn"
             style={{
-              background: '#fff',
-              color: 'var(--primary-700)',
+              background: '#CA6603',
+              color: '#FEFCF6',
               fontWeight: 700,
               flexShrink: 0,
               whiteSpace: 'nowrap',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+              boxShadow: '0 4px 12px rgba(79, 55, 40, 0.12)',
+              border: '1px solid #CA6603'
             }}
           >
             {tDash.talkAi}

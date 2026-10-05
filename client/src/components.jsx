@@ -5,7 +5,7 @@ import { api } from './api.js';
 import {
   Mic, MicOff, Volume2, Briefcase, User, ShieldCheck, Sparkles, TrendingUp,
   Award, Compass, LogOut, Menu, X, Home, BookOpen, Layers, PhoneCall,
-  CheckCircle, AlertCircle, FileText, FolderKanban, Building2, Users, Lock, Languages
+  CheckCircle, AlertCircle, FileText, FolderKanban, Building2, Users, Lock, Languages, Network
 } from 'lucide-react';
 
 export const QuickDemoBar = () => null;
@@ -16,6 +16,7 @@ const PAGE_TITLES = {
     opportunities: 'Tailored Livelihood Opportunities',
     'skill-gaps': 'Skill Gap & Competency Analysis',
     training: 'Certified Skilling Programs',
+    'community-learning': 'Community & Learning',
     roadmap: 'Career Livelihood Roadmap',
     'what-if': 'What-If Career Simulator',
     'self-employment': 'Micro-Enterprise Business Guide',
@@ -37,6 +38,7 @@ const PAGE_TITLES = {
     opportunities: 'अनुकूलित आजीविका के अवसर',
     'skill-gaps': 'कौशल अंतर और क्षमता विश्लेषण',
     training: 'प्रमाणित कौशल विकास कार्यक्रम',
+    'community-learning': 'समुदाय और सीखना',
     roadmap: 'करियर आजीविका रोडमैप',
     'what-if': 'करियर परिदृश्य सिम्युलेटर',
     'self-employment': 'सूक्ष्म उद्यम व्यवसाय मार्गदर्शिका',
@@ -58,6 +60,7 @@ const PAGE_TITLES = {
     opportunities: 'వ్యక్తిగతీకరించిన ఉపాధి అవకాశాలు',
     'skill-gaps': 'నైపుణ్య లోపాలు & విశ్లేషణ',
     training: 'ప్రమాణిత శిక్షణా కార్యక్రమాలు',
+    'community-learning': 'సముదాయం & అభ్యాసం',
     roadmap: 'కెరీర్ జీవనోపాధి రోడ్‌మ్యాప్',
     'what-if': 'కెరీర్ వాట్-ఇఫ్ సిమ్యులేటర్',
     'self-employment': 'సూక్ష్మ వ్యాపార మార్గదర్శి',
@@ -83,6 +86,7 @@ const NAV_TRANSLATIONS = {
     opportunities: 'Opportunities',
     skillGaps: 'Skill Gaps',
     training: 'Certified Training',
+    communityLearning: 'Community & Learning',
     roadmap: 'Career Roadmap',
     whatIf: 'What-If Simulator',
     selfEmployment: 'Self-Employment',
@@ -109,6 +113,7 @@ const NAV_TRANSLATIONS = {
     opportunities: 'अवसर',
     skillGaps: 'कौशल अंतर',
     training: 'प्रमाणित प्रशिक्षण',
+    communityLearning: 'समुदाय और सीखना',
     roadmap: 'करियर रोडमैप',
     whatIf: 'व्हॉट-इफ़ सिम्युलेटर',
     selfEmployment: 'स्व-रोजगार',
@@ -135,6 +140,7 @@ const NAV_TRANSLATIONS = {
     opportunities: 'అవకాశాలు',
     skillGaps: 'నైపుణ్య అంతరాలు',
     training: 'ప్రమాణిత శిక్షణ',
+    communityLearning: 'సముదాయం & అభ్యాసం',
     roadmap: 'కెరీర్ రోడ్‌మ్యాప్',
     whatIf: 'వాట్-ఇఫ్ సిమ్యులేటర్',
     selfEmployment: 'స్వయం ఉపాధి',
@@ -229,6 +235,7 @@ export const AppSidebar = ({ user, sidebarOpen, setSidebarOpen }) => {
     { to: '/opportunities', label: navText.opportunities, icon: Briefcase },
     { to: '/skill-gaps', label: navText.skillGaps, icon: Layers },
     { to: '/training', label: navText.training, icon: BookOpen },
+    { to: '/community-learning', label: navText.communityLearning, icon: Network },
     { to: '/roadmap', label: navText.roadmap, icon: TrendingUp },
     { to: '/what-if', label: navText.whatIf, icon: Compass },
     { to: '/self-employment', label: navText.selfEmployment, icon: Award },

@@ -882,8 +882,8 @@ export function Login({ onLoginSuccess, initialTab = 'email', initialMode = 'aut
 
           <div className="capabilities-grid">
             <div className="capability-card">
-              <div className="capability-icon-box bg-blue-light">
-                <Mic size={24} className="text-blue" />
+              <div className="capability-icon-box bg-warm-saffron">
+                <Mic size={24} className="text-saffron" />
               </div>
               <h3 className="capability-card-title">{t('capabilities.cap1Title', 'Voice-First Guidance')}</h3>
               <p className="capability-card-desc">
@@ -892,8 +892,8 @@ export function Login({ onLoginSuccess, initialTab = 'email', initialMode = 'aut
             </div>
 
             <div className="capability-card">
-              <div className="capability-icon-box bg-teal-light">
-                <Target size={24} className="text-teal" />
+              <div className="capability-icon-box bg-warm-cream">
+                <Target size={24} className="text-brown" />
               </div>
               <h3 className="capability-card-title">{t('capabilities.cap2Title', 'Personalized Opportunities')}</h3>
               <p className="capability-card-desc">
@@ -902,8 +902,8 @@ export function Login({ onLoginSuccess, initialTab = 'email', initialMode = 'aut
             </div>
 
             <div className="capability-card">
-              <div className="capability-icon-box bg-blue-light">
-                <BookOpen size={24} className="text-blue" />
+              <div className="capability-icon-box bg-warm-saffron">
+                <BookOpen size={24} className="text-saffron" />
               </div>
               <h3 className="capability-card-title">{t('capabilities.cap3Title', 'Skill & Training Guidance')}</h3>
               <p className="capability-card-desc">
@@ -912,8 +912,8 @@ export function Login({ onLoginSuccess, initialTab = 'email', initialMode = 'aut
             </div>
 
             <div className="capability-card">
-              <div className="capability-icon-box bg-teal-light">
-                <Compass size={24} className="text-teal" />
+              <div className="capability-icon-box bg-warm-cream">
+                <Compass size={24} className="text-brown" />
               </div>
               <h3 className="capability-card-title">{t('capabilities.cap4Title', 'Personalized Roadmap')}</h3>
               <p className="capability-card-desc">
@@ -942,7 +942,7 @@ export function Login({ onLoginSuccess, initialTab = 'email', initialMode = 'aut
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800, fontSize: '18px', color: 'var(--primary-900)' }}>
-                <HelpCircle size={20} className="text-blue" />
+                <HelpCircle size={20} className="text-saffron" />
                 <span>{t('helpModal.title', 'About PM-AJAY Livelihood Assistant')}</span>
               </div>
               <button

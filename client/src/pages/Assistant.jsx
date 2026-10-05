@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '../api.js';
+import { useLang } from '../lang.js';
 import { Card, Badge } from '../components.jsx';
 import {
   Sparkles, Mic, MicOff, Volume2, VolumeX,
-  CheckCircle, Loader2, AlertCircle
+  CheckCircle, Loader2, AlertCircle, Plus, History, MessageSquare, X
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -21,7 +22,7 @@ const ALL_LANGUAGES = [
   { code: 'od',  name: 'Odia',      nativeName: 'ଓଡ଼ିଆ',        speechCode: 'od-IN' },
   { code: 'as',  name: 'Assamese',  nativeName: 'অসমীয়া',       speechCode: 'as-IN' },
   { code: 'ur',  name: 'Urdu',      nativeName: 'اُردُو',        speechCode: 'ur-IN' },
-  { code: 'ne',  name: 'Nepali',    nativeName: 'नेपाली',        speechCode: 'ne-IN' },
+  { code: 'ne',  name: 'Nepali',    nativeName: 'నేపాలి',        speechCode: 'ne-IN' },
   { code: 'kok', name: 'Konkani',   nativeName: 'कोंकणी',        speechCode: 'kok-IN' },
   { code: 'ks',  name: 'Kashmiri',  nativeName: 'कॉशुर',         speechCode: 'ks-IN' },
   { code: 'sd',  name: 'Sindhi',    nativeName: 'سنڌي',          speechCode: 'sd-IN' },
@@ -33,7 +34,52 @@ const ALL_LANGUAGES = [
   { code: 'doi', name: 'Dogri',     nativeName: 'डोगरी',         speechCode: 'doi-IN' },
 ];
 
-const INITIAL_GREETING = 'Namaste! Welcome to the PM-AJAY AI Voice Assistant. Speak or type in any of the 23 Indian languages — your language will be automatically detected, answered in the same language, and read aloud.';
+const ASSISTANT_CONTENT = {
+  en: {
+    title: 'Empathetic AI Voice Assistant',
+    subtitle: 'Discuss your past work, trade skills, or livelihood goals in your language',
+    bannerTitle: '2-Min Voice Assessment: Skills & Profile Identified!',
+    bannerDesc: 'Your competencies have been extracted by AI. Verify your profile details to unlock your personalized Dashboard and livelihood pathways.',
+    samplePromptsLabel: 'Or choose a sample scenario to simulate conversation:',
+    newChatBtn: '+ New Chat',
+    historyTitle: 'Chat History',
+    noHistory: 'No past conversations yet',
+    activeChat: 'Active Chat',
+    newChatTitle: 'New Conversation'
+  },
+  hi: {
+    title: 'सहानुभूतिपूर्ण एआई वॉयस असिस्टेंट',
+    subtitle: 'अपने पिछले काम, कौशल या आजीविका लक्ष्यों पर अपनी भाषा में चर्चा करें',
+    bannerTitle: '2-मिनट वॉइस मूल्यांकन: कौशल एवं प्रोफ़ाइल पहचानी गई!',
+    bannerDesc: 'आपकी क्षमताएं एआई द्वारा पहचानी गई हैं। अपनी व्यक्तिगत आजीविका के अवसरों को अनलॉक करने के लिए विवरण सत्यापित करें।',
+    samplePromptsLabel: 'या बातचीत शुरू करने के लिए कोई उदाहरण चुनें:',
+    newChatBtn: '+ नई बातचीत',
+    historyTitle: 'बातचीत का इतिहास',
+    noHistory: 'कोई पुरानी बातचीत नहीं मिली',
+    activeChat: 'सक्रिय बातचीत',
+    newChatTitle: 'नई बातचीत'
+  },
+  te: {
+    title: 'సానుభూతిపూర్వక AI వాయిస్ అసిస్టెంట్',
+    subtitle: 'మీ గత పని, నైపుణ్యాలు లేదా జీవనోపాధి లక్ష్యాల గురించి మీ స్వంత భాషలో మాట్లాడండి',
+    bannerTitle: '2 నిమిషాల వాయిస్ అసెస్‌మెంట్: నైపుణ్యాలు & ప్రొఫైల్ గుర్తించబడ్డాయి!',
+    bannerDesc: 'మీ నైపుణ్యాలను AI గుర్తించింది. మీ వ్యక్తిగతీకరించిన డాష్‌బోర్డ్ మరియు ఉపాధి మార్గాలను అన్‌లాక్ చేయడానికి వివరాలను ధృవీకరించండి.',
+    samplePromptsLabel: 'లేదా సంభాషణ ప్రారంభించడానికి ఒక ఉదాహరణను ఎంచుకోండి:',
+    newChatBtn: '+ కొత్త సంభాషణ',
+    historyTitle: 'గత సంభాషణలు',
+    noHistory: 'గత సంభాషణలేవీ లేవు',
+    activeChat: 'ప్రస్తుత సంభాషణ',
+    newChatTitle: 'కొత్త సంభాషణ'
+  }
+};
+
+const GREETINGS = {
+  en: 'Namaste! Welcome to the PM-AJAY AI Voice Assistant. Speak or type in any of the 23 Indian languages — your language will be automatically detected, answered in the same language, and read aloud.',
+  hi: 'नमस्ते! PM-AJAY AI वॉइस असिस्टेंट में आपका स्वागत है। किसी भी भारतीय भाषा में बोलें या लिखें — आपकी भाषा अपने आप पहचान ली जाएगी।',
+  te: 'నమస్కారం! PM-AJAY AI వాయిస్ అసిస్టెంట్‌కి స్వాగతం. ఏ భారతీయ భాషలోనైనా మాట్లాడండి లేదా టైప్ చేయండి — మీ భాష స్వయంచాలకంగా గుర్తించబడుతుంది.'
+};
+
+const INITIAL_GREETING = GREETINGS.en;
 
 const SAMPLE_PROMPTS = [
   { label: 'Hindi: नौकरी चाहिए', text: 'मुझे सिलाई और कपड़ों के काम का अनुभव है। क्या कोई नौकरी या सरकारी योजना है?' },
@@ -118,6 +164,14 @@ const MicButton = ({ isListening, isDisabled, onClick }) => (
 );
 
 export const Assistant = ({ forUserId = null }) => {
+  const { lang } = useLang();
+  const content = ASSISTANT_CONTENT[lang] || ASSISTANT_CONTENT.en;
+
+  // Persistent Conversation State
+  const [conversationId, setConversationId] = useState(null);
+  const [conversations, setConversations] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
+
   // Informational detected language state (updates dynamically on every turn)
   const [detectedInfo, setDetectedInfo] = useState(null);
 
@@ -143,6 +197,17 @@ export const Assistant = ({ forUserId = null }) => {
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
+  // Sync greeting ONLY when starting a brand-new conversation (no conversationId and 1 message)
+  useEffect(() => {
+    setMessages((prev) => {
+      if (!conversationId && prev.length === 1 && prev[0]?.sender === 'ai') {
+        return [{ sender: 'ai', text: GREETINGS[lang] || GREETINGS.en }];
+      }
+      return prev;
+    });
+  }, [lang, conversationId]);
+
+  // Load user profile
   useEffect(() => {
     api.getProfile(forUserId).then(res => {
       if (res && res.profile) {
@@ -151,6 +216,54 @@ export const Assistant = ({ forUserId = null }) => {
       }
     }).catch(() => {});
   }, [forUserId]);
+
+  // Fetch conversation history list from backend
+  const fetchConversations = useCallback(async () => {
+    try {
+      const res = await api.getConversations(forUserId);
+      if (res?.conversations) {
+        setConversations(res.conversations);
+      }
+    } catch (err) {
+      console.error('Failed to load conversation history:', err);
+    }
+  }, [forUserId]);
+
+  useEffect(() => {
+    fetchConversations();
+  }, [fetchConversations]);
+
+  // Handle "+ New Chat" action
+  const handleNewChat = () => {
+    if (isProcessing) return;
+    setConversationId(null);
+    setMessages([{ sender: 'ai', text: GREETINGS[lang] || GREETINGS.en }]);
+    setShowHistory(false);
+    fetchConversations();
+  };
+
+  // Select and restore an existing conversation from history
+  const handleSelectConversation = async (id) => {
+    if (isProcessing || id === conversationId) return;
+    setIsProcessing(true);
+    try {
+      const res = await api.getConversation(id, forUserId);
+      if (res?.conversation) {
+        setConversationId(res.conversation._id);
+        const loaded = (res.conversation.messages || []).map((m) => ({
+          sender: m.sender,
+          text: m.text,
+          profileInsight: m.profileInsight
+        }));
+        setMessages(loaded.length > 0 ? loaded : [{ sender: 'ai', text: GREETINGS[lang] || GREETINGS.en }]);
+        setShowHistory(false);
+      }
+    } catch (err) {
+      console.error('Failed to load conversation:', err);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   /**
    * Start recording audio via MediaRecorder.
@@ -163,7 +276,6 @@ export const Assistant = ({ forUserId = null }) => {
       audioChunksRef.current = [];
       candidateTranscriptRef.current = '';
 
-      // Optional background listener for candidate transcript fallback if cloud key is not configured
       const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (SpeechRec) {
         try {
@@ -226,7 +338,6 @@ export const Assistant = ({ forUserId = null }) => {
       const blob = new Blob(audioChunksRef.current, { type: mime });
       const b64 = await blobToBase64(blob);
 
-      // ALWAYS send language: 'unknown' for true automatic speech language detection
       const stt = await api.speechToText({
         audioBase64: b64,
         mimeType: mime || 'audio/webm',
@@ -245,7 +356,6 @@ export const Assistant = ({ forUserId = null }) => {
       const detectedSpeechCode = stt.speechCode || (stt.language ? `${stt.language}-IN` : 'en-IN');
       const detectedProb = stt.languageProbability || stt.confidence || 0.95;
 
-      // Update non-clickable informational badge dynamically
       setDetectedInfo({
         code: stt.language,
         speechCode: detectedSpeechCode,
@@ -254,11 +364,9 @@ export const Assistant = ({ forUserId = null }) => {
         confidence: detectedProb
       });
 
-      // Step: "Detected language: Telugu"
       setStatusMsg(`Detected language: ${detectedLangName}`);
       setMessages(prev => [...prev, { sender: 'user', text: transcript, langCode: detectedSpeechCode }]);
 
-      // Transition to generating response
       await new Promise(r => setTimeout(r, 400));
       setStatusMsg('Generating response...');
 
@@ -273,7 +381,6 @@ export const Assistant = ({ forUserId = null }) => {
 
   /**
    * Send transcript to the LLM with the authoritative detected language.
-   * LLM generates response in that language, and TTS speaks the response in that language.
    */
   const sendToAssistant = async (text, detectedSpeechCode, detectedLangName) => {
     try {
@@ -282,8 +389,13 @@ export const Assistant = ({ forUserId = null }) => {
         language: detectedSpeechCode,
         speechCode: detectedSpeechCode,
         channel: 'web',
+        conversationId,
         forUserId
       });
+
+      if (res && res.conversationId && res.conversationId !== conversationId) {
+        setConversationId(res.conversationId);
+      }
 
       const reply = (res && (res.replyText || res.response)) || '';
       const respLangCode = (res && res.speechCode) || detectedSpeechCode;
@@ -293,7 +405,6 @@ export const Assistant = ({ forUserId = null }) => {
         setMessages(prev => [...prev, { sender: 'ai', text: reply, langCode: respLangCode }]);
         if (autoPlay) {
           setIsSpeaking(true);
-          // Step: "Speaking in Telugu..."
           setStatusMsg(`Speaking in ${respLangName}...`);
           await playTTS(reply, respLangCode);
           setIsSpeaking(false);
@@ -302,6 +413,8 @@ export const Assistant = ({ forUserId = null }) => {
 
       if (res && res.extractedSkills && res.extractedSkills.length > 0) setExtractedSkills(res.extractedSkills);
       if (res && res.updatedProfile) setUpdatedProfile(p => ({ ...p, ...res.updatedProfile }));
+
+      fetchConversations();
     } catch {
       setMessages(prev => [...prev, {
         sender: 'ai',
@@ -331,8 +444,13 @@ export const Assistant = ({ forUserId = null }) => {
         message: t,
         language: 'unknown',
         channel: 'web',
+        conversationId,
         forUserId
       });
+
+      if (res && res.conversationId && res.conversationId !== conversationId) {
+        setConversationId(res.conversationId);
+      }
 
       const reply = (res && (res.replyText || res.response)) || '';
       const respLangCode = (res && res.speechCode) || 'en-IN';
@@ -360,6 +478,8 @@ export const Assistant = ({ forUserId = null }) => {
 
       if (res && res.extractedSkills && res.extractedSkills.length > 0) setExtractedSkills(res.extractedSkills);
       if (res && res.updatedProfile) setUpdatedProfile(p => ({ ...p, ...res.updatedProfile }));
+
+      fetchConversations();
     } catch {
       setErrorMsg('Failed to process message.');
     } finally {
@@ -383,6 +503,7 @@ export const Assistant = ({ forUserId = null }) => {
   };
 
   const statusColor = errorMsg ? '#dc2626' : isListening ? '#dc2626' : isProcessing ? '#ea580c' : isSpeaking ? '#2563eb' : '#64748b';
+  const activeConvObj = conversations.find(c => c._id === conversationId);
 
   return (
     <div className="page-container">
@@ -391,14 +512,121 @@ export const Assistant = ({ forUserId = null }) => {
         @keyframes va-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}</style>
 
-      <div style={{ marginBottom: '20px' }}>
-        <h2 style={{ fontSize: '22px', fontWeight: 800 }}>Empathetic AI Voice Assistant</h2>
-        <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
-          Speak or type in any of 23 Indian languages — automatically detected from voice audio, answered and read back in the same language
-        </p>
+      {/* PAGE HEADER & CONTROLS */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
+        <div>
+          <h2 style={{ fontSize: '22px', fontWeight: 800, margin: 0 }}>{content.title}</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '14px', margin: '2px 0 0 0' }}>{content.subtitle}</p>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button
+            type="button"
+            onClick={() => setShowHistory(!showHistory)}
+            className="btn btn-secondary"
+            style={{
+              fontSize: '13px',
+              fontWeight: 600,
+              padding: '8px 14px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: showHistory ? 'var(--primary-50, #fff7ed)' : undefined,
+              borderColor: showHistory ? 'var(--primary-600, #c2410c)' : undefined
+            }}
+          >
+            <History size={16} /> {content.historyTitle} ({conversations.length})
+          </button>
+
+          <button
+            type="button"
+            onClick={handleNewChat}
+            disabled={isProcessing}
+            className="btn btn-primary"
+            style={{
+              fontSize: '13px',
+              fontWeight: 700,
+              padding: '8px 16px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: 'var(--shadow-sm)'
+            }}
+          >
+            <Plus size={16} /> {content.newChatBtn}
+          </button>
+        </div>
       </div>
 
-      {/* Informational Auto-Detection Status Bar (No manual selector) */}
+      {/* CHAT HISTORY PANEL (EXPANDABLE) */}
+      {showHistory && (
+        <Card style={{ marginBottom: '20px', background: 'var(--surface-subtle)', borderColor: 'var(--border-light)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <History size={17} color="var(--primary-600)" /> {content.historyTitle}
+            </div>
+            <button
+              onClick={() => setShowHistory(false)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          {conversations.length === 0 ? (
+            <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontStyle: 'italic', padding: '12px 0' }}>
+              {content.noHistory}
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '10px' }}>
+              {conversations.map((c) => {
+                const isActive = c._id === conversationId;
+                const formattedDate = new Date(c.updatedAt || c.createdAt).toLocaleDateString(undefined, {
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                });
+
+                return (
+                  <button
+                    key={c._id}
+                    type="button"
+                    onClick={() => handleSelectConversation(c._id)}
+                    style={{
+                      textAlign: 'left',
+                      padding: '10px 14px',
+                      borderRadius: 'var(--radius-md)',
+                      background: isActive ? 'var(--primary-600)' : '#ffffff',
+                      color: isActive ? '#ffffff' : 'var(--text-main)',
+                      border: isActive ? '1px solid var(--primary-600)' : '1px solid var(--border-light)',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      boxShadow: 'var(--shadow-sm)'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                      <span style={{ fontWeight: 700, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '180px' }}>
+                        {c.title || 'Conversation'}
+                      </span>
+                      <span style={{ fontSize: '10.5px', opacity: isActive ? 0.9 : 0.6 }}>
+                        {formattedDate}
+                      </span>
+                    </div>
+                    {c.preview && (
+                      <div style={{ fontSize: '12px', opacity: isActive ? 0.9 : 0.75, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {c.preview}
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </Card>
+      )}
+
+      {/* Informational Auto-Detection Status Bar */}
       <div style={{
         display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '12px',
         marginBottom: '18px', padding: '12px 18px',
@@ -453,7 +681,7 @@ export const Assistant = ({ forUserId = null }) => {
         </div>
       </div>
 
-      {/* Skills Banner */}
+      {/* Identified Profile Banner */}
       {(extractedSkills.length > 0 || updatedProfile) && (
         <Card style={{ marginBottom: '18px', background: 'linear-gradient(135deg,#f0fdf4,#eff6ff)', borderColor: '#86efac' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px' }}>
@@ -486,10 +714,25 @@ export const Assistant = ({ forUserId = null }) => {
         </Card>
       )}
 
-      {/* Chat Card */}
-      <Card style={{ minHeight: '380px', display: 'flex', flexDirection: 'column' }}>
-        {/* Messages */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', marginBottom: '16px', maxHeight: '400px', paddingRight: '4px' }}>
+      {/* CHAT MESSAGES WINDOW */}
+      <Card style={{ minHeight: '340px', display: 'flex', flexDirection: 'column' }}>
+        {/* ACTIVE CONVERSATION BADGE HEADER */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '10px', marginBottom: '12px', borderBottom: '1px solid var(--border-light)' }}>
+          <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <MessageSquare size={14} color="var(--primary-600)" />
+            {conversationId ? (
+              <span>{content.activeChat}: <strong>{activeConvObj?.title || 'Active Session'}</strong></span>
+            ) : (
+              <span>{content.newChatTitle}</span>
+            )}
+          </div>
+
+          <div style={{ fontSize: '11.5px', color: 'var(--text-subtle)' }}>
+            {messages.length} {messages.length === 1 ? 'message' : 'messages'}
+          </div>
+        </div>
+
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '14px', overflowY: 'auto', marginBottom: '20px', maxHeight: '420px', paddingRight: '4px' }}>
           {messages.map((m, idx) => (
             <div key={idx} style={{ alignSelf: m.sender === 'user' ? 'flex-end' : 'flex-start', maxWidth: '82%', display: 'flex', flexDirection: 'column', alignItems: m.sender === 'user' ? 'flex-end' : 'flex-start', gap: '3px' }}>
               <div style={{
